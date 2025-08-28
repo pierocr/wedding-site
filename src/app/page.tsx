@@ -82,7 +82,7 @@ const GALLERY = [
   "/hero/IMG-20230923-WA0054~2.jpg",
   "/hero/IMG-20231205-WA0010.jpg",
   "/hero/20231208_143753.jpg",
-  "/hero/imagen6.jpg",
+  "/hero/imagen6.jpeg",
   "/hero/IMG-20240214-WA0313.jpg",
   "/hero/IMG-20250816-WA0036.jpg",
 ];
@@ -235,23 +235,25 @@ const Hero = () => {
     return () => clearInterval(t);
   }, []);
 
-// dentro de Hero()
-const [hydrated, setHydrated] = React.useState(false);
-React.useEffect(() => setHydrated(true), []);
-const safe = (n: number) => (hydrated ? n : 0);
+  // dentro de Hero()
+  const [hydrated, setHydrated] = React.useState(false);
+  React.useEffect(() => setHydrated(true), []);
+  const safe = (n: number) => (hydrated ? n : 0);
 
-// Micro inline (reemplaza tu actual)
-const Micro = ({ v, l }: { v: number; l: string }) => (
-  <div className="flex items-baseline justify-center gap-1 rounded-md border border-white/60 bg-white/85 px-3 py-2 shadow-sm">
-    <span
-      className="text-[15px] md:text-lg font-extrabold leading-none text-foreground"
-      suppressHydrationWarning
-    >
-      {safe(v)}
-    </span>
-    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{l}</span>
-  </div>
-);
+  // Micro inline (ajustado con tamaños fluidos)
+  const Micro = ({ v, l }: { v: number; l: string }) => (
+    <div className="flex items-baseline justify-center gap-1 rounded-md border border-white/60 bg-white/85 px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-sm">
+      <span
+        className="text-[15px] sm:text-lg font-extrabold leading-none text-foreground"
+        suppressHydrationWarning
+      >
+        {safe(v)}
+      </span>
+      <span className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground">
+        {l}
+      </span>
+    </div>
+  );
 
   return (
     <div className="relative isolate min-h-[46vh] md:min-h-[40vh] lg:min-h-[38vh]">
@@ -291,36 +293,38 @@ const Micro = ({ v, l }: { v: number; l: string }) => (
             <Calendar className="mr-2 h-4 w-4" />
             {CEREMONY.datePretty}
           </Badge>
-          {/* <Badge variant="secondary" className="bg-white/85 text-foreground px-3 py-1.5 text-sm">
-            <Clock className="mr-2 h-4 w-4" />
-            {CEREMONY.timePretty}
-          </Badge> */}
         </div>
       </div>
 
-      {/* Panel inferior: countdown inline + botones en UNA sola línea */}
-      <div className="absolute inset-x-0 bottom-3">
-        <div className="mx-auto flex max-w-6xl justify-center px-4">
-          <div className="w-full sm:w-auto rounded-2xl border border-white/60 bg-white/80 px-3 py-3 backdrop-blur-md shadow-lg">
-            <div className="mb-2 grid grid-cols-4 gap-1.5" role="status" aria-live="polite">
+      {/* Panel inferior: en móvil es ESTÁTICO y compacto; en md+ flota (absolute) y crece */}
+      <div className="px-3 md:px-4 mt-3 md:mt-0 md:absolute md:inset-x-0 md:bottom-3">
+        <div className="mx-auto flex max-w-6xl justify-center">
+          <div className="w-full sm:w-auto rounded-2xl border border-white/60 bg-white/85 backdrop-blur-md shadow-lg px-2 sm:px-3 py-2 sm:py-3">
+            {/* Contador */}
+            <div className="mb-2 grid grid-cols-4 gap-1 sm:gap-1.5" role="status" aria-live="polite">
               <Micro v={days} l="D" />
               <Micro v={hours} l="H" />
               <Micro v={minutes} l="M" />
               <Micro v={seconds} l="S" />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            {/* Botones */}
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
               <a href="#regalo">
                 <Button
-                  size="lg"
-                  className="w-full bg-rose-500 text-white hover:bg-rose-600 shadow-lg ring-2 ring-white/50"
+                  size="sm"
+                  className="w-full h-9 sm:h-11 px-3 sm:px-5 text-xs sm:text-base bg-rose-500 text-white hover:bg-rose-600 shadow-lg ring-1 sm:ring-2 ring-white/50"
                 >
-                  <Gift className="mr-2 h-4 w-4" />
+                  <Gift className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Hacer Regalo
                 </Button>
               </a>
               <a href="#rsvp">
-                <Button size="lg" variant="secondary" className="w-full shadow-md">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="w-full h-9 sm:h-11 px-3 sm:px-5 text-xs sm:text-base shadow-md"
+                >
                   Confirmar Asistencia
                 </Button>
               </a>
@@ -740,17 +744,17 @@ const GiftSection = () => {
 
   // Mensajes creativos (mientras más profundo, mayor precio)
   const OPTIONS = [
-    { id: "abrazo",    emoji: "🤗", label: "Un abrazo apretado",            price: 5000 },
-    { id: "brindis",   emoji: "🥂", label: "Brindis por nuestro siempre",   price: 10000 },
-    { id: "desayuno",  emoji: "🥞", label: "Desayuno en la cama",           price: 20000 },
-    { id: "picnic",    emoji: "🧺", label: "Tarde de picnic",               price: 30000 },
-    { id: "ramo",      emoji: "💐", label: "Mil flores para ti",            price: 40000 },
-    { id: "cena",      emoji: "🍽️", label: "Cena romántica",               price: 60000 },
+    { id: "abrazo",    emoji: "🤗", label: "Un abrazo apretado",            price: 30000 },
+    { id: "brindis",   emoji: "🥂", label: "Brindis por nuestro siempre",   price: 40000 },
+    { id: "desayuno",  emoji: "🥞", label: "Desayuno en la cama",           price: 50000 },
+    { id: "picnic",    emoji: "🧺", label: "Tarde de picnic",               price: 60000 },
+    { id: "ramo",      emoji: "💐", label: "Mil flores para ti",            price: 70000 },
+    { id: "cena",      emoji: "🍽️", label: "Cena romántica",               price: 75000 },
     { id: "spa",       emoji: "💆", label: "Día de spa",                    price: 80000 },
-    { id: "aventura",  emoji: "🎢", label: "Aventura sorpresa",             price: 120000 },
-    { id: "finde",     emoji: "🏖️", label: "Fin de semana soñado",         price: 180000 },
-    { id: "viaje",     emoji: "✈️", label: "Empujoncito para el viaje",     price: 300000 },
-    { id: "felicidad", emoji: "💖", label: "Un matrimonio feliz",           price: 400000 },
+    { id: "aventura",  emoji: "🎢", label: "Aventura sorpresa",             price: 100000 },
+    { id: "finde",     emoji: "🏖️", label: "Fin de semana soñado",         price: 130000 },
+    { id: "viaje",     emoji: "✈️", label: "Empujoncito para el viaje",     price: 200000 },
+    { id: "felicidad", emoji: "💖", label: "Un matrimonio feliz",           price: 350000 },
     { id: "vida",      emoji: "♾️", label: "Una vida entera juntos",        price: 600000 },
   ] as const;
 
