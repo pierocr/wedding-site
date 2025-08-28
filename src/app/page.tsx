@@ -223,7 +223,6 @@ const Micro = ({ v, l }: { v: number; l: string }) => (
   );
 };
 
-
 const HERO_IMAGES = ["/hero/1.jpg"];
 
 const Hero = () => {
@@ -235,23 +234,20 @@ const Hero = () => {
     return () => clearInterval(t);
   }, []);
 
-  // dentro de Hero()
+  // Evita mismatch de hidratación en el contador
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);
   const safe = (n: number) => (hydrated ? n : 0);
 
-  // Micro inline (ajustado con tamaños fluidos)
-  const Micro = ({ v, l }: { v: number; l: string }) => (
-    <div className="flex items-baseline justify-center gap-1 rounded-md border border-white/60 bg-white/85 px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-sm">
-      <span
-        className="text-[15px] sm:text-lg font-extrabold leading-none text-foreground"
+  const TimerChip = ({ v, l }: { v: number; l: string }) => (
+    <div className="flex items-baseline gap-1 rounded-xl bg-white px-[clamp(10px,1.2vw,14px)] py-[clamp(6px,1vw,8px)] shadow-sm">
+      <div
+        className="tabular-nums font-bold leading-none tracking-tight text-[clamp(20px,3.6vw,28px)]"
         suppressHydrationWarning
       >
         {safe(v)}
-      </span>
-      <span className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground">
-        {l}
-      </span>
+      </div>
+      <div className="text-[clamp(10px,2vw,12px)] font-medium text-muted-foreground">{l}</div>
     </div>
   );
 
@@ -273,8 +269,8 @@ const Hero = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-transparent" />
       </div>
 
-      {/* Título, subtítulo y fecha/hora */}
-      <div className="mx-auto max-w-6xl px-4 pt-10 md:pt-12 text-white">
+      {/* Título / subtítulo */}
+      <div className="relative z-40 mx-auto max-w-6xl px-4 pt-10 md:pt-12 text-white">
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -288,47 +284,56 @@ const Hero = () => {
           ¡Nos casamos! Acompáñanos a celebrar este día especial.
         </p>
 
-        <div className="mt-4 md:mt-3 flex flex-wrap items-center justify-center gap-2">
-          <Badge variant="secondary" className="bg-white/85 text-foreground px-3 py-1.5 text-sm">
-            <Calendar className="mr-2 h-4 w-4" />
+        {/* FECHA (puede ir aquí sobre el dock) */}
+        <div className="mt-4 flex justify-center">
+          <Badge
+            variant="secondary"
+            className="inline-flex items-center gap-2 bg-white/90 text-foreground px-3 py-1.5 text-sm shadow ring-1 ring-black/5"
+          >
+            <Calendar className="h-4 w-4" />
             {CEREMONY.datePretty}
           </Badge>
         </div>
       </div>
 
-      {/* Panel inferior: en móvil es ESTÁTICO y compacto; en md+ flota (absolute) y crece */}
-      <div className="px-3 md:px-4 mt-3 md:mt-0 md:absolute md:inset-x-0 md:bottom-3">
-        <div className="mx-auto flex max-w-6xl justify-center">
-          <div className="w-full sm:w-auto rounded-2xl border border-white/60 bg-white/85 backdrop-blur-md shadow-lg px-2 sm:px-3 py-2 sm:py-3">
-            {/* Contador */}
-            <div className="mb-2 grid grid-cols-4 gap-1 sm:gap-1.5" role="status" aria-live="polite">
-              <Micro v={days} l="D" />
-              <Micro v={hours} l="H" />
-              <Micro v={minutes} l="M" />
-              <Micro v={seconds} l="S" />
-            </div>
+      {/* D O C K  → anclado al borde inferior del héroe en XL+ */}
+      <div
+        className={[
+          // En < xl: flujo normal debajo del título (no absolute)
+          "relative mx-auto w-[min(100%,56rem)] px-3 sm:px-4",
+          "mt-3 sm:mt-4",
+          // En XL+: pegado al borde inferior de la foto, centrado
+          "xl:absolute xl:bottom-[clamp(10px,2.2vw,22px)] xl:left-1/2 xl:-translate-x-1/2",
+          "z-30",
+        ].join(" ")}
+      >
+        <div
+          className={[
+            "rounded-2xl bg-white/85 backdrop-blur-md shadow-xl ring-1 ring-black/5",
+            "p-[clamp(10px,1.4vw,16px)]",
+            "flex flex-wrap items-center justify-center",
+            "gap-[clamp(8px,1.2vw,14px)]",
+          ].join(" ")}
+        >
+          <TimerChip v={days} l="D" />
+          <TimerChip v={hours} l="H" />
+          <TimerChip v={minutes} l="M" />
+          <TimerChip v={seconds} l="S" />
 
-            {/* Botones */}
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-              <a href="#regalo">
-                <Button
-                  size="sm"
-                  className="w-full h-9 sm:h-11 px-3 sm:px-5 text-xs sm:text-base bg-rose-500 text-white hover:bg-rose-600 shadow-lg ring-1 sm:ring-2 ring-white/50"
-                >
-                  <Gift className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  Hacer Regalo
-                </Button>
-              </a>
-              <a href="#rsvp">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="w-full h-9 sm:h-11 px-3 sm:px-5 text-xs sm:text-base shadow-md"
-                >
-                  Confirmar Asistencia
-                </Button>
-              </a>
-            </div>
+          <div className="hidden md:block md:h-6 md:w-px bg-black/10 mx-1 md:mx-2" />
+
+          <div className="flex flex-wrap gap-2 sm:gap-3 justify-center md:ml-auto">
+            <a href="#regalo">
+              <Button className="min-w-[clamp(9rem,18vw,12rem)]">
+                <Gift className="mr-2 h-4 w-4" />
+                Hacer Regalo
+              </Button>
+            </a>
+            <a href="#rsvp">
+              <Button variant="secondary" className="min-w-[clamp(9rem,18vw,12rem)]">
+                Confirmar Asistencia
+              </Button>
+            </a>
           </div>
         </div>
       </div>
@@ -772,10 +777,12 @@ const GiftSection = () => {
         return { title: `${o.emoji} ${o.label}`, amount: o.price };
       })();
 
-  const priceFmt = (n: number) =>
-    (typeof window !== "undefined"
-      ? n.toLocaleString("es-CL", { style: "currency", currency: CURRENCY, maximumFractionDigits: 0 })
-      : `${n} ${CURRENCY}`);
+const priceFmt = (n: number) =>
+  new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(n);
 
   async function pay() {
     // Validaciones mínimas
