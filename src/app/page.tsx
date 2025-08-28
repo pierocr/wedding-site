@@ -234,15 +234,43 @@ const Hero = () => {
     return () => clearInterval(t);
   }, []);
 
-  // Evita mismatch de hidratación en el contador
+  // === Evitar mismatch del contador
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);
   const safe = (n: number) => (hydrated ? n : 0);
 
+  // === Medimos el alto real del dock y reservamos espacio para que no cubra nada
+  const dockRef = React.useRef<HTMLDivElement | null>(null);
+  const [dockH, setDockH] = React.useState(0);
+  const [isXL, setIsXL] = React.useState(false);
+
+  // Breakpoint XL (min-width: 1280px) para decidir si el dock es absolute o no
+  React.useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1280px)");
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) =>
+      setIsXL(("matches" in e ? e.matches : (e as MediaQueryList).matches));
+    onChange(mql);
+    mql.addEventListener?.("change", onChange as any);
+    return () => mql.removeEventListener?.("change", onChange as any);
+  }, []);
+
+  // Observa cambios de tamaño del dock (wraps, fuentes fluidas, etc.)
+  React.useEffect(() => {
+    if (!dockRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height ?? 0;
+      setDockH(h);
+    });
+    ro.observe(dockRef.current);
+    return () => ro.disconnect();
+  }, [isXL]);
+
+  const reservedPB = isXL ? Math.round(dockH + 16) : 0; // 16px de aire bajo el dock
+
   const TimerChip = ({ v, l }: { v: number; l: string }) => (
     <div className="flex items-baseline gap-1 rounded-xl bg-white px-[clamp(10px,1.2vw,14px)] py-[clamp(6px,1vw,8px)] shadow-sm">
       <div
-        className="tabular-nums font-bold leading-none tracking-tight text-[clamp(20px,3.6vw,28px)]"
+        className="tabular-nums font-extrabold leading-none tracking-tight text-[clamp(22px,3.2vw,30px)]"
         suppressHydrationWarning
       >
         {safe(v)}
@@ -252,7 +280,11 @@ const Hero = () => {
   );
 
   return (
-    <div className="relative isolate min-h-[46vh] md:min-h-[40vh] lg:min-h-[38vh]">
+    <section
+      className="relative isolate"
+      // Reservamos espacio en la parte baja SOLO en XL+ (cuando el dock es absolute)
+      style={isXL ? { paddingBottom: reservedPB } : undefined}
+    >
       {/* Fondo */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {HERO_IMAGES.map((src, i) => (
@@ -266,44 +298,37 @@ const Hero = () => {
             style={{ objectPosition: "center 35%" }}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/10" />
       </div>
 
-      {/* Título / subtítulo */}
-      <div className="relative z-40 mx-auto max-w-6xl px-4 pt-10 md:pt-12 text-white">
+      {/* Contenido superior */}
+      <div className="relative z-20 mx-auto max-w-6xl px-4 pt-[clamp(28px,8vh,120px)]">
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center font-serif text-5xl md:text-7xl font-extrabold tracking-tight"
+          className="text-center font-serif font-extrabold leading-tight text-balance
+                     text-[clamp(36px,6.2vw,88px)] text-white"
         >
           {BRIDE} <span className="text-accent">&</span> {GROOM}
         </motion.h1>
 
-        <p className="mt-3 text-center text-white/95 text-lg md:text-xl">
+        <p
+          className="mx-auto mt-3 max-w-3xl text-center text-white/95 leading-snug
+                     text-[clamp(14px,2.1vw,20px)]"
+        >
           ¡Nos casamos! Acompáñanos a celebrar este día especial.
         </p>
-
-        {/* FECHA (puede ir aquí sobre el dock) */}
-        <div className="mt-4 flex justify-center">
-          <Badge
-            variant="secondary"
-            className="inline-flex items-center gap-2 bg-white/90 text-foreground px-3 py-1.5 text-sm shadow ring-1 ring-black/5"
-          >
-            <Calendar className="h-4 w-4" />
-            {CEREMONY.datePretty}
-          </Badge>
-        </div>
       </div>
 
-      {/* D O C K  → anclado al borde inferior del héroe en XL+ */}
+      {/* D O C K  (fluido, con fecha integrada) */}
       <div
+        ref={dockRef}
         className={[
-          // En < xl: flujo normal debajo del título (no absolute)
-          "relative mx-auto w-[min(100%,56rem)] px-3 sm:px-4",
-          "mt-3 sm:mt-4",
-          // En XL+: pegado al borde inferior de la foto, centrado
-          "xl:absolute xl:bottom-[clamp(10px,2.2vw,22px)] xl:left-1/2 xl:-translate-x-1/2",
+          // En < xl: en flujo normal debajo del texto (no absolute)
+          "relative mx-auto w-[min(100%,56rem)] px-3 sm:px-4 mt-4",
+          // En XL+: absoluto, pegado al borde inferior de la foto
+          "xl:absolute xl:left-1/2 xl:bottom-[clamp(10px,2.2vw,22px)] xl:-translate-x-1/2",
           "z-30",
         ].join(" ")}
       >
@@ -320,8 +345,19 @@ const Hero = () => {
           <TimerChip v={minutes} l="M" />
           <TimerChip v={seconds} l="S" />
 
+          {/* Separador colapsable */}
           <div className="hidden md:block md:h-6 md:w-px bg-black/10 mx-1 md:mx-2" />
 
+          {/* Fecha dentro del dock (no se superpone nunca) */}
+          <Badge
+            variant="secondary"
+            className="inline-flex items-center gap-2 bg-white/90 text-foreground px-3 py-1.5 text-sm shadow ring-1 ring-black/5"
+          >
+            <Calendar className="h-4 w-4" />
+            {CEREMONY.datePretty}
+          </Badge>
+
+          {/* Botones (se encogen y saltan a 2ª fila si falta ancho) */}
           <div className="flex flex-wrap gap-2 sm:gap-3 justify-center md:ml-auto">
             <a href="#regalo">
               <Button className="min-w-[clamp(9rem,18vw,12rem)]">
@@ -337,7 +373,7 @@ const Hero = () => {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
@@ -1106,6 +1142,8 @@ export default function WeddingSite() {
 <Section id="rsvp" title="Confirmar asistencia (RSVP)" icon={Heart}>
   <RSVPSection />
 </Section>
+      
+      
       <Section id="faq" title="Preguntas frecuentes" icon={Stars}>
         <FAQ />
       </Section>
