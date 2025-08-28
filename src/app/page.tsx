@@ -339,7 +339,7 @@ const Schedule = () => (
         title: "Ceremonia",
         time: CEREMONY.timePretty,
         place: "Iglesia Santa Ursula de Vitacura",
-        address: "Santiago, Chile",
+        address: "Vitacura, Chile",
         link: CEREMONY.mapsUrl,
         image:
           "https://comunavitacura.cl/wp-content/uploads/2024/08/colegio_santa_ursula.jpg",
