@@ -55,13 +55,13 @@ const CEREMONY = {
   datePretty: "Sábado 21 de noviembre de 2026",
   timePretty: "16:30 hrs",
   venue: "Iglesia Santa Ursula de Vitacura",
-  venueAddress: "Santiago, Chile",
+  venueAddress: "Vitacura, Chile",
   mapsUrl: "https://maps.app.goo.gl/Hsxztok7HaTwegmm7",
 };
 
 const RECEPTION = {
   venue: "Casona Santa Luz de Chicureo  ",
-  venueAddress: "Huechuraba, Santiago",
+  venueAddress: "Chicureo, Santiago",
   mapsUrl: "https://maps.app.goo.gl/7u4oLZkD91fxuqdc7",
   startTime: "18:30 hrs",
 };
@@ -82,7 +82,7 @@ const GALLERY = [
   "/hero/IMG-20230923-WA0054~2.jpg",
   "/hero/IMG-20231205-WA0010.jpg",
   "/hero/20231208_143753.jpg",
-  "/hero/IMG-20231216-WA0003.jpg",
+  "/hero/imagen6.jpg",
   "/hero/IMG-20240214-WA0313.jpg",
   "/hero/IMG-20250816-WA0036.jpg",
 ];
