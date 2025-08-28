@@ -361,7 +361,7 @@ const Schedule = () => (
         address: "Mujeres NO utilizar color blanco o muy claros",
         link: "#",
         image:
-          "https://www.creativefabrica.com/wp-content/uploads/2021/07/06/Dress-Code-icon-Graphics-14346056-1-1-580x387.jpg",
+          "/hero/dress_code.jpg",
         icon: <Users className="h-5 w-5" />,
       },
     ].map((i) => {
