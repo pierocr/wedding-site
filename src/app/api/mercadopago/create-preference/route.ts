@@ -1,94 +1,99 @@
-// app/api/mercadopago/create-preference/route.ts
-import { NextResponse } from "next/server";
-import { MercadoPagoConfig, Preference } from "mercadopago";
-import type { PreferenceCreateData } from "mercadopago/dist/clients/preference/create/types";
-
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 type Body = {
   name?: string;
   email?: string;
   title: string;
-  amount: number;
-  currency?: "CLP" | "USD" | "ARS" | string;
-  siteUrl?: string; // si no viene, usamos NEXT_PUBLIC_SITE_URL o el origin del request
+  amount: number; // CLP entero
+  currency?: string; // default CLP
+  siteUrl?: string; // opcional
+  external_reference?: string;
 };
 
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Body;
 
-    const accessToken = process.env.MP_ACCESS_TOKEN;
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: "Falta MP_ACCESS_TOKEN en las variables de entorno" },
-        { status: 500 }
-      );
+    const token = process.env.MP_ACCESS_TOKEN;
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Falta MP_ACCESS_TOKEN" }), {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      });
     }
 
-    const rawTitle = (body?.title ?? "").toString();
-    const title = rawTitle.slice(0, 250);
-    const amount = Math.round(Number(body?.amount || 0)); // CLP entero
+    // Usa tu var NEXT_PUBLIC_SITE_URL; si no existe, toma el origin de la request.
+    const baseUrl =
+      body.siteUrl ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      new URL(req.url).origin;
 
-    if (!title || !Number.isFinite(amount) || amount <= 0) {
-      return NextResponse.json(
-        { error: "Título o monto inválido" },
-        { status: 400 }
-      );
-    }
+    const externalRef =
+      body.external_reference || `ref_${Date.now().toString(36)}`;
 
-    const fallbackOrigin = new URL(req.url).origin;
-    const siteUrl =
-      body?.siteUrl || process.env.NEXT_PUBLIC_SITE_URL || fallbackOrigin;
-
-    const client = new MercadoPagoConfig({ accessToken });
-    const preference = new Preference(client);
-
-    const externalRef = `gift_${Date.now()}`;
-
-    // Tipamos SOLO el body usando el tipo del SDK
-    const prefBody: PreferenceCreateData["body"] = {
+    const payload = {
       items: [
         {
-          id: externalRef, // requerido por los tipos actuales
-          title,
+          id: externalRef,
+          title: body.title,
           quantity: 1,
-          unit_price: amount,
-          currency_id: body?.currency || "CLP",
+          unit_price: Math.round(body.amount),
+          currency_id: body.currency || "CLP",
         },
       ],
-      payer: {
-        name: body?.name,
-        email: body?.email || undefined,
-      },
-      metadata: {
-        origin: "wedding-site",
-        externalRef,
-      },
-      external_reference: externalRef,
+      payer: body.email
+        ? { name: body.name || undefined, email: body.email }
+        : undefined,
+      metadata: { origin: "wedding-site", external_reference: externalRef },
       back_urls: {
-        success: `${siteUrl}/pago/resultado?status=approved`,
-        pending: `${siteUrl}/pago/resultado?status=pending`,
-        failure: `${siteUrl}/pago/resultado?status=failure`,
+        success: `${baseUrl}/pago/resultado`,
+        failure: `${baseUrl}/pago/resultado`,
+        pending: `${baseUrl}/pago/resultado`,
       },
       auto_return: "approved",
-      notification_url: `${siteUrl}/api/mercadopago/webhook`,
-      statement_descriptor: "Boda Debby & Piero",
+      notification_url: `${baseUrl}/api/mercadopago/webhook`,
+      statement_descriptor: "REGALO BODA",
+      external_reference: externalRef,
     };
 
-    const pref = await preference.create({ body: prefBody });
-
-    return NextResponse.json({
-      id: pref.id,
-      init_point: pref.init_point,
-      sandbox_init_point: pref.sandbox_init_point,
+    const res = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
     });
-  } catch (err: any) {
-    console.error("MP create-preference error:", err?.message || err);
-    return NextResponse.json(
-      { error: "No se pudo crear la preferencia" },
-      { status: 500 }
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      return new Response(JSON.stringify({ error: json }), {
+        status: res.status,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    return new Response(
+      JSON.stringify({
+        id: json.id,
+        init_point: json.init_point,
+        sandbox_init_point: json.sandbox_init_point,
+      }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "cache-control": "no-store",
+        },
+      }
     );
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e?.message || "Error inesperado" }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
