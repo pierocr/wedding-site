@@ -234,27 +234,25 @@ const Hero = () => {
     return () => clearInterval(t);
   }, []);
 
-  // === Evitar mismatch del contador
+  // Evita hydration mismatch del contador
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);
   const safe = (n: number) => (hydrated ? n : 0);
 
-  // === Medimos el alto real del dock y reservamos espacio para que no cubra nada
+  // Medimos alto del dock (solo en XL cuando es absolute) para reservar espacio
   const dockRef = React.useRef<HTMLDivElement | null>(null);
   const [dockH, setDockH] = React.useState(0);
   const [isXL, setIsXL] = React.useState(false);
 
-  // Breakpoint XL (min-width: 1280px) para decidir si el dock es absolute o no
   React.useEffect(() => {
     const mql = window.matchMedia("(min-width: 1280px)");
     const onChange = (e: MediaQueryListEvent | MediaQueryList) =>
-      setIsXL(("matches" in e ? e.matches : (e as MediaQueryList).matches));
+      setIsXL("matches" in e ? (e as MediaQueryListEvent).matches : (e as MediaQueryList).matches);
     onChange(mql);
     mql.addEventListener?.("change", onChange as any);
     return () => mql.removeEventListener?.("change", onChange as any);
   }, []);
 
-  // Observa cambios de tamaño del dock (wraps, fuentes fluidas, etc.)
   React.useEffect(() => {
     if (!dockRef.current) return;
     const ro = new ResizeObserver((entries) => {
@@ -265,117 +263,103 @@ const Hero = () => {
     return () => ro.disconnect();
   }, [isXL]);
 
-  const reservedPB = isXL ? Math.round(dockH + 16) : 0; // 16px de aire bajo el dock
+  const reservedPB = isXL ? Math.round(dockH + 12) : 0;
 
   const TimerChip = ({ v, l }: { v: number; l: string }) => (
-    <div className="flex items-baseline gap-1 rounded-xl bg-white px-[clamp(10px,1.2vw,14px)] py-[clamp(6px,1vw,8px)] shadow-sm">
+    <div className="flex items-baseline gap-1 rounded-2xl border border-white/20 bg-white/70 px-[clamp(8px,0.9vw,12px)] py-[clamp(5px,0.7vw,7px)] shadow-sm">
       <div
-        className="tabular-nums font-extrabold leading-none tracking-tight text-[clamp(22px,3.2vw,30px)]"
+        className="tabular-nums font-extrabold leading-none tracking-tight text-[clamp(16px,2.1vw,20px)] text-black"
         suppressHydrationWarning
       >
         {safe(v)}
       </div>
-      <div className="text-[clamp(10px,2vw,12px)] font-medium text-muted-foreground">{l}</div>
+      <div className="text-[clamp(9px,1.3vw,10px)] font-semibold text-black/85">{l}</div>
     </div>
   );
 
   return (
-    <section
-      className="relative isolate"
-      // Reservamos espacio en la parte baja SOLO en XL+ (cuando el dock es absolute)
-      style={isXL ? { paddingBottom: reservedPB } : undefined}
-    >
-      {/* Fondo */}
+    <section className="relative isolate" style={isXL ? { paddingBottom: reservedPB } : undefined}>
+      {/* Fondo del héroe */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {HERO_IMAGES.map((src, i) => (
           <img
             key={src}
             src={src}
-            alt={`hero ${i + 1}`}
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+            alt=""
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
               i === idx ? "opacity-100" : "opacity-0"
             }`}
             style={{ objectPosition: "center 35%" }}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/10" />
+        {/* Gradiente para legibilidad (sin blur) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/10" />
       </div>
 
-      {/* Contenido superior */}
-      <div className="relative z-20 mx-auto max-w-6xl px-4 pt-[clamp(28px,8vh,120px)]">
-        <motion.h1
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center font-serif font-extrabold leading-tight text-balance
-                     text-[clamp(36px,6.2vw,88px)] text-white"
-        >
+      {/* Título / subtítulo (tipografías más contenidas) */}
+      <div className="relative z-20 mx-auto max-w-7xl px-4 pt-[clamp(34px,7.5vh,100px)] text-white">
+        <h1 className="text-center font-serif font-extrabold leading-tight text-balance text-[clamp(32px,5.6vw,72px)]">
           {BRIDE} <span className="text-accent">&</span> {GROOM}
-        </motion.h1>
-
-        <p
-          className="mx-auto mt-3 max-w-3xl text-center text-white/95 leading-snug
-                     text-[clamp(14px,2.1vw,20px)]"
-        >
+        </h1>
+        <p className="mx-auto mt-3 max-w-3xl text-center text-white/95 leading-snug text-[clamp(13px,1.8vw,17px)]">
           ¡Nos casamos! Acompáñanos a celebrar este día especial.
         </p>
       </div>
 
-      {/* D O C K  (fluido, con fecha integrada) */}
+      {/* DOCK TRANSPARENTE (compacto) */}
       <div
         ref={dockRef}
         className={[
-          // En < xl: en flujo normal debajo del texto (no absolute)
-          "relative mx-auto w-[min(100%,56rem)] px-3 sm:px-4 mt-4",
-          // En XL+: absoluto, pegado al borde inferior de la foto
-          "xl:absolute xl:left-1/2 xl:bottom-[clamp(10px,2.2vw,22px)] xl:-translate-x-1/2",
+          "relative mx-auto w-[min(100%,60rem)] px-4 mt-4",
+          // En XL+: pegado al borde inferior de la foto, centrado
+          "xl:absolute xl:left-1/2 xl:bottom-[clamp(10px,1.6vw,10px)] xl:-translate-x-1/2",
           "z-30",
         ].join(" ")}
       >
-        <div
-          className={[
-            "rounded-2xl bg-white/85 backdrop-blur-md shadow-xl ring-1 ring-black/5",
-            "p-[clamp(10px,1.4vw,16px)]",
-            "flex flex-wrap items-center justify-center",
-            "gap-[clamp(8px,1.2vw,14px)]",
-          ].join(" ")}
-        >
-          <TimerChip v={days} l="D" />
-          <TimerChip v={hours} l="H" />
-          <TimerChip v={minutes} l="M" />
-          <TimerChip v={seconds} l="S" />
+        <div className="rounded-2xl border border-transparent bg-transparent">
+          <div className="flex flex-wrap items-center justify-center gap-[clamp(8px,1vw,12px)] p-[clamp(8px,1.2vw,12px)]">
+            {/* Contador */}
+            <div className="flex flex-wrap items-center justify-center gap-[clamp(6px,0.9vw,10px)]">
+              <TimerChip v={days} l="D" />
+              <TimerChip v={hours} l="H" />
+              <TimerChip v={minutes} l="M" />
+              <TimerChip v={seconds} l="S" />
+            </div>
 
-          {/* Separador colapsable */}
-          <div className="hidden md:block md:h-6 md:w-px bg-black/10 mx-1 md:mx-2" />
+            {/* Separador fino (solo si hay espacio) */}
+            <div className="hidden md:block md:h-6 md:w-px bg-white/20 mx-1 md:mx-2" />
 
-          {/* Fecha dentro del dock (no se superpone nunca) */}
-          <Badge
-            variant="secondary"
-            className="inline-flex items-center gap-2 bg-white/90 text-foreground px-3 py-1.5 text-sm shadow ring-1 ring-black/5"
-          >
-            <Calendar className="h-4 w-4" />
-            {CEREMONY.datePretty}
-          </Badge>
+            {/* Fecha (pill ligera) */}
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/70 px-3 py-2 text-[clamp(11px,1.5vw,13px)] text-black">
+              <Calendar className="h-4 w-4" />
+              {CEREMONY.datePretty}
+            </div>
 
-          {/* Botones (se encogen y saltan a 2ª fila si falta ancho) */}
-          <div className="flex flex-wrap gap-2 sm:gap-3 justify-center md:ml-auto">
-            <a href="#regalo">
-              <Button className="min-w-[clamp(9rem,18vw,12rem)]">
-                <Gift className="mr-2 h-4 w-4" />
-                Hacer Regalo
-              </Button>
-            </a>
-            <a href="#rsvp">
-              <Button variant="secondary" className="min-w-[clamp(9rem,18vw,12rem)]">
-                Confirmar Asistencia
-              </Button>
-            </a>
+{/* Botones – siempre en una fila aparte y centrados */}
+<div className="w-full flex items-center justify-center gap-2 sm:gap-3 mt-[clamp(4px,0.8vw,8px)]">
+  <a href="#regalo">
+    <Button className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)]">
+      <Gift className="mr-2 h-4 w-4" />
+      Hacer Regalo
+    </Button>
+  </a>
+  <a href="#rsvp">
+    <Button
+      variant="secondary"
+      className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)] bg-white text-foreground hover:bg-white/90"
+    >
+      Confirmar Asistencia
+    </Button>
+  </a>
+</div>
           </div>
         </div>
       </div>
     </section>
   );
 };
+
+
 
 const Schedule = () => (
   <div className="grid gap-6 md:grid-cols-3">
