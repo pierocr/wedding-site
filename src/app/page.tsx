@@ -28,6 +28,7 @@ import {
   X,
   Flame, Utensils, Home, Sparkles, CalendarCheck, Video
 } from "lucide-react";
+import PayWithMPRedirect from "@/components/PayWithMPRedirect";
 import { createPortal } from "react-dom";
 import { SpotifyEmbed } from "@/components/ui/SpotifyEmbed";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -164,7 +165,7 @@ const Nav = () => {
     { href: "#historia", label: "Historia" },
     { href: "#galeria", label: "Galería" },
     { href: "#regalo", label: "Regalo" },
-    { href: "#rsvp", label: "RSVP" },
+    { href: "#rsvp", label: "Confirmar asistencia" },
     { href: "#faq", label: "FAQ" },
   ];
 
