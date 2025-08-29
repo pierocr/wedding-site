@@ -564,26 +564,30 @@ const Story = () => {
 
   return (
     <div className="grid items-start gap-6 md:grid-cols-2">
-      {/* Texto romántico */}
+      {/* Texto */}
       <div className="space-y-4 leading-relaxed text-foreground/90">
+        <p>Queremos compartir la historia de cómo comenzó todo con Piero.</p>
+
         <p>
-          Nos conocimos trabajando, cuando el proyecto <span className="font-medium">Fénix</span> nos puso
-          codo a codo durante días (y varios fines de semana). Entre entregas y cafés, apareció algo más
-          que compañerismo: una calma bonita de estar donde había que estar.
+          Nos conocimos trabajando, algo que ninguno de los dos esperaba. Cada cruce en los pasillos bastaba
+          para sonrojarnos con solo mirarnos… hasta que un día dijimos “sí” a salir juntos, y desde entonces
+          nuestras vidas cambiaron para siempre.
         </p>
+
         <p>
-          El <span className="font-medium">16 de agosto de 2023</span>, en una cita en Providencia, esa
-          intuición se volvió certeza. Desde entonces caminamos juntos, y la casa que armamos con paciencia
-          se llenó de pequeñas costumbres y grandes planes.
+          El <span className="font-medium">16 de agosto de 2025</span>, en medio de la magia de{" "}
+          <span className="font-medium">Bariloche</span>, Piero me pidió matrimonio. Un “sí” lleno de amor y
+          emoción que hoy nos lleva a dar el paso más importante de nuestras vidas.
         </p>
+
         <p>
-          Dos años después, el <span className="font-medium">16 de agosto de 2025</span>, llegó la pregunta
-          que ya latía en todo lo que vivíamos. Y dijimos que sí: a cuidarnos, a reírnos mucho, a construir
-          una vida a fuego lento.
+          Han sido años maravillosos: viajes, aventuras, experiencias inolvidables, la creación de un hogar y
+          momentos que atesoramos con el corazón.
         </p>
+
         <p>
-          Ahora contamos los días para celebrar nuestro “para siempre” el{" "}
-          <span className="font-medium">21 de noviembre de 2026</span>.
+          Ahora queremos invitarte a compartir esta felicidad con nosotros y a acompañarnos en este gran día.{" "}
+          <span className="font-medium">¡Nos vemos el 21 de noviembre de 2026!</span>
         </p>
       </div>
 
@@ -606,7 +610,6 @@ const Story = () => {
     </div>
   );
 };
-
 
 const Gallery = () => {
   const [open, setOpen] = useState(false);
