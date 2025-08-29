@@ -24,8 +24,11 @@ import {
   XIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  Menu,
+  X,
   Flame, Utensils, Home, Sparkles, CalendarCheck, Video
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import { SpotifyEmbed } from "@/components/ui/SpotifyEmbed";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -142,40 +145,124 @@ const Section = ({
 /* ==============================
    UI SECTIONS
 ============================== */
-const Nav = () => (
-  <div className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
-    <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-      <a href="#inicio" className="text-lg font-semibold">
-        {BRIDE} & {GROOM}
-      </a>
-      <nav className="hidden items-center gap-6 text-sm md:flex">
-        <a href="#agenda" className="hover:underline">
-          Agenda
+// import { Menu, X } from "lucide-react";
+
+const Nav = () => {
+  const [open, setOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => setMounted(true), []);
+
+  // Bloquea el scroll del body cuando el drawer está abierto
+  React.useEffect(() => {
+    document.body.classList.toggle("overflow-hidden", open);
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [open]);
+
+  const links = [
+    { href: "#agenda", label: "Agenda" },
+    { href: "#historia", label: "Historia" },
+    { href: "#galeria", label: "Galería" },
+    { href: "#regalo", label: "Regalo" },
+    { href: "#rsvp", label: "RSVP" },
+    { href: "#faq", label: "FAQ" },
+  ];
+
+  return (
+    <div className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <a href="#inicio" className="text-lg font-semibold">
+          {BRIDE} & {GROOM}
         </a>
-        <a href="#historia" className="hover:underline">
-          Historia
-        </a>
-        <a href="#galeria" className="hover:underline">
-          Galería
-        </a>
-        <a href="#regalo" className="hover:underline">
-          Regalo
-        </a>
-        <a href="#rsvp" className="hover:underline">
-          RSVP
-        </a>
-        <a href="#faq" className="hover:underline">
-          FAQ
-        </a>
-      </nav>
-      <a href="#regalo">
-        <Button size="sm" variant="secondary">
-          Hacer regalo
-        </Button>
-      </a>
+
+        {/* Desktop */}
+        <nav className="hidden items-center gap-6 text-sm md:flex">
+          {links.map((l) => (
+            <a key={l.href} href={l.href} className="hover:underline">{l.label}</a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          {/* Ahora visible también en mobile */}
+          <a href="#regalo">
+            <Button size="sm" variant="secondary">Hacer regalo</Button>
+          </a>
+
+          {/* Hamburguesa (solo mobile) */}
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-foreground/10 md:hidden"
+            aria-label="Abrir menú"
+            aria-expanded={open}
+            onClick={() => setOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Drawer móvil en PORTAL para salir del stacking del header/hero */}
+      {mounted &&
+        createPortal(
+          <div
+            id="mobile-menu"
+            className={`fixed inset-0 z-[9999] md:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`}
+          >
+            {/* Overlay opaco */}
+            <div
+              className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity ${
+                open ? "opacity-100" : "opacity-0"
+              }`}
+              onClick={() => setOpen(false)}
+              aria-hidden
+            />
+
+            {/* Drawer derecho, sólido */}
+            <aside
+              role="dialog"
+              aria-modal="true"
+              className={`fixed right-0 inset-y-0 w-[86%] max-w-[22rem]
+                          transform transition-transform duration-200 ease-out
+                          ${open ? "translate-x-0" : "translate-x-full"}
+                          bg-white dark:bg-neutral-950 shadow-2xl border-l border-black/10
+                          flex flex-col`}
+            >
+              <div className="flex h-16 items-center justify-between border-b px-4">
+                <span className="font-semibold">{BRIDE} & {GROOM}</span>
+                <button
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-foreground/10"
+                  aria-label="Cerrar menú"
+                  onClick={() => setOpen(false)}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="grow overflow-y-auto px-4 py-4">
+                <nav className="space-y-1">
+                  {links.map((l) => (
+                    <a
+                      key={l.href}
+                      href={l.href}
+                      onClick={() => setOpen(false)}
+                      className="block rounded-lg px-3 py-3 text-base font-medium hover:bg-muted"
+                    >
+                      {l.label}
+                    </a>
+                  ))}
+                </nav>
+
+                <a href="#regalo" onClick={() => setOpen(false)} className="mt-4 block">
+                  <Button className="w-full">🎁 Hacer Regalo</Button>
+                </a>
+              </div>
+            </aside>
+          </div>,
+          document.body
+        )}
     </div>
-  </div>
-);
+  );
+};
 
 const MiniCountdownBar = () => {
   const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE_ISO);
