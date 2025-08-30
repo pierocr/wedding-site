@@ -171,7 +171,7 @@ const Nav = () => {
 
   return (
     <div className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
         <a href="#inicio" className="text-lg font-semibold">
           {BRIDE} & {GROOM}
         </a>
