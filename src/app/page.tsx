@@ -29,6 +29,7 @@ import {
   Flame, Utensils, Home, Sparkles, CalendarCheck, Video
 } from "lucide-react";
 import PayWithMPRedirect from "@/components/PayWithMPRedirect";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { createPortal } from "react-dom";
 import { SpotifyEmbed } from "@/components/ui/SpotifyEmbed";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -763,73 +764,78 @@ const Gallery = () => {
       </div>
 
       {/* Lightbox */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[92vw] border-0 bg-black/90 p-2 sm:max-w-5xl [&>button]:hidden">
-          <div className="relative">
-            <div
-              ref={containerRef}
-              className={`mx-auto flex max-h-[80vh] w-full select-none items-center justify-center overflow-hidden rounded-lg bg-black/20 ${
-                scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
-              }`}
-              onDoubleClick={toggleZoom}
-              onClick={(e) => {
-                // en móvil, un solo tap alterna zoom
-                if (window.matchMedia("(hover: none)").matches) toggleZoom(e as any);
-              }}
-              onWheel={onWheel}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-            >
-              <img
-                src={src}
-                alt={`Foto grande ${index + 1}`}
-                className="pointer-events-none max-h-[80vh] w-auto select-none"
-                style={{
-                  transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${scale})`,
-                  transition: dragRef.current.dragging ? "none" : "transform 150ms ease-out",
-                  willChange: "transform",
-                }}
-                draggable={false}
-              />
-            </div>
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent className="max-w-[92vw] border-0 bg-black/90 p-2 sm:max-w-5xl [&>button]:hidden">
+    {/* Requisito de accesibilidad de Radix: título (oculto visualmente) */}
+    <VisuallyHidden>
+      <DialogTitle>Visor de fotos</DialogTitle>
+    </VisuallyHidden>
 
-            {/* Cerrar */}
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
-              aria-label="Cerrar"
-            >
-              <XIcon className="h-5 w-5" />
-            </button>
+    <div className="relative">
+      <div
+        ref={containerRef}
+        className={`mx-auto flex max-h-[80vh] w-full select-none items-center justify-center overflow-hidden rounded-lg bg-black/20 ${
+          scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
+        }`}
+        onDoubleClick={toggleZoom}
+        onClick={(e) => {
+          // en móvil, un solo tap alterna zoom
+          if (window.matchMedia("(hover: none)").matches) toggleZoom(e as any);
+        }}
+        onWheel={onWheel}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+      >
+        <img
+          src={src}
+          alt={`Foto grande ${index + 1}`}
+          className="pointer-events-none max-h-[80vh] w-auto select-none"
+          style={{
+            transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${scale})`,
+            transition: dragRef.current.dragging ? "none" : "transform 150ms ease-out",
+            willChange: "transform",
+          }}
+          draggable={false}
+        />
+      </div>
 
-            {/* Controles izq/der */}
-            {total > 1 && (
-              <>
-                <button
-                  onClick={prev}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
-                  aria-label="Anterior"
-                >
-                  <ChevronLeftIcon className="h-6 w-6" />
-                </button>
-                <button
-                  onClick={next}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
-                  aria-label="Siguiente"
-                >
-                  <ChevronRightIcon className="h-6 w-6" />
-                </button>
-              </>
-            )}
+      {/* Cerrar */}
+      <button
+        onClick={() => setOpen(false)}
+        className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
+        aria-label="Cerrar"
+      >
+        <XIcon className="h-5 w-5" />
+      </button>
 
-            {/* Indicador */}
-            <div className="mt-3 text-center text-xs text-white/80">
-              {index + 1} / {total}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Controles izq/der */}
+      {total > 1 && (
+        <>
+          <button
+            onClick={prev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
+            aria-label="Anterior"
+          >
+            <ChevronLeftIcon className="h-6 w-6" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
+            aria-label="Siguiente"
+          >
+            <ChevronRightIcon className="h-6 w-6" />
+          </button>
+        </>
+      )}
+
+      {/* Indicador */}
+      <div className="mt-3 text-center text-xs text-white/80">
+        {index + 1} / {total}
+      </div>
+    </div>
+  </DialogContent>
+</Dialog>
     </>
   );
 };
@@ -1197,13 +1203,13 @@ const Footer = () => (
           <Mail className="h-4 w-4" />
           Contacto
         </a>
-        <a
+{/*         <a
           href="tel:+56912345678"
           className="inline-flex items-center gap-1 hover:underline"
         >
           <Phone className="h-4 w-4" />
           +56 9 1234 5678
-        </a>
+        </a> */}
       </div>
     </div>
   </footer>
