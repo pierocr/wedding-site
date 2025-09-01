@@ -387,7 +387,7 @@ const Hero = () => {
       {/* Título / subtítulo (tipografías más contenidas) */}
       <div className="relative z-20 mx-auto max-w-7xl px-4 pt-[clamp(34px,7.5vh,100px)] text-white">
         <h1 className="text-center font-serif font-extrabold leading-tight text-balance text-[clamp(32px,5.6vw,72px)]">
-          {BRIDE} <span className="text-accent">&</span> {GROOM}
+          {BRIDE} <span className="text-white [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">&</span> {GROOM}
         </h1>
         <p className="mx-auto mt-3 max-w-3xl text-center text-white/95 leading-snug text-[clamp(13px,1.8vw,17px)]">
           ¡Nos casamos! Acompáñanos a celebrar este día especial.
@@ -764,7 +764,7 @@ const Gallery = () => {
 
       {/* Lightbox */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[92vw] border-0 bg-black/90 p-2 sm:max-w-5xl">
+        <DialogContent className="max-w-[92vw] border-0 bg-black/90 p-2 sm:max-w-5xl [&>button]:hidden">
           <div className="relative">
             <div
               ref={containerRef}
@@ -857,6 +857,7 @@ const Gallery = () => {
 const GiftSection = () => {
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "";
   const CURRENCY = "CLP";
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
   // Mensajes creativos (mientras más profundo, mayor precio)
   const OPTIONS = [
@@ -888,19 +889,18 @@ const GiftSection = () => {
         return { title: `${o.emoji} ${o.label}`, amount: o.price };
       })();
 
-const priceFmt = (n: number) =>
-  new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0,
-  }).format(n);
+  const priceFmt = (n: number) =>
+    new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(n);
 
   async function pay() {
     // Validaciones mínimas
-    if (!name.trim()) {
-      alert("Por favor ingresa tu nombre 💌");
+    if (!name.trim()) return alert("Por favor ingresa tu nombre 💌");
+
+    if (!email.trim() || !EMAIL_RE.test(email)) {
+      alert("Por favor ingresa un email válido 📧");
       return;
     }
+
     if (selected === "custom") {
       if (!customMsg.trim()) return alert("Escribe tu mensaje personalizado.");
       if (!customAmount || Number(customAmount) <= 0) return alert("Ingresa un monto válido.");
@@ -922,8 +922,7 @@ const priceFmt = (n: number) =>
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Error creando preferencia");
-      // Redirección a Checkout Pro
-      window.location.href = data.init_point;
+      window.location.href = data.init_point; // Redirección a Checkout Pro
     } catch (e: any) {
       console.error(e);
       alert("No pudimos iniciar el pago. Intenta nuevamente.");
@@ -931,6 +930,11 @@ const priceFmt = (n: number) =>
       setLoading(false);
     }
   }
+
+  const canPay =
+    !!name.trim() &&
+    EMAIL_RE.test(email) &&
+    (selected !== "custom" || (customMsg.trim() && Number(customAmount) > 0));
 
   return (
     <Card className="rounded-2xl">
@@ -1008,8 +1012,14 @@ const priceFmt = (n: number) =>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Carolina Pérez" />
           </div>
           <div>
-            <label className="text-sm font-medium">Email (opcional)</label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nombre@correo.cl" />
+            <label className="text-sm font-medium">Email (obligatorio)</label>
+            <Input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="nombre@correo.cl"
+            />
           </div>
         </div>
 
@@ -1028,7 +1038,7 @@ const priceFmt = (n: number) =>
             size="lg"
             className="bg-rose-500 text-white hover:bg-rose-600 shadow-lg"
             onClick={pay}
-            disabled={loading}
+            disabled={loading || !canPay}
           >
             <CreditCard className="mr-2 h-4 w-4" />
             {loading ? "Conectando a Mercado Pago…" : "Pagar con Mercado Pago"}
@@ -1038,6 +1048,7 @@ const priceFmt = (n: number) =>
     </Card>
   );
 };
+
 
 // --- RSVP (solo esta sección) ---
 const RSVPSection = () => {
@@ -1095,27 +1106,47 @@ const RSVPSection = () => {
           Enviar confirmación
         </Button>
         <p className="text-xs text-muted-foreground">
-          * En la versión real esto guarda en DB (Supabase) y dispara email de confirmación.
+          {/* * En la versión real esto guarda en DB (Supabase) y dispara email de confirmación. */}
         </p>
       </CardContent>
     </Card>
   );
 };
 
-// 👉 Agrega/edita aquí tus preguntas y respuestas
+// 👉 FAQ (bloque completo: items + helper + componente)
 const FAQ_ITEMS = [
-  { q: "¿Puedo llevar niños?", a: "¡Claro! Indícanos en el RSVP la edad y si requieren silla o menú infantil para considerarlo en el banquete." },
-  { q: "¿Cuál es el código de vestimenta?", a: "Elegante/Formal. Sugerimos colores claros y abrigos livianos para la tarde/noche." },
-  { q: "¿Hasta cuándo puedo confirmar mi asistencia?", a: "Idealmente hasta 60 días antes del evento para cerrar banquete y logística. Si necesitas más tiempo, escríbenos." },
-  { q: "¿Hay estacionamientos disponibles?", a: "Sí, en el lugar del evento habrá estacionamientos limitados. Recomendamos compartir auto o usar apps de transporte." },
-  { q: "¿Habrá transporte de acercamiento?", a: "Si hay suficiente demanda, coordinaremos vans desde puntos clave. Avisaremos por email con horarios y paradas." },
-  { q: "¿Cómo puedo hacer el regalo?", a: "En la sección “Regalo” puedes ver datos de transferencia o pagar con tarjeta. También puedes dejar un mensaje para nosotros." },
-  { q: "¿Puedo pagar en cuotas con tarjeta?", a: "Sí. Al pagar con Mercado Pago (en la versión final) podrás elegir cuotas disponibles según tu banco/tarjeta." },
-  { q: "Tengo restricciones alimentarias", a: "¡Ningún problema! Indícalo en el RSVP (vegetariano, vegano, sin gluten o alergias) para informarlo al banquete." },
-  { q: "¿Habrá fotógrafo? ¿Puedo llevar cámara?", a: "Sí, habrá fotógrafo y video. Puedes tomar fotos, solo te pedimos no usar flash durante la ceremonia." },
-  { q: "¿Cómo comparto mis fotos con ustedes?", a: "Usa el hashtag #BodaPieroDebby o el link que enviaremos por email después del evento." },
-  { q: "¿Habrá transmisión en vivo?", a: "Estamos evaluándolo. Si la hacemos, enviaremos el link unos días antes por email." },
-  { q: "Voy desde otra ciudad, ¿alguna recomendación de hotel?", a: "Sí, tenemos un listado de hoteles cercanos. Escríbenos y te lo compartimos con tarifas y distancias." },
+  {
+    q: "👗 ¿Cuál es el código de vestimenta?",
+    a: "Elegante/Formal. Por favor, evita el blanco o tonos muy claros para no competir con la novia. Sugerimos un abrigo liviano para la tarde/noche."
+  },
+  {
+    q: "📅 ¿Hasta cuándo puedo confirmar mi asistencia?",
+    a: "Hasta el 22 de septiembre de 2026 (60 días antes) o lo antes posbile para cerrar banquete y logística. Si necesitas más tiempo, cuéntanos y vemos cómo ayudarte. Puedes confirmar en la sección RSVP."
+  },
+  {
+    q: "🅿️ ¿Hay estacionamientos disponibles?",
+    a: "Sí, habrá estacionamientos en el lugar. Tanto en la iglesia como en el centro de eventos. Recomendamos compartir auto o usar apps de transporte para mayor comodidad."
+  },
+  {
+    q: "🎁 ¿Cómo puedo hacer el regalo?",
+    a: "En la sección “Regalo” podrás elegir un mensaje con Mercado Pago o usar los datos de transferencia. ¡El mejor regalo es que estés con nosotros!"
+  },
+  {
+    q: "💳 ¿Puedo pagar en cuotas con tarjeta?",
+    a: "Sí. Al pagar por Mercado Pago podrás seleccionar cuotas según tu banco y tarjeta, incluso podrás elegir cuotas sin interes dependiendo del banco (sujeto a condiciones de cada emisor)."
+  },
+  {
+    q: "🥗 Tengo restricciones alimentarias",
+    a: "¡Perfecto! Indícalas en el formulario RSVP (vegetariano, vegano, sin gluten o alergias) y lo coordinamos con el banquete."
+  },
+  {
+    q: "📸 ¿Habrá fotógrafo? ¿Puedo llevar cámara?",
+    a: "Sí, contaremos con fotógrafo y video. Puedes tomar fotos, solo te pedimos evitar flash durante la ceremonia y no bloquear el pasillo."
+  },
+  {
+    q: "📤 ¿Cómo comparto mis fotos con ustedes?",
+    a: "Usa el hashtag #BodaPieroDebby. Usaremos un codigo QR para que puedas compartir todas tus imagenes. ¡Nos encantará verlas!"
+  },
 ];
 
 // util para dividir en dos columnas equilibradas
@@ -1130,11 +1161,7 @@ const FAQ = () => {
     <div className="mx-auto w-full max-w-6xl">
       <div className="grid gap-4 md:grid-cols-2">
         {[left, right].map((col, idx) => (
-          <Accordion
-            key={idx}
-            type="multiple"
-            className="w-full"
-          >
+          <Accordion key={idx} type="multiple" className="w-full">
             {col.map((f, i) => (
               <AccordionItem
                 key={i}
@@ -1155,6 +1182,7 @@ const FAQ = () => {
     </div>
   );
 };
+
 const Footer = () => (
   <footer className="mt-12 border-t py-10">
     <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 md:flex-row">
@@ -1163,7 +1191,7 @@ const Footer = () => (
       </div>
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <a
-          href="mailto:piero@example.cl"
+          href="mailto:pierocr@gmail.com"
           className="inline-flex items-center gap-1 hover:underline"
         >
           <Mail className="h-4 w-4" />
