@@ -26,7 +26,7 @@ import {
   ChevronRightIcon,
   Menu,
   X,
-  Flame, Utensils, Home, Sparkles, CalendarCheck, Video
+  Flame, Utensils, Home, Sparkles, CalendarCheck, Video, Play, Pause, Volume2, VolumeX,
 } from "lucide-react";
 import PayWithMPRedirect from "@/components/PayWithMPRedirect";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -1301,6 +1301,94 @@ const FAQ = () => {
   );
 };
 
+// ==============================
+// MUSIC PLAYER — mini, derecha, autoplay 70% + ping al pausar
+// ==============================
+type MusicPlayerProps = { src: string; className?: string };
+
+const MusicPlayer = ({ src, className = "" }: MusicPlayerProps) => {
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = React.useState(false); // SSR seguro (inicia en false)
+
+  React.useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    a.volume = 0.7; // 70%
+    a.muted = false;
+    a.preload = "auto";
+    a.loop = true;
+    (a as any).playsInline = true;
+
+
+    // Intento de autoplay
+    const tryPlay = () => a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    tryPlay();
+
+    // Fallback: primer gesto del usuario
+    const onFirstInteraction = () => {
+      tryPlay();
+      window.removeEventListener("pointerdown", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
+    };
+    window.addEventListener("pointerdown", onFirstInteraction, { once: true });
+    window.addEventListener("keydown", onFirstInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
+      a.pause();
+    };
+  }, []);
+
+  const togglePlay = async () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (playing) {
+      a.pause();
+      setPlaying(false);
+    } else {
+      try {
+        await a.play();
+        setPlaying(true);
+      } catch {
+        setPlaying(false);
+      }
+    }
+  };
+
+  return (
+    <div
+      className={[
+        "fixed right-3 bottom-3 z-50", // 👈 esquina inferior derecha
+        className,
+      ].join(" ")}
+    >
+      <div className="relative isolate">
+        {/* Ping sutil cuando está pausado */}
+        {!playing && (
+          <span className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-primary/30 animate-ping" />
+        )}
+
+        <motion.button
+          onClick={togglePlay}
+          className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-md ring-1 ring-border flex items-center justify-center"
+          aria-label={playing ? "Pausar música" : "Reproducir música"}
+          title={playing ? "Pausar" : "Reproducir"}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.94 }}
+        >
+          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </motion.button>
+      </div>
+
+      {/* audio real (oculto) */}
+      <audio ref={audioRef} src={src} className="hidden" />
+    </div>
+  );
+};
+
+
 const Footer = () => (
   <footer className="mt-12 border-t py-10">
     <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 md:flex-row">
@@ -1334,6 +1422,7 @@ export default function WeddingSite() {
   return (
     <div className="min-h-screen">
       <Nav />
+      <MusicPlayer src="/music/sonreir.mp3"/>
       {/* <MiniCountdownBar />   <= nuevo: countdown fuera del Hero */}
       <div id="inicio">
         <Hero />
