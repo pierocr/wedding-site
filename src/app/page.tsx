@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -249,6 +248,7 @@ const Nav = () => {
     { href: "#regalo", label: "Regalo" },
     { href: "#rsvp", label: "Confirmar asistencia" },
     { href: "#faq", label: "FAQ" },
+    { href: "#musica", label: "Música" },
   ];
 
   return (
@@ -952,23 +952,6 @@ const Gallery = () => {
   );
 };
 
-<Section id="musica" title="Nuestra música" icon={Music2}>
-  <div className="grid gap-6 md:grid-cols-2">
-    <SpotifyEmbed
-      title="Playlist oficial de la boda"
-      url="https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"
-    />
-    <SpotifyEmbed
-      title="Primera danza (demo)"
-      url="https://open.spotify.com/track/5nTtCOCds6I0PHMNtqelas"
-    />
-  </div>
-  <p className="mt-4 text-sm text-muted-foreground">
-    ¿Tienes una canción que no puede faltar? Déjala en el formulario RSVP o
-    envíanosla por WhatsApp 🎵
-  </p>
-</Section>
-
 // =========================
 // REGALO - MENSAJES CON PRECIO + MERCADO PAGO
 // =========================
@@ -1544,7 +1527,6 @@ const MusicPlayer = ({ src, className = "" }: MusicPlayerProps) => {
   );
 };
 
-
 const Footer = () => (
   <footer className="mt-12 border-t py-10">
     <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 md:flex-row">
@@ -1578,41 +1560,44 @@ export default function WeddingSite() {
   return (
     <div className="min-h-screen">
       <Nav />
-      <MusicPlayer src="/music/Sonreir.mp3"/>
-      {/* <MiniCountdownBar />   <= nuevo: countdown fuera del Hero */}
+      {/* Mantener desactivado para evitar doble audio con Spotify */}
+      <MusicPlayer src="/music/Sonreir.mp3" />
+      {/* <MiniCountdownBar />   <= countdown fuera del Hero */}
       <div id="inicio">
         <Hero />
       </div>
+
       <Section id="agenda" title="Agenda" icon={Calendar} animation="up">
-  <Schedule />
-</Section>
-{/* Banda color arena */}
-<div className="bg-secondary/40">
-  <Section id="historia" title="Nuestra Historia" icon={Heart} animation="left">
-  <Story />
-</Section>
-</div>
+        <Schedule />
+      </Section>
 
-<Section id="galeria" title="Galería" icon={ImageIcon}>
-  <Gallery />
-</Section>
+      {/* Banda color arena */}
+      <div className="bg-secondary/40">
+        <Section id="historia" title="Nuestra Historia" icon={Heart} animation="left">
+          <Story />
+        </Section>
+      </div>
 
-{/* Banda con acento muy tenue para Regalo */}
-<div className="bg-accent/20">
-  <Section id="regalo" title="Regalo" icon={Gift}>
-    <GiftSection />
-  </Section>
-</div>
+      <Section id="galeria" title="Galería" icon={ImageIcon}>
+        <Gallery />
+      </Section>
 
-{/* RSVP en su propia sección */}
-<Section id="rsvp" title="Confirmar asistencia" icon={Heart}>
-  <RSVPSection />
-</Section>
-      
-      
+      {/* Banda con acento muy tenue para Regalo */}
+      <div className="bg-accent/20">
+        <Section id="regalo" title="Regalo" icon={Gift}>
+          <GiftSection />
+        </Section>
+      </div>
+
+      {/* RSVP en su propia sección */}
+      <Section id="rsvp" title="Confirmar asistencia" icon={Heart}>
+        <RSVPSection />
+      </Section>
+
       <Section id="faq" title="Preguntas frecuentes" icon={Stars}>
         <FAQ />
       </Section>
+
       <Footer />
     </div>
   );
