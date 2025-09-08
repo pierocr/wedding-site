@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Calendar,
   Clock,
@@ -47,6 +47,57 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
+/* ==============================
+   ANIMATION PRESETS (Framer Motion)
+============================== */
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+// Fade + up
+const REVEAL_UP = {
+  hidden: { opacity: 0, y: 20 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+};
+
+// Fade + desde la izquierda
+const REVEAL_LEFT = {
+  hidden: { opacity: 0, x: -40 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.6, ease: EASE } },
+};
+
+// Fade + desde la derecha
+const REVEAL_RIGHT = {
+  hidden: { opacity: 0, x: 40 },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.6, ease: EASE } },
+};
+
+// Contenedor con "stagger" de hijos
+const STAGGER = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.12,
+    },
+  },
+};
+
+// Animaciones para los íconos del header de cada sección (loop sutil)
+const ICON_ANIMS: Record<
+  string,
+  { animate: any; transition: { duration: number; repeat: number; repeatType?: "loop" | "mirror"; ease?: string } }
+> = {
+  agenda:   { animate: { rotate: [0, 6, -6, 0] },      transition: { duration: 3.4, repeat: Infinity, ease: "easeInOut" } },
+  historia: { animate: { scale: [1, 1.08, 1] },        transition: { duration: 2.2, repeat: Infinity, repeatType: "mirror" } },
+  galeria:  { animate: { y: [0, -3, 0] },              transition: { duration: 2.0, repeat: Infinity, repeatType: "mirror" } },
+  regalo:   { animate: { y: [0, -5, 0], rotate: [0, -8, 8, 0] },
+              transition: { duration: 2.6, repeat: Infinity, ease: "easeInOut" } },
+  rsvp:     { animate: { scale: [1, 1.12, 1] },        transition: { duration: 2.0, repeat: Infinity, repeatType: "mirror" } },
+  faq:      { animate: { rotate: [0, 10, -10, 0] },    transition: { duration: 3.8, repeat: Infinity, ease: "easeInOut" } },
+};
+
+// Fallback para secciones sin animación específica
+const ICON_DEFAULT = { animate: { y: [0, -2, 0] }, transition: { duration: 2.2, repeat: Infinity, repeatType: "mirror" } };
 
 /* ==============================
    CONFIG
@@ -125,24 +176,54 @@ const Section = ({
   title,
   icon: Icon,
   children,
+  animation = "up", // 👈 por defecto "up"
 }: {
   id: string;
   title: string;
   icon: React.ComponentType<any>;
   children: React.ReactNode;
-}) => (
-  <section id={id} className="scroll-mt-24 py-16" aria-labelledby={`${id}-title`}>
-    <div className="mx-auto max-w-6xl px-4">
-      <div className="mb-8 flex items-center gap-3">
-        <Icon className="h-6 w-6 text-primary" />
-        <h2 id={`${id}-title`} className="font-serif text-2xl md:text-3xl font-semibold">
-          {title}
-        </h2>
+  animation?: "up" | "left" | "right";
+}) => {
+  const prefersReducedMotion = useReducedMotion();
+  const MIcon = React.useMemo(() => motion(Icon as any), [Icon]);
+  const iconAnim = ICON_ANIMS[id] ?? ICON_DEFAULT;
+
+  // según el prop, elige el preset correcto
+  const variantMap = {
+    up: REVEAL_UP,
+    left: REVEAL_LEFT,
+    right: REVEAL_RIGHT,
+  };
+  const chosenVariant = variantMap[animation];
+
+  return (
+    <motion.section
+      id={id}
+      className="scroll-mt-24 py-16"
+      aria-labelledby={`${id}-title`}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
+      variants={STAGGER}
+    >
+      <div className="mx-auto max-w-6xl px-4">
+        <motion.div className="mb-8 flex items-center gap-3" variants={chosenVariant}>
+          <MIcon
+            className="h-6 w-6 text-primary"
+            {...(!prefersReducedMotion ? { animate: iconAnim.animate, transition: iconAnim.transition } : {})}
+          />
+          <h2 id={`${id}-title`} className="font-serif text-2xl md:text-3xl font-semibold">
+            {title}
+          </h2>
+        </motion.div>
+
+        <motion.div variants={chosenVariant}>
+          {children}
+        </motion.div>
       </div>
-      {children}
-    </div>
-  </section>
-);
+    </motion.section>
+  );
+};
 
 /* ==============================
    UI SECTIONS
@@ -314,6 +395,7 @@ const Micro = ({ v, l }: { v: number; l: string }) => (
 
 const HERO_IMAGES = ["/hero/1.jpg"];
 
+// === HERO (versión centrada, sin solaparse y sin altura excesiva en desktop) ===
 const Hero = () => {
   const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE_ISO);
   const [idx, setIdx] = React.useState(0);
@@ -328,32 +410,6 @@ const Hero = () => {
   React.useEffect(() => setHydrated(true), []);
   const safe = (n: number) => (hydrated ? n : 0);
 
-  // Medimos alto del dock (solo en XL cuando es absolute) para reservar espacio
-  const dockRef = React.useRef<HTMLDivElement | null>(null);
-  const [dockH, setDockH] = React.useState(0);
-  const [isXL, setIsXL] = React.useState(false);
-
-  React.useEffect(() => {
-    const mql = window.matchMedia("(min-width: 1280px)");
-    const onChange = (e: MediaQueryListEvent | MediaQueryList) =>
-      setIsXL("matches" in e ? (e as MediaQueryListEvent).matches : (e as MediaQueryList).matches);
-    onChange(mql);
-    mql.addEventListener?.("change", onChange as any);
-    return () => mql.removeEventListener?.("change", onChange as any);
-  }, []);
-
-  React.useEffect(() => {
-    if (!dockRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      const h = entries[0]?.contentRect.height ?? 0;
-      setDockH(h);
-    });
-    ro.observe(dockRef.current);
-    return () => ro.disconnect();
-  }, [isXL]);
-
-  const reservedPB = isXL ? Math.round(dockH + 12) : 0;
-
   const TimerChip = ({ v, l }: { v: number; l: string }) => (
     <div className="flex items-baseline gap-1 rounded-2xl border border-white/20 bg-white/70 px-[clamp(8px,0.9vw,12px)] py-[clamp(5px,0.7vw,7px)] shadow-sm">
       <div
@@ -367,7 +423,7 @@ const Hero = () => {
   );
 
   return (
-    <section className="relative isolate" style={isXL ? { paddingBottom: reservedPB } : undefined}>
+    <section className="relative isolate">
       {/* Fondo del héroe */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {HERO_IMAGES.map((src, i) => (
@@ -381,29 +437,58 @@ const Hero = () => {
             style={{ objectPosition: "center 35%" }}
           />
         ))}
-        {/* Gradiente para legibilidad (sin blur) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/10" />
+        {/* Gradiente para legibilidad */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/10" />
       </div>
 
-      {/* Título / subtítulo (tipografías más contenidas) */}
-      <div className="relative z-20 mx-auto max-w-7xl px-4 pt-[clamp(34px,7.5vh,100px)] text-white">
-        <h1 className="text-center font-serif font-extrabold leading-tight text-balance text-[clamp(32px,5.6vw,72px)]">
-          {BRIDE} <span className="text-white [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">&</span> {GROOM}
-        </h1>
-        <p className="mx-auto mt-3 max-w-3xl text-center text-white/95 leading-snug text-[clamp(13px,1.8vw,17px)]">
+      {/* Títulos tipográficos */}
+      <motion.div
+        className="relative z-20 mx-auto max-w-7xl px-4
+                   pt-[clamp(28px,6vh,80px)]
+                   pb-[clamp(14px,3.5vh,36px)]
+                   text-white"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.3 }}
+        variants={STAGGER}
+      >
+        <motion.div
+          className="text-center text-[12px] uppercase tracking-[0.18em] text-white/80"
+          variants={REVEAL_UP}
+        >
+          Nuestra boda <span className="ornament text-base text-white/70">❦</span>
+        </motion.div>
+
+        <motion.h1
+          className="mt-2 text-center leading-none text-balance"
+          variants={REVEAL_UP}
+        >
+          <span className="font-script text-[clamp(52px,8vw,102px)] [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">
+            {BRIDE}
+          </span>
+          <span className="mx-[0.35em] align-baseline font-serif text-[clamp(30px,5vw,64px)] font-extrabold [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">
+            &
+          </span>
+          <span className="font-script text-[clamp(52px,8vw,102px)] [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">
+            {GROOM}
+          </span>
+        </motion.h1>
+
+        <motion.p
+          className="mx-auto mt-3 max-w-3xl text-center text-white/95 leading-snug text-[clamp(13px,1.8vw,17px)]"
+          variants={REVEAL_UP}
+        >
           ¡Nos casamos! Acompáñanos a celebrar este día especial.
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
 
-      {/* DOCK TRANSPARENTE (compacto) */}
-      <div
-        ref={dockRef}
-        className={[
-          "relative mx-auto w-[min(100%,60rem)] px-4 mt-4",
-          // En XL+: pegado al borde inferior de la foto, centrado
-          "xl:absolute xl:left-1/2 xl:bottom-[clamp(10px,1.6vw,10px)] xl:-translate-x-1/2",
-          "z-30",
-        ].join(" ")}
+      {/* DOCK EN-FLUJO (contador + fecha + botones) */}
+      <motion.div
+        className="relative z-30 mx-auto w-[min(100%,60rem)] px-4 mb-[clamp(12px,2vh,20px)]"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.5 }}
+        variants={REVEAL_UP}
       >
         <div className="rounded-2xl border border-transparent bg-transparent">
           <div className="flex flex-wrap items-center justify-center gap-[clamp(8px,1vw,12px)] p-[clamp(8px,1.2vw,12px)]">
@@ -415,43 +500,47 @@ const Hero = () => {
               <TimerChip v={seconds} l="S" />
             </div>
 
-            {/* Separador fino (solo si hay espacio) */}
+            {/* Separador fino */}
             <div className="hidden md:block md:h-6 md:w-px bg-white/20 mx-1 md:mx-2" />
 
-            {/* Fecha (pill ligera) */}
+            {/* Fecha */}
             <div className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/70 px-3 py-2 text-[clamp(11px,1.5vw,13px)] text-black">
               <Calendar className="h-4 w-4" />
               {CEREMONY.datePretty}
             </div>
 
-{/* Botones – siempre en una fila aparte y centrados */}
-<div className="w-full flex items-center justify-center gap-2 sm:gap-3 mt-[clamp(4px,0.8vw,8px)]">
-  <a href="#regalo">
-    <Button className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)]">
-      <Gift className="mr-2 h-4 w-4" />
-      Hacer Regalo
-    </Button>
-  </a>
-  <a href="#rsvp">
-    <Button
-      variant="secondary"
-      className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)] bg-white text-foreground hover:bg-white/90"
-    >
-      Confirmar Asistencia
-    </Button>
-  </a>
-</div>
+            {/* Botones */}
+            <div className="w-full flex items-center justify-center gap-2 sm:gap-3 mt-[clamp(4px,0.8vw,8px)]">
+              <a href="#regalo">
+                <Button className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)]">
+                  <Gift className="mr-2 h-4 w-4" />
+                  Hacer Regalo
+                </Button>
+              </a>
+              <a href="#rsvp">
+                <Button
+                  variant="secondary"
+                  className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)] bg-white text-foreground hover:bg-white/90"
+                >
+                  Confirmar Asistencia
+                </Button>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };
 
-
-
 const Schedule = () => (
-  <div className="grid gap-6 md:grid-cols-3">
+  <motion.div
+    className="grid gap-6 md:grid-cols-3"
+    initial="hidden"
+    whileInView="show"
+    viewport={{ once: true, amount: 0.2 }}
+    variants={STAGGER}
+  >
     {[
       {
         title: "Ceremonia",
@@ -459,8 +548,7 @@ const Schedule = () => (
         place: "Iglesia Santa Ursula de Vitacura",
         address: "Vitacura, Chile",
         link: CEREMONY.mapsUrl,
-        image:
-          "https://comunavitacura.cl/wp-content/uploads/2024/08/colegio_santa_ursula.jpg",
+        image: "https://comunavitacura.cl/wp-content/uploads/2024/08/colegio_santa_ursula.jpg",
         icon: <Stars className="h-5 w-5" />,
       },
       {
@@ -478,11 +566,10 @@ const Schedule = () => (
         place: "Elegante / Formal",
         address: "Mujeres NO utilizar color blanco o muy claros",
         link: "#",
-        image:
-          "/hero/dress_code.jpg",
+        image: "/hero/dress_code.jpg",
         icon: <Users className="h-5 w-5" />,
       },
-    ].map((i) => {
+    ].map((i, idx) => {
       const hasLink = i.link && i.link !== "#";
       const Wrapper: any = hasLink ? "a" : "div";
       const wrapperProps = hasLink
@@ -496,104 +583,128 @@ const Schedule = () => (
         : {};
 
       return (
-        <Wrapper
-          key={i.title}
-          {...wrapperProps}
-          className={`group block rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary ${
-            hasLink ? "cursor-pointer" : ""
-          }`}
-        >
-          <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)]">
-            {/* Imagen superior 16:9 con overlay */}
-            <div className="relative overflow-hidden rounded-t-2xl">
-              <div className="aspect-[16/9] w-full">
-                <img
-                  src={i.image}
-                  alt={`Imagen ${i.title}`}
-                  className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
-                  loading="lazy"
-                  draggable={false}
-                />
+        <motion.div key={i.title} variants={REVEAL_UP}>
+          <Wrapper
+            {...wrapperProps}
+            className={`group block rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary ${
+              hasLink ? "cursor-pointer" : ""
+            }`}
+          >
+            <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)]">
+              {/* Imagen superior 16:9 con overlay */}
+              <div className="relative overflow-hidden rounded-t-2xl">
+                <div className="aspect-[16/9] w-full">
+                  <img
+                    src={i.image}
+                    alt={`Imagen ${i.title}`}
+                    className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+                    loading="lazy"
+                    draggable={false}
+                  />
+                </div>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-black/0 to-black/0" />
+                <div className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-foreground shadow">
+                  {i.icon}
+                  {i.title}
+                </div>
               </div>
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-black/0 to-black/0" />
-              <div className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-foreground shadow">
-                {i.icon}
-                {i.title}
-              </div>
-            </div>
 
-            {/* Contenido */}
-            <CardContent className="space-y-2 pt-4">
-              {i.time && (
-                <p className="text-sm text-muted-foreground">
-                  <Clock className="mr-1 inline h-4 w-4" />
-                  {i.time}
-                </p>
-              )}
+              {/* Contenido */}
+              <CardContent className="space-y-2 pt-4">
+                {i.time && (
+                  <p className="text-sm text-muted-foreground">
+                    <Clock className="mr-1 inline h-4 w-4" />
+                    {i.time}
+                  </p>
+                )}
 
-              {/* Lugar y dirección: cuando la tarjeta es <a>, NO anidamos <a> */}
-              {hasLink ? (
-                <>
-                  <span className="font-medium inline-flex items-center gap-1 hover:underline underline-offset-4">
-                    {i.place}
-                    <ExternalLink className="h-4 w-4" />
-                  </span>
-                  <span className="block text-sm text-muted-foreground hover:underline underline-offset-4">
-                    {i.address}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium">{i.place}</p>
-                  <p className="text-sm text-muted-foreground">{i.address}</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Wrapper>
+                {/* Lugar y dirección: cuando la tarjeta es <a>, NO anidamos <a> */}
+                {hasLink ? (
+                  <>
+                    <span className="font-medium inline-flex items-center gap-1 hover:underline underline-offset-4">
+                      {i.place}
+                      <ExternalLink className="h-4 w-4" />
+                    </span>
+                    <span className="block text-sm text-muted-foreground hover:underline underline-offset-4">
+                      {i.address}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium">{i.place}</p>
+                    <p className="text-sm text-muted-foreground">{i.address}</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Wrapper>
+        </motion.div>
       );
     })}
-  </div>
+  </motion.div>
 );
 
 // ===========================
-// NUESTRA HISTORIA (simple) + VIDEO
+// NUESTRA HISTORIA (animada, sin imports locales)
 // ===========================
 const Story = () => {
   // Video YouTube embebido
   const YT_EMBED = "https://www.youtube.com/embed/CisTs-tueAU";
 
-  return (
-    <div className="grid items-start gap-6 md:grid-cols-2">
-      {/* Texto */}
-      <div className="space-y-4 leading-relaxed text-foreground/90">
-        <p>Queremos compartir la historia de cómo comenzó todo con Piero.</p>
+  // Variants locales (no requieren imports; usan el "motion" que ya tienes arriba)
+  const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+  const REVEAL_LEFT = {
+    hidden: { opacity: 0, x: -40 },
+    show: { opacity: 1, x: 0, transition: { duration: 0.6, ease: EASE } },
+  };
+  const REVEAL_UP = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+  };
+  const STAGGER = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.08, delayChildren: 0.12 } },
+  };
 
-        <p>
+  return (
+    <motion.div
+      className="grid items-start gap-6 md:grid-cols-2"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.25 }}
+      variants={STAGGER}
+    >
+      {/* Texto */}
+      <motion.div className="space-y-4 leading-relaxed text-foreground/90" variants={REVEAL_LEFT}>
+        <motion.p variants={REVEAL_UP}>
+          Queremos compartir la historia de cómo comenzó todo con Piero.
+        </motion.p>
+
+        <motion.p variants={REVEAL_UP}>
           Nos conocimos trabajando, algo que ninguno de los dos esperaba. Cada cruce en los pasillos bastaba
           para sonrojarnos con solo mirarnos… hasta que un día dijimos “sí” a salir juntos, y desde entonces
           nuestras vidas cambiaron para siempre.
-        </p>
+        </motion.p>
 
-        <p>
+        <motion.p variants={REVEAL_UP}>
           El <span className="font-medium">16 de agosto de 2025</span>, en medio de la magia de{" "}
           <span className="font-medium">Bariloche</span>, Piero me pidió matrimonio. Un “sí” lleno de amor y
           emoción que hoy nos lleva a dar el paso más importante de nuestras vidas.
-        </p>
+        </motion.p>
 
-        <p>
+        <motion.p variants={REVEAL_UP}>
           Han sido años maravillosos: viajes, aventuras, experiencias inolvidables, la creación de un hogar y
           momentos que atesoramos con el corazón.
-        </p>
+        </motion.p>
 
-        <p>
+        <motion.p variants={REVEAL_UP}>
           Ahora queremos invitarte a compartir esta felicidad con nosotros y a acompañarnos en este gran día.{" "}
           <span className="font-medium">¡Nos vemos el 21 de noviembre de 2026!</span>
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
 
       {/* Video */}
-      <div className="space-y-3">
+      <motion.div className="space-y-3" variants={REVEAL_UP}>
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl shadow-sm">
           <iframe
             src={YT_EMBED}
@@ -607,10 +718,11 @@ const Story = () => {
         <p className="text-xs text-muted-foreground">
           Sugerencia: usa un video horizontal (16:9) para que luzca perfecto.
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
+
 
 const Gallery = () => {
   const [open, setOpen] = useState(false);
@@ -1226,14 +1338,14 @@ export default function WeddingSite() {
       <div id="inicio">
         <Hero />
       </div>
-      <Section id="agenda" title="Agenda del día" icon={Calendar}>
-        <Schedule />
-      </Section>
+      <Section id="agenda" title="Agenda" icon={Calendar} animation="up">
+  <Schedule />
+</Section>
 {/* Banda color arena */}
 <div className="bg-secondary/40">
-  <Section id="historia" title="Nuestra historia" icon={Heart}>
-    <Story />
-  </Section>
+  <Section id="historia" title="Nuestra Historia" icon={Heart} animation="left">
+  <Story />
+</Section>
 </div>
 
 <Section id="galeria" title="Galería" icon={ImageIcon}>

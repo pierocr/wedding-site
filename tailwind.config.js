@@ -59,11 +59,18 @@ module.exports = {
         "2xl": "calc(var(--radius) + 6px)",
       },
       fontFamily: {
+        // Inter para UI/texto
         sans: ["var(--font-sans)", ...fontFamily.sans],
+        // Playfair (o la serif que definas) para títulos
         serif: ["var(--font-serif)", ...fontFamily.serif],
+        // Great Vibes (o la script que definas) para acentos
+        script: ["var(--font-script)"],
+      },
+      letterSpacing: {
+        "wide-hero": "0.02em",
       },
     },
   },
-  // plugins: [require("tailwindcss-animate")], // opcional (si lo quieres: pnpm add -D tailwindcss-animate)
+  // plugins: [require("tailwindcss-animate")], // opcional
   plugins: [],
 };

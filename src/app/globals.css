@@ -1,8 +1,13 @@
+/* ===========================
+   Tailwind layers
+=========================== */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ======= Design tokens (shadcn-style) ======= */
+/* ===========================
+   Design tokens (shadcn-style)
+=========================== */
 :root {
   --background: 39 33% 97%;      /* marfil cálido */
   --foreground: 30 7% 11%;       /* negro suave */
@@ -67,26 +72,98 @@
   }
 }
 
-/* ======= Base layer usando tokens ======= */
+/* ===========================
+   Base layer (tokens + tipografía)
+=========================== */
 @layer base {
-  * { @apply border-border; }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    text-rendering: optimizeLegibility;
+  * {
+    @apply border-border;
   }
 
-  /* Utilidades para headings serif */
-  h1,h2,h3,.font-display { @apply font-serif tracking-tight; }
+  html {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Ligaduras y kerning más estables para lectura */
+    font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "rlig" 1, "calt" 1;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Headings en serif, con leve tracking positivo elegante */
+  h1, h2, h3, .font-display {
+    @apply font-serif tracking-wide-hero;
+  }
+
+  /* Párrafos base más cómodos */
+  p {
+    @apply leading-relaxed;
+  }
+
+  /* Enlaces: subrayado limpio y offset agradable */
+  a {
+    @apply underline-offset-4;
+  }
+  a:hover {
+    @apply underline;
+  }
+
+  /* Selección de texto con color acorde al tema */
+  ::selection {
+    background: rgba(217, 171, 117, 0.28); /* aprox. a --accent */
+    color: inherit;
+  }
+
+  /* Imágenes responsivas por defecto */
+  img, svg, video, canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
 }
 
-/* ======= Helpers visuales ======= */
-.container-page {
-  @apply mx-auto max-w-6xl px-4;
+/* ===========================
+   Components / helpers
+=========================== */
+@layer components {
+  .container-page {
+    @apply mx-auto max-w-6xl px-4;
+  }
+
+  .card {
+    @apply rounded-2xl bg-card text-card-foreground border;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition;
+  }
+
+  /* Ornamentos / acentos caligráficos puntuales (usa junto a text-*) */
+  .ornament {
+    @apply font-script align-baseline;
+  }
+
+  /* Párrafo destacado (lead) para intros */
+  .lead {
+    @apply text-[17px] leading-relaxed text-foreground/80;
+  }
+
+  /* Focus rings consistentes para elementos interactivos genéricos */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
 }
-.card {
-  @apply rounded-2xl bg-card text-card-foreground border;
-}
-.btn {
-  @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition;
+
+/* ===========================
+   Motion preferences
+=========================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
