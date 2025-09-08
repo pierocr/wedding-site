@@ -10,16 +10,15 @@ export default function GraciasPage() {
   const params = useSearchParams();
   const router = useRouter();
 
-  // status que envías en back_urls: approved | failure | pending
+  // status: approved | failure | pending (o vacío)
   const status = (params.get("status") || params.get("collection_status") || "").toLowerCase();
-  // IDs que suele devolver MP en la redirección:
   const paymentId = params.get("payment_id") || params.get("collection_id") || "";
   const preferenceId = params.get("preference_id") || "";
   const externalRef = params.get("external_reference") || "";
   const merchantOrderId = params.get("merchant_order_id") || "";
 
+  // Limpia carrito si approved
   React.useEffect(() => {
-    // Si el pago fue aprobado, limpiamos el carrito local (si lo estabas persistiendo)
     if (status === "approved") {
       try {
         localStorage.removeItem("gift_cart");
@@ -27,14 +26,47 @@ export default function GraciasPage() {
     }
   }, [status]);
 
+  // Enviar email (una sola vez por payment_id)
+  React.useEffect(() => {
+    if (status !== "approved" || !paymentId) return;
+    const sentKey = `thanks_mail_sent:${paymentId}`;
+
+    // ¿ya se envió?
+    if (typeof window !== "undefined" && localStorage.getItem(sentKey) === "1") return;
+
+    // Donor fallback desde localStorage (por si MP no nos da email/nombre)
+    let fallback: { name?: string; email?: string } = {};
+    try {
+      const raw = localStorage.getItem("gift_donor");
+      if (raw) fallback = JSON.parse(raw) ?? {};
+    } catch {}
+
+    fetch("/api/email/thanks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payment_id: paymentId,
+        external_reference: externalRef || undefined,
+        fallback,
+      }),
+    })
+      .then(() => {
+        try {
+          localStorage.setItem(sentKey, "1");
+        } catch {}
+      })
+      .catch(() => {
+        // silencioso: la UX de gracias no se rompe si el correo falla
+      });
+  }, [status, paymentId, externalRef]);
+
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "/";
 
   const variants = {
     approved: {
       icon: <CheckCircle2 className="h-8 w-8 text-emerald-600" />,
       title: "¡Pago recibido con amor!",
-      desc:
-        "Muchas gracias por tu regalo. Tu aporte nos acerca un poquito más a nuestra luna de miel y a nuevos recuerdos juntos.",
+      desc: "Muchas gracias por tu regalo. Tu aporte nos acerca un poquito más a nuestra luna de miel y a nuevos recuerdos juntos.",
       note: "Te llegará un mail de confirmación con el detalle del pago.",
       accent: "text-emerald-700",
       bg: "bg-emerald-50",
@@ -43,8 +75,7 @@ export default function GraciasPage() {
     pending: {
       icon: <Hourglass className="h-8 w-8 text-amber-600" />,
       title: "Tu pago está en revisión",
-      desc:
-        "Mercado Pago está validando la transacción. Te avisaremos por correo cuando se confirme.",
+      desc: "Mercado Pago está validando la transacción. Te avisaremos por correo cuando se confirme.",
       note: "Si ves que tarda demasiado, puedes volver a intentar más tarde.",
       accent: "text-amber-700",
       bg: "bg-amber-50",
@@ -53,8 +84,7 @@ export default function GraciasPage() {
     failure: {
       icon: <XCircle className="h-8 w-8 text-rose-600" />,
       title: "No pudimos procesar el pago",
-      desc:
-        "La transacción fue rechazada o cancelada. Puedes volver e intentar nuevamente.",
+      desc: "La transacción fue rechazada o cancelada. Puedes volver e intentar nuevamente.",
       note: "Revisa tu medio de pago o el límite de tu tarjeta.",
       accent: "text-rose-700",
       bg: "bg-rose-50",
@@ -63,8 +93,7 @@ export default function GraciasPage() {
     default: {
       icon: <Heart className="h-8 w-8 text-pink-600" />,
       title: "¡Gracias por tu cariño!",
-      desc:
-        "Si realizaste un pago, pronto te llegará un mail con la confirmación.",
+      desc: "Si realizaste un pago, pronto te llegará un mail con la confirmación.",
       note: "",
       accent: "text-pink-700",
       bg: "bg-pink-50",
@@ -93,16 +122,8 @@ export default function GraciasPage() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Resumen técnico (útil para soporte) */}
           {(paymentId || preferenceId || externalRef || merchantOrderId) && (
-            <div
-              className={[
-                "rounded-xl border p-4 text-sm",
-                v.bg,
-                v.border,
-                v.accent,
-              ].join(" ")}
-            >
+            <div className={["rounded-xl border p-4 text-sm", v.bg, v.border, v.accent].join(" ")}>
               <div className="font-medium mb-1">Detalle de la operación</div>
               <ul className="grid gap-1 text-foreground/80">
                 {status && (
@@ -112,42 +133,32 @@ export default function GraciasPage() {
                 )}
                 {paymentId && (
                   <li>
-                    <span className="text-foreground/60">Payment ID:</span>{" "}
-                    {paymentId}
+                    <span className="text-foreground/60">Payment ID:</span> {paymentId}
                   </li>
                 )}
                 {preferenceId && (
                   <li>
-                    <span className="text-foreground/60">Preference ID:</span>{" "}
-                    {preferenceId}
+                    <span className="text-foreground/60">Preference ID:</span> {preferenceId}
                   </li>
                 )}
                 {merchantOrderId && (
                   <li>
-                    <span className="text-foreground/60">Merchant Order:</span>{" "}
-                    {merchantOrderId}
+                    <span className="text-foreground/60">Merchant Order:</span> {merchantOrderId}
                   </li>
                 )}
                 {externalRef && (
                   <li>
-                    <span className="text-foreground/60">Referencia:</span>{" "}
-                    {externalRef}
+                    <span className="text-foreground/60">Referencia:</span> {externalRef}
                   </li>
                 )}
               </ul>
             </div>
           )}
 
-          {v.note && (
-            <p className="text-sm text-muted-foreground">{v.note}</p>
-          )}
+          {v.note && <p className="text-sm text-muted-foreground">{v.note}</p>}
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button
-              className="rounded-xl"
-              onClick={() => router.push("/")}
-              aria-label="Volver al inicio"
-            >
+            <Button className="rounded-xl" onClick={() => router.push("/")} aria-label="Volver al inicio">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Volver al inicio
             </Button>
@@ -164,10 +175,7 @@ export default function GraciasPage() {
         </CardContent>
       </Card>
 
-      {/* Mini toque romántico */}
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        Gracias por ser parte de nuestra historia 💖
-      </p>
+      <p className="mt-6 text-center text-sm text-muted-foreground">Gracias por ser parte de nuestra historia 💖</p>
     </div>
   );
 }
