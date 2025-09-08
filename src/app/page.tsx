@@ -566,12 +566,12 @@ const Schedule = () => (
         icon: <PartyPopper className="h-5 w-5" />,
       },
       {
-        title: "Código de vestimenta",
+        title: "Dress Code",
         time: "",
         place: "Elegante / Formal",
-        address: "Mujeres NO utilizar color blanco o muy claros",
+        address: "Ellas NO deben usar blanco ni tonos muy claros, eso déjenlo para la novia 😉",
         link: "#",
-        image: "/hero/dress_code.jpg",
+        image: "/hero/dress_code.png",
         icon: <Users className="h-5 w-5" />,
       },
     ].map((i, idx) => {

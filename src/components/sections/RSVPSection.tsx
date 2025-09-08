@@ -55,7 +55,7 @@ const RSVPSection = () => {
     <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 font-serif">
-          <Heart className="h-5 w-5" /> Confirmar asistencia (RSVP)
+          <Heart className="h-5 w-5" /> Confirmar asistencia
         </CardTitle>
       </CardHeader>
 

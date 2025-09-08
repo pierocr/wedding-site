@@ -41,6 +41,44 @@ export default function GiftSection() {
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
   const MAX_QTY = 10;
 
+  // 💾 Claves de persistencia
+  const CART_KEY = "gift_cart";
+  const DONOR_KEY = "gift_donor";
+
+  // 🔐 Carga segura desde localStorage (evita SSR/hydration issues)
+  function loadCart(): CartLine[] {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(CART_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((l: any) => l && typeof l.id === "string")
+        .map((l: any) => ({
+          id: String(l.id),
+          title: String(l.title ?? ""),
+          unitPrice: Number(l.unitPrice ?? 0),
+          qty: Number(l.qty ?? 0),
+        }))
+        .filter((l: CartLine) => l.qty > 0 && l.unitPrice >= 0);
+    } catch {
+      return [];
+    }
+  }
+
+  function loadDonor(): { name: string; email: string } {
+    if (typeof window === "undefined") return { name: "", email: "" };
+    try {
+      const raw = localStorage.getItem(DONOR_KEY);
+      if (!raw) return { name: "", email: "" };
+      const { name = "", email = "" } = JSON.parse(raw) ?? {};
+      return { name: String(name), email: String(email) };
+    } catch {
+      return { name: "", email: "" };
+    }
+  }
+
   // 💞 Catálogo romántico (desde 40.000) — 8 ítems
   const ITEMS: CatalogItem[] = [
     { id: "brindis",   emoji: "🥂", label: "Brindis bajo las estrellas",       price: 40000 },
@@ -53,14 +91,15 @@ export default function GiftSection() {
     { id: "amanecer",  emoji: "🌅", label: "Amanecer de luna de miel",         price: 200000 },
   ];
 
-  // 🧾 Carrito
-  const [cart, setCart] = React.useState<CartLine[]>([]);
+  // 🧾 Carrito (persistente)
+  const [cart, setCart] = React.useState<CartLine[]>(() => loadCart());
 
-  // Datos del regalante
-  const [name, setName] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  // Datos del regalante (persistentes)
+  const donor = React.useMemo(loadDonor, []);
+  const [name, setName] = React.useState(donor.name);
+  const [email, setEmail] = React.useState(donor.email);
 
-  // Personalizado
+  // Personalizado (no persisto por ahora)
   const [customMsg, setCustomMsg] = React.useState("");
   const [customAmount, setCustomAmount] = React.useState<number | "">("");
 
@@ -72,6 +111,23 @@ export default function GiftSection() {
       currency: "CLP",
       maximumFractionDigits: 0,
     }).format(n);
+
+  // 💽 Guardar carrito cuando cambie
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    } catch {}
+  }, [cart]);
+
+  // 💽 Guardar donante con debounce
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(DONOR_KEY, JSON.stringify({ name, email }));
+      } catch {}
+    }, 250);
+    return () => clearTimeout(t);
+  }, [name, email]);
 
   // ===== Helpers carrito =====
   const qtyFor = (id: string) => cart.find((l) => l.id === id)?.qty ?? 0;
@@ -97,18 +153,18 @@ export default function GiftSection() {
   const addItem = (item: CatalogItem) =>
     setQty(item.id, `${item.emoji} ${item.label}`, item.price, qtyFor(item.id) + 1);
 
-  const inc  = (id: string) => {
+  const inc = (id: string) => {
     const line = cart.find((l) => l.id === id);
     if (!line) return;
     setQty(id, line.title, line.unitPrice, line.qty + 1);
   };
-  const dec  = (id: string) => {
+  const dec = (id: string) => {
     const line = cart.find((l) => l.id === id);
     if (!line) return;
     setQty(id, line.title, line.unitPrice, line.qty - 1);
   };
   const removeLine = (id: string) => setQty(id, "", 0, 0);
-  const clearCart  = () => setCart([]);
+  const clearCart = () => setCart([]);
 
   const addCustomToCart = () => {
     if (!customMsg.trim() || !customAmount || Number(customAmount) <= 0) {
@@ -124,51 +180,47 @@ export default function GiftSection() {
   const subtotal = (l: CartLine) => l.unitPrice * l.qty;
   const total = cart.reduce((acc, l) => acc + subtotal(l), 0);
 
-  const canPay =
-    !!name.trim() && EMAIL_RE.test(email) && cart.length > 0 && !loading;
+  const canPay = !!name.trim() && EMAIL_RE.test(email) && cart.length > 0 && !loading;
 
-async function pay() {
-  if (!canPay) return;
+  async function pay() {
+    if (!canPay) return;
 
-  setLoading(true);
-  try {
-    // Título-resumen para tu endpoint edge (usa title+amount)
-    const summaryTitle =
-      "Regalos para Piero & Debby — " +
-      cart.map((l) => `${l.qty}× ${l.title}`).join(", ");
+    setLoading(true);
+    try {
+      // Título-resumen para tu endpoint edge (usa title+amount)
+      const summaryTitle =
+        "Regalos para Piero & Debby — " +
+        cart.map((l) => `${l.qty}× ${l.title}`).join(", ");
 
-    const res = await fetch("/api/mercadopago/create-preference", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        email,
-        title: summaryTitle,
-        amount: Math.round(total),         // CLP entero
-        currency: "CLP",
-        // usa el público o, en dev, el origin actual
-        siteUrl:
-          process.env.NEXT_PUBLIC_SITE_URL ||
-          (typeof window !== "undefined" ? window.location.origin : undefined),
-        // opcional: te sirve para rastrear la orden en tus logs
-        external_reference: `gift:${Date.now()}:${Math.random()
-          .toString(36)
-          .slice(2, 8)}`,
-      }),
-    });
+      const res = await fetch("/api/mercadopago/create-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          title: summaryTitle,
+          amount: Math.round(total), // CLP entero
+          currency: CURRENCY,
+          siteUrl:
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            (typeof window !== "undefined" ? window.location.origin : undefined),
+          external_reference: `gift:${Date.now()}:${Math.random()
+            .toString(36)
+            .slice(2, 8)}`,
+        }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
 
-    // tu route responde con init_point
-    window.location.href = data.init_point;
-  } catch (e: any) {
-    console.error(e);
-    alert(e?.message || "No pudimos iniciar el pago. Intenta nuevamente.");
-  } finally {
-    setLoading(false);
+      window.location.href = data.init_point;
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || "No pudimos iniciar el pago. Intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   return (
     <Card className="rounded-2xl">
@@ -299,9 +351,7 @@ async function pay() {
         {/* Datos del regalante */}
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="text-sm font-medium">
-              Tu nombre (obligatorio)
-            </label>
+            <label className="text-sm font-medium">Tu nombre (obligatorio)</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
