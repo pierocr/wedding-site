@@ -238,6 +238,11 @@ const Nav = () => {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
+  // Estado del carrito para el badge
+  const [cartQty, setCartQty] = React.useState(0);
+  const [cartTotal, setCartTotal] = React.useState(0);
+  const CART_KEY = "gift_cart";
+
   React.useEffect(() => setMounted(true), []);
 
   // Bloquea el scroll del body cuando el drawer está abierto
@@ -245,6 +250,52 @@ const Nav = () => {
     document.body.classList.toggle("overflow-hidden", open);
     return () => document.body.classList.remove("overflow-hidden");
   }, [open]);
+
+  // Lee carrito desde localStorage
+  const refreshFromStorage = React.useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(CART_KEY);
+      if (!raw) {
+        setCartQty(0);
+        setCartTotal(0);
+        return;
+      }
+      const arr = JSON.parse(raw) as Array<{ qty: number; unitPrice: number }>;
+      const qty = Array.isArray(arr) ? arr.reduce((a, l) => a + (l?.qty || 0), 0) : 0;
+      const total = Array.isArray(arr) ? arr.reduce((a, l) => a + (l?.qty || 0) * (l?.unitPrice || 0), 0) : 0;
+      setCartQty(qty);
+      setCartTotal(total);
+    } catch {
+      setCartQty(0);
+      setCartTotal(0);
+    }
+  }, []);
+
+  // Escucha: evento custom, cambio de storage (otras pestañas) y focus
+  React.useEffect(() => {
+    refreshFromStorage();
+    const onCart = (e: Event) => {
+      const detail = (e as CustomEvent<{ qty: number; total: number }>).detail;
+      if (detail) {
+        setCartQty(detail.qty);
+        setCartTotal(detail.total);
+      } else {
+        refreshFromStorage();
+      }
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === CART_KEY) refreshFromStorage();
+    };
+    window.addEventListener("gift:cart-changed", onCart as EventListener);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", refreshFromStorage);
+    return () => {
+      window.removeEventListener("gift:cart-changed", onCart as EventListener);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", refreshFromStorage);
+    };
+  }, [refreshFromStorage]);
 
   const links = [
     { href: "#agenda", label: "Agenda" },
@@ -255,6 +306,36 @@ const Nav = () => {
     { href: "#faq", label: "FAQ" },
     { href: "#musica", label: "Música" },
   ];
+
+  const GiftButton = ({ fullWidth = false }: { fullWidth?: boolean }) => {
+    const hasItems = cartQty > 0;
+    return (
+      <a href="#regalo" aria-label={hasItems ? `Regalo (${cartQty} ítems)` : "Hacer regalo"}>
+        <Button
+          size="sm"
+          variant={hasItems ? "default" : "secondary"}
+          className={[
+            "rounded-xl",
+            fullWidth ? "w-full" : "",
+            hasItems ? "bg-emerald-600 text-white hover:bg-emerald-700" : "",
+          ].join(" ")}
+        >
+          <Gift className="mr-2 h-4 w-4" />
+          {hasItems ? "Regalo" : "Hacer regalo"}
+          {hasItems && (
+            <>
+              <span className="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-white/90 text-emerald-700">
+                {cartQty}
+              </span>
+              <span className="ml-2 hidden sm:inline text-xs font-semibold tabular-nums">
+                {currencyCLP(cartTotal)}
+              </span>
+            </>
+          )}
+        </Button>
+      </a>
+    );
+  };
 
   return (
     <div className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
@@ -271,10 +352,8 @@ const Nav = () => {
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Ahora visible también en mobile */}
-          <a href="#regalo">
-            <Button size="sm" variant="secondary">Hacer regalo</Button>
-          </a>
+          {/* Botón regalo con badge */}
+          <GiftButton />
 
           {/* Hamburguesa (solo mobile) */}
           <button
@@ -289,14 +368,13 @@ const Nav = () => {
         </div>
       </div>
 
-      {/* Drawer móvil en PORTAL para salir del stacking del header/hero */}
+      {/* Drawer móvil */}
       {mounted &&
         createPortal(
           <div
             id="mobile-menu"
             className={`fixed inset-0 z-[9999] md:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`}
           >
-            {/* Overlay opaco */}
             <div
               className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity ${
                 open ? "opacity-100" : "opacity-0"
@@ -304,8 +382,6 @@ const Nav = () => {
               onClick={() => setOpen(false)}
               aria-hidden
             />
-
-            {/* Drawer derecho, sólido */}
             <aside
               role="dialog"
               aria-modal="true"
@@ -340,9 +416,11 @@ const Nav = () => {
                   ))}
                 </nav>
 
-                <a href="#regalo" onClick={() => setOpen(false)} className="mt-4 block">
-                  <Button className="w-full">🎁 Hacer Regalo</Button>
-                </a>
+                <div className="mt-4">
+                  <div onClick={() => setOpen(false)}>
+                    <GiftButton fullWidth />
+                  </div>
+                </div>
               </div>
             </aside>
           </div>,
@@ -351,6 +429,7 @@ const Nav = () => {
     </div>
   );
 };
+
 
 const MiniCountdownBar = () => {
   const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE_ISO);

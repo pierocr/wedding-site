@@ -111,13 +111,19 @@ export default function GiftSection() {
       currency: "CLP",
       maximumFractionDigits: 0,
     }).format(n);
+// 💽 Guardar carrito cuando cambie + avisar al nav
+React.useEffect(() => {
+  try {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    const qty = cart.reduce((acc, l) => acc + l.qty, 0);
+    const total = cart.reduce((acc, l) => acc + l.qty * l.unitPrice, 0);
+    // Notificar (misma pestaña) que el carrito cambió
+    window.dispatchEvent(
+      new CustomEvent("gift:cart-changed", { detail: { qty, total } })
+    );
+  } catch {}
+}, [cart]);
 
-  // 💽 Guardar carrito cuando cambie
-  React.useEffect(() => {
-    try {
-      localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    } catch {}
-  }, [cart]);
 
   // 💽 Guardar donante con debounce
   React.useEffect(() => {
