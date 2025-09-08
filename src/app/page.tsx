@@ -1167,79 +1167,235 @@ const GiftSection = () => {
   );
 };
 
-
-// --- RSVP (solo esta sección) ---
+// --- Confirmar asistencia (UX pulido) ---
 const RSVPSection = () => {
+  const [form, setForm] = React.useState({
+    name: "",
+    email: "",
+    phone: "",
+    attending: "Sí, allí estaré",
+    vegetarian: false,
+    message: "",
+  });
+  const [touched, setTouched] = React.useState<{ name: boolean; email: boolean }>({
+    name: false,
+    email: false,
+  });
+  const [status, setStatus] = React.useState<"idle" | "sending" | "ok" | "error">("idle");
+
+  const onChange =
+    (key: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const value =
+        e.currentTarget.type === "checkbox"
+          ? (e.currentTarget as HTMLInputElement).checked
+          : e.currentTarget.value;
+      setForm((f) => ({ ...f, [key]: value }));
+      if (key === "name" || key === "email") setTouched((t) => ({ ...t, [key]: true }));
+      if (status !== "idle") setStatus("idle");
+    };
+
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+  const nameOk = form.name.trim().length >= 3;
+  const showNameErr = touched.name && !nameOk;
+  const showEmailErr = touched.email && !emailOk;
+  const canSubmit = nameOk && emailOk && status !== "sending";
+
+  const onBlur =
+    (key: "name" | "email") =>
+    () =>
+      setTouched((t) => ({ ...t, [key]: true }));
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTouched({ name: true, email: true });
+
+    if (!canSubmit) return;
+
+    setStatus("sending");
+    try {
+      // TODO: reemplazar por tu integración real (Supabase/Email/Route)
+      await new Promise((r) => setTimeout(r, 900));
+      setStatus("ok");
+      // Mantén nombre/email por si quieren editar, resetea lo demás
+      setForm((f) => ({ ...f, message: "" }));
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  const inputBase =
+    "h-10 w-full rounded-md bg-background px-3 border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+  const invalidRing = "ring-2 ring-destructive/70 focus-visible:ring-destructive";
+
   return (
-    <Card className="rounded-2xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-serif">
-          <Heart className="h-5 w-5" /> Confirmar asistencia (RSVP)
+    <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 font-serif text-xl">
+          <Heart className="h-5 w-5 text-primary" />
+          Confirma tú asistencia
         </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          ¡Nos encantará saber de ti! Completa tus datos y envíanos tu confirmación.
+        </p>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="text-sm font-medium">Nombre completo</label>
-            <Input placeholder="Ej: Juanita González" />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Email</label>
-            <Input type="email" placeholder="nombre@correo.cl" />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Teléfono</label>
-            <Input type="tel" placeholder="+56 9 1234 5678" />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Asistiré</label>
-            <select className="h-10 w-full rounded-md border bg-background px-3">
-              <option>Sí, allí estaré</option>
-              <option>Lo siento, no podré</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-medium">Acompañantes</label>
-            <Input type="number" min={0} defaultValue={0} />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Restricciones alimentarias</label>
-            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-              <Badge variant="secondary" className="cursor-default">
-                <Salad className="mr-1 h-3 w-3" />
-                Vegetariano
-              </Badge>
-              <Badge variant="secondary" className="cursor-default">Vegano</Badge>
-              <Badge variant="secondary" className="cursor-default">Sin gluten</Badge>
-              <Badge variant="secondary" className="cursor-default">Alergias</Badge>
+
+      <CardContent>
+        {/* Banner de éxito / error */}
+        <div className="min-h-[1rem]" aria-live="polite">
+          {status === "ok" && (
+            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+              ¡Gracias! Recibimos tu confirmación.
+            </div>
+          )}
+          {status === "error" && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              Ocurrió un problema al enviar. Inténtalo nuevamente en unos segundos.
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={onSubmit} noValidate className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label htmlFor="rsvp-name" className="text-sm font-medium">
+                Nombre completo
+              </label>
+              <input
+                id="rsvp-name"
+                placeholder="Ej: Juanita González"
+                value={form.name}
+                onChange={onChange("name")}
+                onBlur={onBlur("name")}
+                autoComplete="name"
+                required
+                aria-invalid={showNameErr}
+                className={`${inputBase} ${showNameErr ? invalidRing : ""}`}
+              />
+              {showNameErr && (
+                <p className="mt-1 text-xs text-destructive">Ingresa tu nombre (mínimo 3 caracteres).</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="rsvp-email" className="text-sm font-medium">
+                Email
+              </label>
+              <input
+                id="rsvp-email"
+                type="email"
+                placeholder="nombre@correo.cl"
+                value={form.email}
+                onChange={onChange("email")}
+                onBlur={onBlur("email")}
+                autoComplete="email"
+                required
+                aria-invalid={showEmailErr}
+                className={`${inputBase} ${showEmailErr ? invalidRing : ""}`}
+              />
+              {showEmailErr && (
+                <p className="mt-1 text-xs text-destructive">Ingresa un correo válido.</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="rsvp-phone" className="text-sm font-medium">
+                Teléfono
+              </label>
+              <input
+                id="rsvp-phone"
+                type="tel"
+                placeholder="+56 9 1234 5678"
+                value={form.phone}
+                onChange={onChange("phone")}
+                autoComplete="tel"
+                inputMode="tel"
+                className={inputBase}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="rsvp-attending" className="text-sm font-medium">
+                Asistiré
+              </label>
+              <select
+                id="rsvp-attending"
+                className="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                value={form.attending}
+                onChange={onChange("attending")}
+                aria-label="Confirmación de asistencia"
+              >
+                <option>Sí, allí estaré</option>
+                <option>Lo siento, no podré</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium">Preferencias</label>
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, vegetarian: !f.vegetarian }))}
+                  aria-pressed={form.vegetarian}
+                  className={[
+                    "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                    form.vegetarian
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-foreground/80 hover:bg-secondary",
+                  ].join(" ")}
+                >
+                  <Salad className="h-3.5 w-3.5" />
+                  Vegetariano
+                </button>
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="rsvp-msg" className="text-sm font-medium">
+                Mensaje para los novios (opcional)
+              </label>
+              <textarea
+                id="rsvp-msg"
+                rows={3}
+                placeholder="Escribe un mensajito lindo…"
+                value={form.message}
+                onChange={onChange("message")}
+                className="w-full rounded-xl border bg-background p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
             </div>
           </div>
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium">Mensaje para los novios (opcional)</label>
-            <Textarea rows={3} placeholder="Escribe un mensajito lindo…" />
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              size="lg"
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full sm:w-auto rounded-xl"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {status === "sending" ? "Enviando…" : "Enviar confirmación"}
+            </Button>
+
+            <p className="text-xs text-muted-foreground">
+              * Solo usaremos tus datos para la coordinación del evento.
+            </p>
           </div>
-        </div>
-        <Button size="lg" className="w-full md:w-auto">
-          <Send className="mr-2 h-4 w-4" />
-          Enviar confirmación
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          {/* * En la versión real esto guarda en DB (Supabase) y dispara email de confirmación. */}
-        </p>
+        </form>
       </CardContent>
     </Card>
   );
 };
 
+
 // 👉 FAQ (bloque completo: items + helper + componente)
 const FAQ_ITEMS = [
   {
     q: "👗 ¿Cuál es el código de vestimenta?",
-    a: "Elegante/Formal. Por favor, evita el blanco o tonos muy claros para no competir con la novia. Sugerimos un abrigo liviano para la tarde/noche."
+    a: "Elegante/Formal. Por favor, evita el blanco o tonos muy claros. Eso se lo dejamos a la novia. Sugerimos un abrigo liviano para la tarde/noche."
   },
   {
     q: "📅 ¿Hasta cuándo puedo confirmar mi asistencia?",
-    a: "Hasta el 22 de septiembre de 2026 (60 días antes) o lo antes posbile para cerrar banquete y logística. Si necesitas más tiempo, cuéntanos y vemos cómo ayudarte. Puedes confirmar en la sección RSVP."
+    a: "Hasta el 22 de septiembre de 2026 (60 días antes) o lo antes posible para cerrar banquete y logística. Si necesitas más tiempo, cuéntanos y vemos cómo ayudarte. Puedes confirmar en la sección RSVP."
   },
   {
     q: "🅿️ ¿Hay estacionamientos disponibles?",
@@ -1422,7 +1578,7 @@ export default function WeddingSite() {
   return (
     <div className="min-h-screen">
       <Nav />
-      <MusicPlayer src="/music/sonreir.mp3"/>
+      <MusicPlayer src="public\music\Sonreir.mp3"/>
       {/* <MiniCountdownBar />   <= nuevo: countdown fuera del Hero */}
       <div id="inicio">
         <Hero />
@@ -1449,7 +1605,7 @@ export default function WeddingSite() {
 </div>
 
 {/* RSVP en su propia sección */}
-<Section id="rsvp" title="Confirmar asistencia (RSVP)" icon={Heart}>
+<Section id="rsvp" title="Confirmar asistencia" icon={Heart}>
   <RSVPSection />
 </Section>
       
