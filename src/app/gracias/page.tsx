@@ -1,10 +1,8 @@
 import { Suspense } from "react";
 import GraciasClient from "./GraciasClient";
 
-// Evita que Next intente prerender con datos estáticos y nos deje usar searchParams
-export const dynamic = "force-dynamic";
-
-// (opcional) si quieres theme-color aquí, usa viewport en vez de metadata:
+export const runtime = "edge";            // ✅ requerido por Cloudflare Pages para rutas dinámicas
+export const dynamic = "force-dynamic";   // evita SSG
 export const viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
