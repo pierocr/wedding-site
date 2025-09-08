@@ -1578,7 +1578,7 @@ export default function WeddingSite() {
   return (
     <div className="min-h-screen">
       <Nav />
-      <MusicPlayer src="/music/sonreir.mp3"/>
+      <MusicPlayer src="/music/Sonreir.mp3"/>
       {/* <MiniCountdownBar />   <= nuevo: countdown fuera del Hero */}
       <div id="inicio">
         <Hero />
