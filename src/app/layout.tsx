@@ -1,5 +1,5 @@
 // src/app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 import { fontSans, fontSerif, fontScript } from "./fonts";
 import SeoWebsite from "@/components/seo/SeoWebsite";
@@ -23,7 +23,9 @@ export const metadata: Metadata = {
     description: SITE_DESC,
     siteName: SITE_NAME,
     locale: "es_CL",
-    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: `${SITE_NAME} — Invitación` }],
+    images: [
+      { url: "/og.jpg", width: 1200, height: 630, alt: `${SITE_NAME} — Invitación` },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -32,10 +34,6 @@ export const metadata: Metadata = {
     images: ["/og.jpg"],
   },
   icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0b0b" },
-  ],
   robots: {
     index: true,
     follow: true,
@@ -49,20 +47,22 @@ export const metadata: Metadata = {
   },
 };
 
+// ✅ Mover themeColor aquí
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0b0b" },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="es"
-      className="scroll-smooth"
-      suppressHydrationWarning
-    >
+    <html lang="es" className="scroll-smooth" suppressHydrationWarning>
       <body
         className={[
-          // Mantiene TUS fuentes desde src/app/fonts.ts:
           fontSans.variable,
           fontSerif.variable,
           fontScript.variable,
-          // Tipografía base y layout
           "min-h-screen bg-background text-foreground font-sans antialiased",
         ].join(" ")}
       >
