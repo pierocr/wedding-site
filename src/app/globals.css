@@ -38,6 +38,10 @@
   --ring: 144 21% 26%;
 
   --radius: 14px;
+
+  /* Tipografía global */
+  --leading: 1.65;               /* interlineado cómodo para texto */
+  --tracking-title: 0.02em;      /* leve espaciado para títulos */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -84,7 +88,6 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Ligaduras y kerning más estables para lectura */
     font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "rlig" 1, "calt" 1;
   }
 
@@ -92,35 +95,54 @@
     @apply bg-background text-foreground;
   }
 
-  /* Headings en serif, con leve tracking positivo elegante */
-  h1, h2, h3, .font-display {
-    @apply font-serif tracking-wide-hero;
+  /* Headings: serif, tracking sutil, tamaño fluido y buen interlineado */
+  h1, .h1, h2, .h2, h3, .h3, .font-display {
+    @apply font-serif;
+    letter-spacing: var(--tracking-title);
+    text-wrap: balance;              /* evita viudas/huérfanas en títulos modernos */
+  }
+  h1, .h1 { 
+    font-size: clamp(2.25rem, 1.3rem + 2.5vw, 3.5rem);
+    line-height: 1.12;
+    font-weight: 600;
+  }
+  h2, .h2 { 
+    font-size: clamp(1.875rem, 1.15rem + 1.8vw, 3rem);
+    line-height: 1.18;
+    font-weight: 600;
+  }
+  h3, .h3 { 
+    font-size: clamp(1.375rem, 1.05rem + 0.9vw, 2.125rem);
+    line-height: 1.22;
+    font-weight: 600;
   }
 
   /* Párrafos base más cómodos */
-  p {
-    @apply leading-relaxed;
+  p, .prose p {
+    @apply font-sans;
+    line-height: var(--leading);
   }
 
+  /* Números tabulares (para horas, precios, contadores) */
+  .tnum { font-variant-numeric: tabular-nums; }
+
   /* Enlaces: subrayado limpio y offset agradable */
-  a {
-    @apply underline-offset-4;
-  }
-  a:hover {
-    @apply underline;
-  }
+  a { @apply underline-offset-4; }
+  a:hover { @apply underline; }
 
   /* Selección de texto con color acorde al tema */
   ::selection {
-    background: rgba(217, 171, 117, 0.28); /* aprox. a --accent */
+    background: rgba(217, 171, 117, 0.28); /* aprox --accent */
     color: inherit;
   }
 
-  /* Imágenes responsivas por defecto */
-  img, svg, video, canvas {
-    display: block;
-    max-width: 100%;
-    height: auto;
+  /* Medios responsivos por defecto */
+  img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
+
+    html, body {
+    overflow-x: hidden;   /* bloquea el scroll horizontal */
+    width: 100%;
+    position: relative;   /* asegura contención para absolutos */
   }
 }
 
@@ -128,27 +150,17 @@
    Components / helpers
 =========================== */
 @layer components {
-  .container-page {
-    @apply mx-auto max-w-6xl px-4;
-  }
+  .container-page { @apply mx-auto max-w-6xl px-4; }
 
-  .card {
-    @apply rounded-2xl bg-card text-card-foreground border;
-  }
+  .card { @apply rounded-2xl bg-card text-card-foreground border; }
 
-  .btn {
-    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition;
-  }
+  .btn { @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition; }
 
   /* Ornamentos / acentos caligráficos puntuales (usa junto a text-*) */
-  .ornament {
-    @apply font-script align-baseline;
-  }
+  .ornament { @apply font-script align-baseline; }
 
   /* Párrafo destacado (lead) para intros */
-  .lead {
-    @apply text-[17px] leading-relaxed text-foreground/80;
-  }
+  .lead { @apply text-[17px] leading-relaxed text-foreground/80; }
 
   /* Focus rings consistentes para elementos interactivos genéricos */
   .focus-ring {

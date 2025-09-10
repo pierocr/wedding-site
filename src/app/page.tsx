@@ -50,6 +50,7 @@ import Story from "@/components/sections/Story";
 import Gallery from "@/components/sections/Gallery";
 import GiftSection from "@/components/sections/GiftSection";
 import RSVPSection from "@/components/sections/RSVPSection";
+import Timeline from '@/components/sections/Timeline';
 
 
 /* ==============================
@@ -203,7 +204,7 @@ const Section = ({
   return (
     <motion.section
       id={id}
-      className="scroll-mt-24 py-16"
+      className="scroll-mt-24 py-8"
       aria-labelledby={`${id}-title`}
       initial="hidden"
       whileInView="show"
@@ -211,7 +212,7 @@ const Section = ({
       variants={STAGGER}
     >
       <div className="mx-auto max-w-6xl px-4">
-        <motion.div className="mb-8 flex items-center gap-3" variants={chosenVariant}>
+        <motion.div className="mb-4 flex items-center gap-3" variants={chosenVariant}>
           <MIcon
             className="h-6 w-6 text-primary"
             {...(!prefersReducedMotion ? { animate: iconAnim.animate, transition: iconAnim.transition } : {})}
@@ -987,6 +988,10 @@ export default function WeddingSite() {
       {/* RSVP en su propia sección */}
       <Section id="rsvp" title="Confirmar asistencia" icon={Heart}>
         <RSVPSection />
+      </Section>
+      
+      <Section id="agenda" title="Programación" icon={Calendar} animation="up">
+        <Timeline />
       </Section>
 
       <Section id="faq" title="Preguntas frecuentes" icon={Stars}>
