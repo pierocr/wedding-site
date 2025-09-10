@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import { fontSans, fontSerif, fontScript } from "./fonts";
+import SeoWebsite from '@/components/seo/SeoWebsite'
 
 /**
  * Puedes definir estas variables en tu hosting (p. ej. Cloudflare Pages → Project → Settings → Environment variables)
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     locale: "es_CL",
     images: [
       {
-        url: "/og.jpg", // 1200x630 recomendado
+        url: "/og.jpg",
         width: 1200,
         height: 630,
         alt: `${SITE_NAME} — Invitación`,
@@ -50,12 +51,24 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  // (opcional) colores del navegador en mobile
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0b0b0b" },
   ],
-};
+
+  // 👇 NUEVO: deja explícito index/follow y límites generosos para rich snippets
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  },
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -71,7 +84,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           // Layout base
           "min-h-screen",
         ].join(" ")}
+        
       >
+        <SeoWebsite name="Piero & Debby" url="https://www.pieroydebby.cl" />
         {children}
       </body>
     </html>

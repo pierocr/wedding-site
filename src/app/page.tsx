@@ -728,8 +728,34 @@ const Schedule = () => (
   </motion.div>
 );
 
-// 👉 FAQ (bloque completo: items + helper + componente)
-const FAQ_ITEMS = [
+// 👉 FAQ (bloque completo: items + helper + componente + JSON-LD)
+
+type FaqItem = { q: string; a: string }
+type FaqSeoItem = { question: string; answer: string }
+
+// JSON-LD: FAQPage
+function SeoFaq({ items }: { items: FaqSeoItem[] }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((it) => ({
+      '@type': 'Question',
+      name: it.question,
+      acceptedAnswer: { '@type': 'Answer', text: it.answer },
+    })),
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      // Importante: el contenido debe coincidir con lo que se muestra en pantalla
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  )
+}
+
+// 👉 Items del FAQ (usa exactamente los textos que muestras en la UI)
+const FAQ_ITEMS: FaqItem[] = [
   {
     q: "👗 ¿Cuál es el código de vestimenta?",
     a: "Elegante/Formal. Por favor, evita el blanco o tonos muy claros. Eso se lo dejamos a la novia. Sugerimos un abrigo liviano para la tarde/noche."
@@ -762,16 +788,23 @@ const FAQ_ITEMS = [
     q: "📤 ¿Cómo comparto mis fotos con ustedes?",
     a: "Usa el hashtag #BodaPieroDebby. Usaremos un codigo QR para que puedas compartir todas tus imagenes. ¡Nos encantará verlas!"
   },
-];
+]
 
 // util para dividir en dos columnas equilibradas
 const splitInTwo = <T,>(arr: T[]) => {
-  const mid = Math.ceil(arr.length / 2);
-  return [arr.slice(0, mid), arr.slice(mid)];
-};
+  const mid = Math.ceil(arr.length / 2)
+  return [arr.slice(0, mid), arr.slice(mid)]
+}
 
 const FAQ = () => {
-  const [left, right] = splitInTwo(FAQ_ITEMS);
+  const [left, right] = splitInTwo(FAQ_ITEMS)
+
+  // Normaliza para el JSON-LD (debe coincidir con lo visible)
+  const FAQ_FOR_SEO: FaqSeoItem[] = FAQ_ITEMS.map((it) => ({
+    question: it.q,
+    answer: it.a,
+  }))
+
   return (
     <div className="mx-auto w-full max-w-6xl">
       <div className="grid gap-4 md:grid-cols-2">
@@ -794,9 +827,13 @@ const FAQ = () => {
           </Accordion>
         ))}
       </div>
+
+      {/* JSON-LD de FAQ: una sola vez por página/sección */}
+      <SeoFaq items={FAQ_FOR_SEO} />
     </div>
-  );
-};
+  )
+}
+
 
 // ==============================
 // MUSIC PLAYER — mini, derecha, autoplay 70% + ping al pausar
