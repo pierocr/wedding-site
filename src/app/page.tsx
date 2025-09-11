@@ -190,7 +190,10 @@ const Section = ({
   animation?: "up" | "left" | "right";
 }) => {
   const prefersReducedMotion = useReducedMotion();
-  const MIcon = React.useMemo(() => motion(Icon as any), [Icon]);
+  const MIcon = React.useMemo(
+  () => motion.create(Icon as React.ComponentType<any>),
+  [Icon]
+);
   const iconAnim = ICON_ANIMS[id] ?? ICON_DEFAULT;
 
   // según el prop, elige el preset correcto
