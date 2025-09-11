@@ -1,73 +1,93 @@
-// app/api/mercadopago/webhook/route.ts
-export const runtime = "edge";
-export const dynamic = "force-dynamic";
+// src/app/api/mercadopago/webhook/route.ts
+export const runtime = "edge";            // Cloudflare-friendly
+export const dynamic = "force-dynamic";   // no cache
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json().catch(() => ({} as any));
-    const id =
-      body?.data?.id ||
-      (typeof body?.resource === "string"
-        ? body.resource.split("/").pop()
-        : undefined);
+import { NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-    if (!id) return Response.json({ ok: true });
-
-    const payment = await fetchPayment(String(id));
-    // TODO: persiste / envía email si corresponde
-    // console.log("MP webhook payment", payment?.id, payment?.status); // opcional
-
-    return Response.json({ ok: true });
-  } catch {
-    // Responder 200 evita reintentos infinitos de MP
-    return Response.json({ ok: true });
-  }
+function env(k: string) {
+  const v = process.env[k];
+  if (!v) throw new Error(`Missing env ${k}`);
+  return v;
 }
 
+// 🔐 Valida el secret en querystring
+function isAuthorized(url: URL) {
+  const secret = url.searchParams.get("secret");
+  return !!secret && secret === env("MP_WEBHOOK_SECRET");
+}
+
+// GET: usado por el panel / simulador como ping (200 si el secret es correcto)
 export async function GET(req: Request) {
+  const url = new URL(req.url);
+  if (!isAuthorized(url)) return new NextResponse("unauthorized", { status: 401 });
+  return NextResponse.json({ ok: true, method: "GET" });
+}
+
+// POST: notificaciones reales de MP
+export async function POST(req: Request) {
+  const url = new URL(req.url);
+  if (!isAuthorized(url)) return new NextResponse("unauthorized", { status: 401 });
+
+  const supabase = getSupabaseAdmin();
+
+  // Lee payload (viene en varias formas según MP)
+  let payload: any = {};
+  try { payload = await req.json(); } catch {}
+
+  const topic = payload?.type || payload?.topic || "unknown";
+  const id =
+    payload?.data?.id ||
+    (typeof payload?.resource === "string" ? payload.resource.split("/").pop() : undefined);
+
+  // Guarda log crudo (best-effort)
   try {
-    const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type") || searchParams.get("topic");
-    const id =
-      searchParams.get("data.id") ||
-      searchParams.get("id") ||
-      (searchParams.get("resource") || "")
-        .split("/")
-        .pop();
+    await supabase.from("webhook_logs").insert({
+      source: "mercadopago",
+      topic,
+      data: payload,
+    });
+  } catch {}
 
-    if (!id) return Response.json({ ok: true });
-
-    if (type === "merchant_order") {
-      await fetchMerchantOrder(String(id));
-    } else {
-      await fetchPayment(String(id));
-    }
-
-    return Response.json({ ok: true });
-  } catch {
-    return Response.json({ ok: true });
+  // Solo nos interesa "payment"
+  if (topic !== "payment" || !id) {
+    return NextResponse.json({ ok: true, ignored: true });
   }
-}
 
-async function fetchPayment(id: string) {
-  const token = process.env.MP_ACCESS_TOKEN;
-  if (!token) throw new Error("Falta MP_ACCESS_TOKEN");
-  const res = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    // Evita caching en el edge
-    cache: "no-store",
+  // Consulta detalle del pago a MP
+  const payRes = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+    headers: { Authorization: `Bearer ${env("MP_ACCESS_TOKEN")}` },
   });
-  if (!res.ok) return null;
-  return res.json();
-}
+  const pay = await payRes.json();
+  if (!payRes.ok) {
+    console.error("MP payment detail error:", pay);
+    return NextResponse.json({ ok: true, payment_detail_error: true }); // respondemos 200 igual
+  }
 
-async function fetchMerchantOrder(id: string) {
-  const token = process.env.MP_ACCESS_TOKEN;
-  if (!token) throw new Error("Falta MP_ACCESS_TOKEN");
-  const res = await fetch(`https://api.mercadopago.com/merchant_orders/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  return res.json();
+  // Campos útiles
+  const external_reference =
+    pay.external_reference || pay.metadata?.external_reference || null;
+
+  const update = {
+    donor_email: pay.payer?.email ?? null,
+    donor_name: [pay.payer?.first_name, pay.payer?.last_name].filter(Boolean).join(" ") || null,
+    amount: Math.round(pay.transaction_amount ?? 0),
+    currency: pay.currency_id ?? "CLP",
+    status: pay.status ?? "unknown",                 // approved | rejected | pending…
+    mp_payment_id: String(pay.id),
+    mp_payment_status: pay.status ?? null,
+    mp_payment_status_detail: pay.status_detail ?? null,
+    mp_merchant_order_id: pay.order?.id ? String(pay.order.id) : null,
+    external_reference,
+    meta: { payment: pay },
+  };
+
+  // Intentamos actualizar por external_reference (si ya la guardamos en create-preference)
+  if (external_reference) {
+    await supabase.from("payments").update(update).eq("external_reference", external_reference);
+  }
+  // Aseguramos registro por payment_id (idempotente)
+  await supabase.from("payments").upsert(update, { onConflict: "mp_payment_id" });
+
+  return NextResponse.json({ ok: true });
 }
