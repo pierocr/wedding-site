@@ -188,12 +188,15 @@ export default function GiftSection() {
         body: JSON.stringify({
           name,
           email,
-          title: summaryTitle,
-          amount: Math.round(total),
           currency: CURRENCY,
-          external_reference: `gift:${Date.now()}:${Math.random()
-            .toString(36)
-            .slice(2, 8)}`,
+          external_reference: `gift:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+          // 👇 nuevo: mandamos el carrito
+          cart: cart.map(l => ({
+            id: l.id,
+            title: l.title,
+            unitPrice: l.unitPrice,
+            qty: l.qty
+          }))
         }),
       });
 
