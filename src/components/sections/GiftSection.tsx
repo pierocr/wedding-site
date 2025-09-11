@@ -36,16 +36,27 @@ type CartLine = {
 };
 
 export default function GiftSection() {
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "";
   const CURRENCY = "CLP";
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
   const MAX_QTY = 10;
 
-  // 💾 Claves de persistencia
+  // Claves de localStorage
   const CART_KEY = "gift_cart";
   const DONOR_KEY = "gift_donor";
 
-  // 🔐 Carga segura desde localStorage (evita SSR/hydration issues)
+  // Catálogo
+  const ITEMS: CatalogItem[] = [
+    { id: "brindis",   emoji: "🥂", label: "Brindis bajo las estrellas",       price: 40000 },
+    { id: "cafe",      emoji: "☕️", label: "Café de domingo para dos",        price: 50000 },
+    { id: "pelis",     emoji: "🎬", label: "Noche de películas y mantita",     price: 60000 },
+    { id: "atardecer", emoji: "🌇", label: "Paseo al atardecer de la mano",    price: 70000 },
+    { id: "vela",      emoji: "🕯️", label: "Cena a la luz de las velas",      price: 80000 },
+    { id: "fotos",     emoji: "📸", label: "Sesión de fotos de luna de miel",  price: 150000 },
+    { id: "escapada",  emoji: "🧳", label: "Escapada de fin de semana",        price: 120000 },
+    { id: "amanecer",  emoji: "🌅", label: "Amanecer de luna de miel",         price: 200000 },
+  ];
+
+  // ------- Carga segura desde storage (evita hydration issues) -------
   function loadCart(): CartLine[] {
     if (typeof window === "undefined") return [];
     try {
@@ -79,30 +90,12 @@ export default function GiftSection() {
     }
   }
 
-  // 💞 Catálogo romántico (desde 40.000) — 8 ítems
-  const ITEMS: CatalogItem[] = [
-    { id: "brindis",   emoji: "🥂", label: "Brindis bajo las estrellas",       price: 40000 },
-    { id: "cafe",      emoji: "☕️", label: "Café de domingo para dos",        price: 50000 },
-    { id: "pelis",     emoji: "🎬", label: "Noche de películas y mantita",     price: 60000 },
-    { id: "atardecer", emoji: "🌇", label: "Paseo al atardecer de la mano",    price: 70000 },
-    { id: "vela",      emoji: "🕯️", label: "Cena a la luz de las velas",      price: 80000 },
-    { id: "fotos",     emoji: "📸", label: "Sesión de fotos de luna de miel",  price: 150000 },
-    { id: "escapada",  emoji: "🧳", label: "Escapada de fin de semana",        price: 120000 },
-    { id: "amanecer",  emoji: "🌅", label: "Amanecer de luna de miel",         price: 200000 },
-  ];
-
-  // 🧾 Carrito (persistente)
   const [cart, setCart] = React.useState<CartLine[]>(() => loadCart());
-
-  // Datos del regalante (persistentes)
   const donor = React.useMemo(loadDonor, []);
   const [name, setName] = React.useState(donor.name);
   const [email, setEmail] = React.useState(donor.email);
-
-  // Personalizado (no persisto por ahora)
   const [customMsg, setCustomMsg] = React.useState("");
   const [customAmount, setCustomAmount] = React.useState<number | "">("");
-
   const [loading, setLoading] = React.useState(false);
 
   const priceFmt = (n: number) =>
@@ -111,21 +104,20 @@ export default function GiftSection() {
       currency: "CLP",
       maximumFractionDigits: 0,
     }).format(n);
-// 💽 Guardar carrito cuando cambie + avisar al nav
-React.useEffect(() => {
-  try {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    const qty = cart.reduce((acc, l) => acc + l.qty, 0);
-    const total = cart.reduce((acc, l) => acc + l.qty * l.unitPrice, 0);
-    // Notificar (misma pestaña) que el carrito cambió
-    window.dispatchEvent(
-      new CustomEvent("gift:cart-changed", { detail: { qty, total } })
-    );
-  } catch {}
-}, [cart]);
 
+  // Guardar carrito + notificar al nav
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      const qty = cart.reduce((acc, l) => acc + l.qty, 0);
+      const total = cart.reduce((acc, l) => acc + l.qty * l.unitPrice, 0);
+      window.dispatchEvent(
+        new CustomEvent("gift:cart-changed", { detail: { qty, total } })
+      );
+    } catch {}
+  }, [cart]);
 
-  // 💽 Guardar donante con debounce
+  // Guardar nombre/email con debounce
   React.useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -145,11 +137,7 @@ React.useEffect(() => {
       if (idx === -1) {
         return q > 0 ? [...prev, { id, title, unitPrice, qty: q }] : prev;
       }
-      if (q === 0) {
-        const next = [...prev];
-        next.splice(idx, 1);
-        return next;
-      }
+      if (q === 0) return prev.filter((l) => l.id !== id);
       const next = [...prev];
       next[idx] = { ...next[idx], qty: q };
       return next;
@@ -160,21 +148,19 @@ React.useEffect(() => {
     setQty(item.id, `${item.emoji} ${item.label}`, item.price, qtyFor(item.id) + 1);
 
   const inc = (id: string) => {
-    const line = cart.find((l) => l.id === id);
-    if (!line) return;
-    setQty(id, line.title, line.unitPrice, line.qty + 1);
+    const l = cart.find((x) => x.id === id);
+    if (l) setQty(id, l.title, l.unitPrice, l.qty + 1);
   };
   const dec = (id: string) => {
-    const line = cart.find((l) => l.id === id);
-    if (!line) return;
-    setQty(id, line.title, line.unitPrice, line.qty - 1);
+    const l = cart.find((x) => x.id === id);
+    if (l) setQty(id, l.title, l.unitPrice, l.qty - 1);
   };
   const removeLine = (id: string) => setQty(id, "", 0, 0);
   const clearCart = () => setCart([]);
 
   const addCustomToCart = () => {
     if (!customMsg.trim() || !customAmount || Number(customAmount) <= 0) {
-      alert("Completa tu mensaje y un monto válido para agregarlo 💌");
+      alert("Completa tu mensaje y un monto válido 💌");
       return;
     }
     const id = `custom:${customMsg.trim()}:${customAmount}`;
@@ -184,16 +170,14 @@ React.useEffect(() => {
   };
 
   const subtotal = (l: CartLine) => l.unitPrice * l.qty;
-  const total = cart.reduce((acc, l) => acc + subtotal(l), 0);
+  const total = cart.reduce((a, l) => a + subtotal(l), 0);
 
   const canPay = !!name.trim() && EMAIL_RE.test(email) && cart.length > 0 && !loading;
 
   async function pay() {
     if (!canPay) return;
-
     setLoading(true);
     try {
-      // Título-resumen para tu endpoint edge (usa title+amount)
       const summaryTitle =
         "Regalos para Piero & Debby — " +
         cart.map((l) => `${l.qty}× ${l.title}`).join(", ");
@@ -205,11 +189,8 @@ React.useEffect(() => {
           name,
           email,
           title: summaryTitle,
-          amount: Math.round(total), // CLP entero
+          amount: Math.round(total),
           currency: CURRENCY,
-          siteUrl:
-            process.env.NEXT_PUBLIC_SITE_URL ||
-            (typeof window !== "undefined" ? window.location.origin : undefined),
           external_reference: `gift:${Date.now()}:${Math.random()
             .toString(36)
             .slice(2, 8)}`,
@@ -218,7 +199,6 @@ React.useEffect(() => {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-
       window.location.href = data.init_point;
     } catch (e: any) {
       console.error(e);
@@ -248,66 +228,83 @@ React.useEffect(() => {
           {ITEMS.map((o) => {
             const qty = qtyFor(o.id);
             const title = `${o.emoji} ${o.label}`;
-
             return (
               <div
                 key={o.id}
-                className="rounded-xl border p-3 text-left shadow-sm hover:bg-muted/40 transition"
+                className="group relative overflow-hidden rounded-xl border p-2 text-left shadow-sm transition hover:shadow-md"
               >
-                <div className="flex items-center justify-between">
-                  <div className="text-lg">{o.emoji}</div>
-                  <div className="flex items-center gap-2">
-                    {qty > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-emerald-700 border-emerald-200 bg-emerald-50">
-                        <Check className="h-3.5 w-3.5" /> {qty} en carrito
+                {/* Contenido */}
+                <div className="relative">
+                  {/* Encabezado compacto: emoji + nombre; permite wrap */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex flex-1 items-start gap-2 pr-2">
+                      <span className="text-lg leading-none">{o.emoji}</span>
+                      <span className="font-medium leading-snug whitespace-normal break-words text-[15px] sm:text-[16px]">
+                        {o.label}
                       </span>
-                    )}
-                    <div className="text-sm font-semibold">{priceFmt(o.price)}</div>
-                  </div>
-                </div>
-
-                <div className="mt-1 font-medium">{o.label}</div>
-
-                <div className="mt-3">
-                  {qty === 0 ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => addItem(o)}
-                      className="rounded-lg"
-                      aria-label={`Agregar ${title}`}
-                    >
-                      <Plus className="mr-1 h-4 w-4" />
-                      Agregar
-                    </Button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        onClick={() => dec(o.id)}
-                        className="h-8 w-8"
-                        aria-label={`Quitar una unidad de ${title}`}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <div className="w-8 text-center text-sm tabular-nums">{qty}</div>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        onClick={() =>
-                          setQty(o.id, title, o.price, Math.min(MAX_QTY, qty + 1))
-                        }
-                        className="h-8 w-8"
-                        aria-label={`Agregar una unidad de ${title}`}
-                        disabled={qty >= MAX_QTY}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
                     </div>
-                  )}
+
+                    <div className="flex shrink-0 items-center gap-2">
+                      {qty > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] text-emerald-700 border-emerald-200 bg-emerald-50">
+                          <Check className="h-3.5 w-3.5" /> {qty}
+                        </span>
+                      )}
+                      <div className="text-sm font-semibold tabular-nums">
+                        {priceFmt(o.price)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Controles compactos */}
+                  <div className="mt-1.5">
+                    {qty === 0 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => addItem(o)}
+                        className="rounded-lg"
+                        aria-label={`Agregar ${title}`}
+                      >
+                        <Plus className="mr-1 h-4 w-4" />
+                        Agregar
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          onClick={() => dec(o.id)}
+                          className="h-8 w-8"
+                          aria-label={`Quitar una unidad de ${title}`}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <div className="w-8 text-center text-sm tabular-nums">
+                          {qty}
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          onClick={() =>
+                            setQty(
+                              o.id,
+                              title,
+                              o.price,
+                              Math.min(MAX_QTY, qty + 1)
+                            )
+                          }
+                          className="h-8 w-8"
+                          aria-label={`Agregar una unidad de ${title}`}
+                          disabled={qty >= MAX_QTY}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -444,7 +441,9 @@ React.useEffect(() => {
 
           <div className="flex items-center gap-3 border-t px-4 py-3">
             <div className="text-sm text-muted-foreground">Total:</div>
-            <div className="ml-auto text-base font-semibold">{priceFmt(total)}</div>
+            <div className="ml-auto text-base font-semibold">
+              {priceFmt(total)}
+            </div>
             <Button
               type="button"
               variant="ghost"
