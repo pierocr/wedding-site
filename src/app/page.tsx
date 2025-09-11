@@ -25,7 +25,18 @@ import {
   ChevronRightIcon,
   Menu,
   X,
-  Flame, Utensils, Home, Sparkles, CalendarCheck, Video, Play, Pause, Volume2, VolumeX,
+  Flame,
+  Utensils,
+  Home,
+  Sparkles,
+  CalendarCheck,
+  Video,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  HelpCircle,
+  ChevronRight,
 } from "lucide-react";
 import PayWithMPRedirect from "@/components/PayWithMPRedirect";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -121,7 +132,7 @@ const CEREMONY = {
 };
 
 const RECEPTION = {
-  venue: "Casona Santa Luz de Chicureo  ",
+  venue: "Casona Santa Luz de Chicureo",
   venueAddress: "Chicureo, Santiago",
   mapsUrl: "https://maps.app.goo.gl/7u4oLZkD91fxuqdc7",
   startTime: "18:30 hrs",
@@ -237,7 +248,7 @@ const Section = ({
    UI SECTIONS
 ============================== */
 // import { Menu, X } from "lucide-react";
-
+// === NAV solo con íconos neutros (sin emojis) ===
 const Nav = () => {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
@@ -249,22 +260,16 @@ const Nav = () => {
 
   React.useEffect(() => setMounted(true), []);
 
-  // Bloquea el scroll del body cuando el drawer está abierto
   React.useEffect(() => {
     document.body.classList.toggle("overflow-hidden", open);
     return () => document.body.classList.remove("overflow-hidden");
   }, [open]);
 
-  // Lee carrito desde localStorage
   const refreshFromStorage = React.useCallback(() => {
     if (typeof window === "undefined") return;
     try {
       const raw = localStorage.getItem(CART_KEY);
-      if (!raw) {
-        setCartQty(0);
-        setCartTotal(0);
-        return;
-      }
+      if (!raw) return setCartQty(0), setCartTotal(0);
       const arr = JSON.parse(raw) as Array<{ qty: number; unitPrice: number }>;
       const qty = Array.isArray(arr) ? arr.reduce((a, l) => a + (l?.qty || 0), 0) : 0;
       const total = Array.isArray(arr) ? arr.reduce((a, l) => a + (l?.qty || 0) * (l?.unitPrice || 0), 0) : 0;
@@ -276,7 +281,6 @@ const Nav = () => {
     }
   }, []);
 
-  // Escucha: evento custom, cambio de storage (otras pestañas) y focus
   React.useEffect(() => {
     refreshFromStorage();
     const onCart = (e: Event) => {
@@ -288,9 +292,7 @@ const Nav = () => {
         refreshFromStorage();
       }
     };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === CART_KEY) refreshFromStorage();
-    };
+    const onStorage = (e: StorageEvent) => e.key === CART_KEY && refreshFromStorage();
     window.addEventListener("gift:cart-changed", onCart as EventListener);
     window.addEventListener("storage", onStorage);
     window.addEventListener("focus", refreshFromStorage);
@@ -301,14 +303,14 @@ const Nav = () => {
     };
   }, [refreshFromStorage]);
 
-  const links = [
-    { href: "#agenda", label: "Agenda" },
-    { href: "#historia", label: "Historia" },
-    { href: "#galeria", label: "Galería" },
-    { href: "#regalo", label: "Regalo" },
-    { href: "#rsvp", label: "Confirmar asistencia" },
-    { href: "#faq", label: "FAQ" },
-    { href: "#musica", label: "Música" },
+  // Ítems del menú (solo íconos lucide, sin emojis)
+  const links: Array<{ href: string; label: string; Icon: React.ComponentType<any> }> = [
+    { href: "#agenda",   label: "Agenda",                Icon: Calendar },
+    { href: "#historia", label: "Historia",              Icon: Heart },
+    { href: "#galeria",  label: "Galería",               Icon: ImageIcon },
+    { href: "#regalo",   label: "Regalo",                Icon: Gift },
+    { href: "#rsvp",     label: "Confirmar asistencia",  Icon: CalendarCheck },
+    { href: "#faq",      label: "FAQ",                   Icon: HelpCircle },
   ];
 
   const GiftButton = ({ fullWidth = false }: { fullWidth?: boolean }) => {
@@ -323,6 +325,7 @@ const Nav = () => {
             fullWidth ? "w-full" : "",
             hasItems ? "bg-emerald-600 text-white hover:bg-emerald-700" : "",
           ].join(" ")}
+          onClick={() => setOpen(false)}
         >
           <Gift className="mr-2 h-4 w-4" />
           {hasItems ? "Regalo" : "Hacer regalo"}
@@ -351,15 +354,14 @@ const Nav = () => {
         {/* Desktop */}
         <nav className="hidden items-center gap-6 text-sm md:flex">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="hover:underline">{l.label}</a>
+            <a key={l.href} href={l.href} className="hover:underline">
+              {l.label}
+            </a>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Botón regalo con badge */}
           <GiftButton />
-
-          {/* Hamburguesa (solo mobile) */}
           <button
             type="button"
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-foreground/10 md:hidden"
@@ -380,9 +382,7 @@ const Nav = () => {
             className={`fixed inset-0 z-[9999] md:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`}
           >
             <div
-              className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity ${
-                open ? "opacity-100" : "opacity-0"
-              }`}
+              className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity ${open ? "opacity-100" : "opacity-0"}`}
               onClick={() => setOpen(false)}
               aria-hidden
             />
@@ -406,25 +406,43 @@ const Nav = () => {
                 </button>
               </div>
 
-              <div className="grow overflow-y-auto px-4 py-4">
+              {/* Contenido scrollable */}
+              <div className="grow overflow-y-auto px-2 py-3">
                 <nav className="space-y-1">
-                  {links.map((l) => (
+                  {links.map(({ href, label, Icon }) => (
                     <a
-                      key={l.href}
-                      href={l.href}
+                      key={href}
+                      href={href}
                       onClick={() => setOpen(false)}
-                      className="block rounded-lg px-3 py-3 text-base font-medium hover:bg-muted"
+                      className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
-                      {l.label}
+                      <div className="flex items-center justify-between px-3 py-3 hover:bg-muted rounded-xl">
+                        <div className="flex items-center gap-3">
+                          {/* pill con icono neutro */}
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted/60">
+                            <Icon className="h-4 w-4 text-foreground/70" />
+                          </span>
+
+                          {/* etiqueta */}
+                          <span className="text-base font-medium">
+                            {label}
+                            {href === "#regalo" && cartQty > 0 && (
+                              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-600/10 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                {cartQty}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
                     </a>
                   ))}
                 </nav>
+              </div>
 
-                <div className="mt-4">
-                  <div onClick={() => setOpen(false)}>
-                    <GiftButton fullWidth />
-                  </div>
-                </div>
+              {/* CTA fijo al pie */}
+              <div className="sticky bottom-0 z-10 border-t bg-gradient-to-t from-background via-background to-background/80 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+                <GiftButton fullWidth />
               </div>
             </aside>
           </div>,
@@ -645,7 +663,7 @@ const Schedule = () => (
         place: RECEPTION.venue,
         address: RECEPTION.venueAddress,
         link: RECEPTION.mapsUrl,
-        image: "https://lh3.googleusercontent.com/gps-cs-s/AC9h4nrep9PlTGymrB71ciNzIX4DS3SvCNan1Bvvboch9myletQiBC1zRG6HAxHE4JdSdLqtPjaZ080bCSQCckLE_jKMBCEKtAifugERg9UnHqGjXhMhPB4tglC_4C7QDpgsjzoGdIlrmA=w289-h312-n-k-no",
+        image: "/hero/centrodeeventos.jpg",
         icon: <PartyPopper className="h-5 w-5" />,
       },
       {
