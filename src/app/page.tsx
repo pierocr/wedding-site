@@ -4,59 +4,26 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   Calendar,
   Clock,
-  MapPin,
   Gift,
   Mail,
-  Phone,
   Heart,
   ExternalLink,
-  Banknote,
-  CreditCard,
-  Send,
   Stars,
   PartyPopper,
-  Salad,
   Users,
   Image as ImageIcon,
-  Music2,
-  Camera,
-  XIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   Menu,
   X,
-  Flame,
-  Utensils,
-  Home,
-  Sparkles,
   CalendarCheck,
-  Video,
   Play,
   Pause,
-  Volume2,
-  VolumeX,
   HelpCircle,
   ChevronRight,
 } from "lucide-react";
-import PayWithMPRedirect from "@/components/PayWithMPRedirect";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { createPortal } from "react-dom";
-import { SpotifyEmbed } from "@/components/ui/SpotifyEmbed";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import Story from "@/components/sections/Story";
 import Gallery from "@/components/sections/Gallery";
 import GiftSection from "@/components/sections/GiftSection";
