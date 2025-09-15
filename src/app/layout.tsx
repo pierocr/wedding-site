@@ -33,7 +33,10 @@ export const metadata: Metadata = {
     description: SITE_DESC,
     images: ["/og.jpg"],
   },
-  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
+  icons: { 
+  icon: "/favicon.ico", 
+  apple: "/apple-touch-icon.png" 
+},
   robots: {
     index: true,
     follow: true,
