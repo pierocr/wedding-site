@@ -1,9 +1,12 @@
+// src/app/pago/page.tsx
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, Home, RotateCcw } from "lucide-react";
 
-// Opcional: fuerza render dinámico para que no intente cachear
+// Requerido por Cloudflare Pages (next-on-pages) para rutas dinámicas
+export const runtime = "edge";
+// Como dependemos de searchParams, forzamos render dinámico
 export const dynamic = "force-dynamic";
 
 type PageProps = { searchParams?: Record<string, string | string[] | undefined> };
@@ -37,14 +40,17 @@ export default function PagoPage({ searchParams }: PageProps) {
         <CardHeader className="text-center">
           <Icon className={`mx-auto h-10 w-10 ${color}`} />
           <CardTitle className="mt-2 font-serif text-2xl">
-            {isSuccess ? "¡Gracias! Tu pago fue aprobado."
-              : isFailure ? "No pudimos procesar tu pago"
+            {isSuccess
+              ? "¡Gracias! Tu pago fue aprobado."
+              : isFailure
+              ? "No pudimos procesar tu pago"
               : "Tu pago está pendiente"}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             Te mostramos el resultado de tu pago y guardamos un respaldo.
           </p>
         </CardHeader>
+
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <span className="text-muted-foreground">collection_id</span>
