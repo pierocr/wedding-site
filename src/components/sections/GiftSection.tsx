@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import clsx from "clsx";
 
 type CatalogItem = {
   id: string;
@@ -97,6 +98,17 @@ export default function GiftSection() {
   const [customMsg, setCustomMsg] = React.useState("");
   const [customAmount, setCustomAmount] = React.useState<number | "">("");
   const [loading, setLoading] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    // Reconciliar con localStorage al montar (cliente)
+    const ls = loadCart();
+    if (ls.length) setCart(ls);
+    const d = loadDonor();
+    if (d.name) setName(d.name);
+    if (d.email) setEmail(d.email);
+  }, []);
 
   const priceFmt = (n: number) =>
     new Intl.NumberFormat("es-CL", {
@@ -178,10 +190,6 @@ export default function GiftSection() {
     if (!canPay) return;
     setLoading(true);
     try {
-      const summaryTitle =
-        "Regalos para Piero & Debby — " +
-        cart.map((l) => `${l.qty}× ${l.title}`).join(", ");
-
       const res = await fetch("/api/mercadopago/create-preference", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -190,7 +198,6 @@ export default function GiftSection() {
           email,
           currency: CURRENCY,
           external_reference: `gift:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-          // 👇 nuevo: mandamos el carrito
           cart: cart.map(l => ({
             id: l.id,
             title: l.title,
@@ -230,6 +237,7 @@ export default function GiftSection() {
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {ITEMS.map((o) => {
             const qty = qtyFor(o.id);
+            const visible = mounted && qty > 0;
             const title = `${o.emoji} ${o.label}`;
             return (
               <div
@@ -248,11 +256,19 @@ export default function GiftSection() {
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
-                      {qty > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] text-emerald-700 border-emerald-200 bg-emerald-50">
-                          <Check className="h-3.5 w-3.5" /> {qty}
-                        </span>
-                      )}
+                      {/* Badge estable: siempre <span>, solo cambia visibilidad */}
+                      <span
+                        className={clsx(
+                          "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px]",
+                          "text-emerald-700 border-emerald-200 bg-emerald-50",
+                          !visible && "opacity-0 pointer-events-none select-none"
+                        )}
+                        aria-hidden={!visible}
+                        suppressHydrationWarning
+                      >
+                        <Check className="h-3.5 w-3.5" /> {visible ? qty : 0}
+                      </span>
+
                       <div className="text-sm font-semibold tabular-nums">
                         {priceFmt(o.price)}
                       </div>
@@ -261,7 +277,7 @@ export default function GiftSection() {
 
                   {/* Controles compactos */}
                   <div className="mt-1.5">
-                    {qty === 0 ? (
+                    {(mounted && qty === 0) ? (
                       <Button
                         type="button"
                         size="sm"
@@ -272,7 +288,7 @@ export default function GiftSection() {
                         <Plus className="mr-1 h-4 w-4" />
                         Agregar
                       </Button>
-                    ) : (
+                    ) : (mounted && qty > 0) ? (
                       <div className="flex items-center gap-2">
                         <Button
                           type="button"
@@ -306,6 +322,9 @@ export default function GiftSection() {
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
+                    ) : (
+                      // Placeholder estable antes de montar
+                      <div className="h-8 w-24 rounded-md bg-muted/40" aria-hidden />
                     )}
                   </div>
                 </div>
@@ -381,12 +400,23 @@ export default function GiftSection() {
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <ShoppingCart className="h-4 w-4" />
             <div className="font-medium">Tu selección</div>
-            <div className="ml-auto text-sm text-muted-foreground">
-              {cart.length} ítem{cart.length === 1 ? "" : "s"}
+            <div
+              className="ml-auto text-sm text-muted-foreground"
+              suppressHydrationWarning
+            >
+              {mounted ? (
+                <>
+                  {cart.length} ítem{cart.length === 1 ? "" : "s"}
+                </>
+              ) : (
+                "—"
+              )}
             </div>
           </div>
 
-          {cart.length === 0 ? (
+          {!mounted ? (
+            <div className="px-4 py-6 text-sm text-muted-foreground">Cargando…</div>
+          ) : cart.length === 0 ? (
             <div className="px-4 py-6 text-sm text-muted-foreground">
               Aún no agregas regalos. Elige uno del catálogo o crea el tuyo 💝
             </div>
@@ -444,15 +474,15 @@ export default function GiftSection() {
 
           <div className="flex items-center gap-3 border-t px-4 py-3">
             <div className="text-sm text-muted-foreground">Total:</div>
-            <div className="ml-auto text-base font-semibold">
-              {priceFmt(total)}
+            <div className="ml-auto text-base font-semibold" suppressHydrationWarning>
+              {mounted ? priceFmt(total) : "—"}
             </div>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={clearCart}
-              disabled={cart.length === 0}
+              disabled={!mounted || cart.length === 0}
             >
               Vaciar
             </Button>
@@ -461,10 +491,12 @@ export default function GiftSection() {
 
         {/* Pagar */}
         <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-          <div className="text-sm">
+          <div className="text-sm" suppressHydrationWarning>
             <div className="font-medium">Resumen:</div>
             <div className="text-muted-foreground">
-              {cart.length === 0
+              {!mounted
+                ? "—"
+                : cart.length === 0
                 ? "Sin ítems aún"
                 : cart.map((l) => `${l.qty}× ${l.title}`).join(", ")}
             </div>
@@ -474,7 +506,7 @@ export default function GiftSection() {
             size="lg"
             className="bg-rose-500 text-white hover:bg-rose-600 shadow-lg rounded-xl"
             onClick={pay}
-            disabled={!canPay}
+            disabled={!mounted || !canPay}
           >
             <CreditCard className="mr-2 h-4 w-4" />
             {loading ? "Conectando a Mercado Pago…" : "Pagar con Mercado Pago"}
