@@ -1,13 +1,15 @@
 // src/app/api/mercadopago/create-preference/route.ts
 import { NextResponse } from "next/server";
 
-function env(k: string) {
-  const v = process.env[k];
-  if (!v) throw new Error(`Missing env ${k}`);
+function env(k: string, fallback?: string) {
+  const v = process.env[k] ?? fallback;
+  if (v === undefined || v === null || v === "") {
+    throw new Error(`Missing env ${k}`);
+  }
   return v;
 }
 
-/** Split "Piero Cespedes Romanini" -> {first:"Piero", last:"Cespedes Romanini"} */
+/** "Piero Cespedes Romanini" -> { first:"Piero", last:"Cespedes Romanini" } */
 function splitName(full: string) {
   const parts = String(full || "").trim().split(/\s+/);
   const first = parts.shift() || "";
@@ -15,128 +17,136 @@ function splitName(full: string) {
   return { first, last };
 }
 
-// quitar emoji inicial opcionalmente
+/** Elimina un emoji inicial del título para cumplir con validaciones de MP */
 function stripLeadingEmoji(s: string) {
   return String(s || "").replace(
-    /^(\p{Extended_Pictographic}|\p{Emoji_Presentation})\s*/u,
+    // rango general de pictogramas/emoji al inicio
+    /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{Emoji}\uFE0F\s]+/u,
     ""
-  );
-}
-
-function resolveCategoryId(idOrTitle: string) {
-  // Puedes cambiar a "donations" si te gusta más. "others" es segura.
-  return "others";
+  ).trim();
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    // ---------- Entrada ----------
+    const body = await req.json().catch(() => ({}));
 
-    const name: string = String(body.name || "");
-    const email: string = String(body.email || "");
-    const currency: string = String(body.currency || "CLP");
-    const title: string = String(body.title || "Regalo");
-    const cart: Array<any> = Array.isArray(body.cart) ? body.cart : [];
-    const external_reference: string =
-      String(body.external_reference || `gift:${Date.now()}`);
+    const {
+      name = "",
+      email = "",
+      cart = [] as Array<{
+        id: string;
+        title: string;
+        unitPrice: number;
+        qty: number;
+        description?: string;
+      }>,
+      currency = "CLP",
+      external_reference,
+    } = body || {};
 
-    if (!email) {
-      return NextResponse.json({ error: "Email requerido" }, { status: 400 });
+    if (!Array.isArray(cart) || cart.length === 0) {
+      return NextResponse.json(
+        { error: "Carrito vacío o inválido" },
+        { status: 400 }
+      );
     }
 
-    // ===== Items con description + category_id (requisito del panel) =====
-    let items: any[] = [];
-
-    if (cart.length > 0) {
-      items = cart.map((l) => {
-        const cleanTitle = stripLeadingEmoji(l.title);
-        const description =
-          l.description ||
-          (String(l.id || "").startsWith("custom:")
-            ? `Regalo personalizado: ${String(l.id).split(":").slice(1, -1).join(":")}`
-            : `Regalo de boda — ${cleanTitle}`);
-
-        return {
-          id: String(l.id || cleanTitle || "gift"),
-          title: cleanTitle || "Regalo",
-          description,                               // ✅ requerido
-          category_id: resolveCategoryId(l.id || cleanTitle), // ✅ requerido
-          quantity: Number(l.qty || 1),
-          currency_id: currency,
-          unit_price: Math.round(Number(l.unitPrice || 0)),
-        };
-      });
-    } else {
-      // compat: flujo antiguo con un solo monto
-      const amount = Number(body.amount || 0);
-      if (!amount) {
-        return NextResponse.json({ error: "Carrito vacío o amount=0" }, { status: 400 });
-      }
-      const cleanTitle = stripLeadingEmoji(title);
-      items = [
-        {
-          id: "single_gift",
-          title: cleanTitle,
-          description: `Regalo de boda — ${cleanTitle}`, // ✅
-          category_id: resolveCategoryId(cleanTitle),     // ✅
-          quantity: 1,
-          currency_id: currency,
-          unit_price: Math.round(amount),
-        },
-      ];
-    }
-
-    // ===== Payer con last_name (requisito del panel) =====
     const { first, last } = splitName(name);
 
-    const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const MP_ACCESS_TOKEN = env("MP_ACCESS_TOKEN");
-    const notification_url =
-      process.env.MP_WEBHOOK_URL || `${SITE_URL}/api/mercadopago/webhook`;
+    // ---------- Configuración ----------
+    const ACCESS_TOKEN = env("MP_ACCESS_TOKEN"); // prod o test token
+    const SITE_URL = env("SITE_URL", "https://www.pieroydebby.cl");
 
-    const preferencePayload = {
-      items,
-      payer: {
-        email,
-        first_name: first,
-        last_name: last, // ✅ requerido
-      },
-      external_reference,
-      back_urls: {
-        success: `${SITE_URL}/gracias`,
-        failure: `${SITE_URL}/pago/resultado?status=failure`,
-        pending: `${SITE_URL}/pago/resultado?status=pending`,
-      },
-      auto_return: "approved",
-      notification_url,
-      statement_descriptor: "Boda P&D",
+    // URLs de retorno (tu página Next)
+    const back = {
+      success: `${SITE_URL}/pago?status=success`,
+      failure: `${SITE_URL}/pago?status=failure`,
+      pending: `${SITE_URL}/pago?status=pending`,
     };
 
-    const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(preferencePayload),
+    // Opcional: webhook para notificaciones (si ya lo tienes)
+    const notification_url =
+      process.env.MP_WEBHOOK_URL && process.env.MP_WEBHOOK_URL.trim() !== ""
+        ? process.env.MP_WEBHOOK_URL
+        : undefined;
+
+    // ---------- Ítems ----------
+    const items = cart.map((l) => {
+      const cleanTitle = stripLeadingEmoji(l.title);
+      const description =
+        l.description ||
+        (String(l.id || "").startsWith("custom:")
+          ? `Regalo personalizado: ${String(l.id)
+              .split(":")
+              .slice(1, -1)
+              .join(":")}`
+          : `Regalo de boda — ${cleanTitle || "Detalle"}`);
+
+      return {
+        id: String(l.id || cleanTitle || "gift"),
+        title: cleanTitle || "Regalo",
+        description,
+        quantity: Number(l.qty) || 1,
+        currency_id: currency || "CLP",
+        unit_price: Number(l.unitPrice) || 0,
+      };
     });
 
-    const data = await mpRes.json();
+    // ---------- Preferencia ----------
+    const preference: any = {
+      items,
+      payer: {
+        name: first,
+        surname: last,
+        email: String(email || "").trim() || undefined,
+      },
+      back_urls: back,
+      auto_return: "approved", // <- clave para volver automáticamente al aprobarse
+      external_reference:
+        external_reference ||
+        `gift:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+      statement_descriptor: "Piero&Debby", // opcional (texto en cartola, máx 22 chars)
+      notification_url, // opcional si tienes webhook
+      metadata: {
+        site: "pieroydebby",
+        cart_len: items.length,
+      },
+    };
 
-    if (!mpRes.ok) {
-      console.error("MercadoPago error:", data);
-      return NextResponse.json(
-        { error: data?.message || "Error en Mercado Pago", details: data },
-        { status: mpRes.status }
+    // ---------- Llamada a Mercado Pago ----------
+    const res = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(preference),
+      // En Cloudflare/Edge no sigas redirecciones
+      redirect: "follow",
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(
+        `MercadoPago error ${res.status}: ${errText || res.statusText}`
       );
+    }
+
+    const data = await res.json();
+
+    // `init_point` (prod) o `sandbox_init_point` (modo test)
+    const init_point = data.init_point || data.sandbox_init_point;
+    if (!init_point) {
+      throw new Error("No se recibió init_point de Mercado Pago");
     }
 
     return NextResponse.json({
       id: data.id,
-      init_point: data.init_point || data.sandbox_init_point,
+      init_point,
     });
   } catch (err: any) {
-    console.error(err);
+    console.error("[MP:create-preference] ", err);
     return NextResponse.json(
       { error: err?.message || "Error interno" },
       { status: 500 }
