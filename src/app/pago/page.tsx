@@ -49,7 +49,7 @@ export default function PagoPage({ searchParams }: PageProps) {
             {isSuccess &&
               "Hemos recibido tu aporte correctamente. ¡Gracias por acompañarnos en este momento especial! ❤️"}
             {isPending &&
-              "Tu pago está siendo revisado por el medio de pago. No se ha realizado ningún cargo aún."}
+              "Tu pago no fue procesado. No se ha realizado ningún cargo aún."}
             {isFailure &&
               "El pago fue cancelado o rechazado por el medio de pago. No se realizó ningún cobro."}
           </p>
