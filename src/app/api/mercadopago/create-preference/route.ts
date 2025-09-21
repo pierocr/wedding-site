@@ -1,15 +1,19 @@
 // src/app/api/mercadopago/create-preference/route.ts
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 
-function env(k: string, fallback?: string) {
-  const v = process.env[k] ?? fallback;
-  if (v === undefined || v === null || v === "") {
+/* ---------------------- utils ---------------------- */
+function env(k: string, opts?: { optional?: boolean; fallback?: string }) {
+  const v = process.env[k] ?? opts?.fallback;
+  if (!opts?.optional && (v === undefined || v === null || v === "")) {
     throw new Error(`Missing env ${k}`);
   }
-  return v;
+  return v as string | undefined;
 }
 
-/** "Piero Cespedes Romanini" -> { first:"Piero", last:"Cespedes Romanini" } */
+/** "Nombre Apellido Apellido" -> { first:"Nombre", last:"Apellido Apellido" } */
 function splitName(full: string) {
   const parts = String(full || "").trim().split(/\s+/);
   const first = parts.shift() || "";
@@ -17,70 +21,63 @@ function splitName(full: string) {
   return { first, last };
 }
 
-/** Elimina un emoji inicial del título para cumplir con validaciones de MP */
+/** Limpia emojis al principio del título (algunos métodos de pago son exigentes) */
 function stripLeadingEmoji(s: string) {
-  return String(s || "").replace(
-    // rango general de pictogramas/emoji al inicio
-    /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{Emoji}\uFE0F\s]+/u,
-    ""
-  ).trim();
+  return String(s || "")
+    .replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{Emoji}\uFE0F\s]+/u, "")
+    .trim();
 }
 
+/* ---------------------- handler ---------------------- */
 export async function POST(req: Request) {
   try {
-    // ---------- Entrada ----------
-    const body = await req.json().catch(() => ({}));
-
-    const {
-      name = "",
-      email = "",
-      cart = [] as Array<{
+    const body = (await req.json().catch(() => ({}))) as {
+      name?: string;
+      email?: string;
+      cart?: Array<{
         id: string;
         title: string;
         unitPrice: number;
         qty: number;
         description?: string;
-      }>,
+      }>;
+      currency?: string; // default CLP
+      external_reference?: string;
+    };
+
+    const {
+      name = "",
+      email = "",
+      cart = [],
       currency = "CLP",
       external_reference,
     } = body || {};
 
     if (!Array.isArray(cart) || cart.length === 0) {
-      return NextResponse.json(
-        { error: "Carrito vacío o inválido" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Carrito vacío o inválido" }, { status: 400 });
     }
 
-    const { first, last } = splitName(name);
+    // ---------- envs ----------
+    const ACCESS_TOKEN = env("MP_ACCESS_TOKEN"); // prueba en preview, real en prod
+    const SITE_URL =
+      env("SITE_URL", { optional: true }) ||
+      env("NEXT_PUBLIC_SITE_URL", { optional: true }) ||
+      "http://localhost:3000";
 
-    // ---------- Configuración ----------
-    const ACCESS_TOKEN = env("MP_ACCESS_TOKEN"); // prod o test token
-    const SITE_URL = env("SITE_URL", "https://www.pieroydebby.cl");
+    // webhook final: MP_WEBHOOK_URL (si está) o SITE_URL + secret si existe
+    const WEBHOOK =
+      env("MP_WEBHOOK_URL", { optional: true }) ||
+      `${SITE_URL}/api/mercadopago/webhook${
+        env("MP_WEBHOOK_SECRET", { optional: true }) ? `?secret=${env("MP_WEBHOOK_SECRET")}` : ""
+      }`;
 
-    // URLs de retorno (tu página Next)
-    const back = {
-      success: `${SITE_URL}/pago?status=success`,
-      failure: `${SITE_URL}/pago?status=failure`,
-      pending: `${SITE_URL}/pago?status=pending`,
-    };
-
-    // Opcional: webhook para notificaciones (si ya lo tienes)
-    const notification_url =
-      process.env.MP_WEBHOOK_URL && process.env.MP_WEBHOOK_URL.trim() !== ""
-        ? process.env.MP_WEBHOOK_URL
-        : undefined;
-
-    // ---------- Ítems ----------
+    // ---------- items ----------
     const items = cart.map((l) => {
       const cleanTitle = stripLeadingEmoji(l.title);
       const description =
         l.description ||
         (String(l.id || "").startsWith("custom:")
-          ? `Regalo personalizado: ${String(l.id)
-              .split(":")
-              .slice(1, -1)
-              .join(":")}`
+          ? `Regalo personalizado`
           : `Regalo de boda — ${cleanTitle || "Detalle"}`);
 
       return {
@@ -93,28 +90,34 @@ export async function POST(req: Request) {
       };
     });
 
-    // ---------- Preferencia ----------
-    const preference: any = {
+    const { first, last } = splitName(name);
+
+    // ---------- preference payload ----------
+    const preference: Record<string, any> = {
       items,
       payer: {
         name: first,
         surname: last,
         email: String(email || "").trim() || undefined,
       },
-      back_urls: back,
-      auto_return: "approved", // <- clave para volver automáticamente al aprobarse
+      back_urls: {
+        success: `${SITE_URL}/pago?status=success`,
+        failure: `${SITE_URL}/pago?status=failure`,
+        pending: `${SITE_URL}/pago?status=pending`,
+      },
+      auto_return: "approved",
       external_reference:
         external_reference ||
         `gift:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-      statement_descriptor: "Piero&Debby", // opcional (texto en cartola, máx 22 chars)
-      notification_url, // opcional si tienes webhook
+      notification_url: WEBHOOK,
+      statement_descriptor: "Piero&Debby", // máx 22 chars, opcional
       metadata: {
-        site: "pieroydebby",
+        site: SITE_URL,
         cart_len: items.length,
       },
     };
 
-    // ---------- Llamada a Mercado Pago ----------
+    // ---------- call MP ----------
     const res = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
@@ -122,28 +125,24 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(preference),
-      // En Cloudflare/Edge no sigas redirecciones
       redirect: "follow",
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(
-        `MercadoPago error ${res.status}: ${errText || res.statusText}`
-      );
+      const txt = await res.text().catch(() => "");
+      throw new Error(`MercadoPago error ${res.status}: ${txt || res.statusText}`);
     }
 
     const data = await res.json();
+    const init_point: string | undefined = data.init_point || data.sandbox_init_point;
+    if (!init_point) throw new Error("No se recibió init_point de Mercado Pago");
 
-    // `init_point` (prod) o `sandbox_init_point` (modo test)
-    const init_point = data.init_point || data.sandbox_init_point;
-    if (!init_point) {
-      throw new Error("No se recibió init_point de Mercado Pago");
-    }
+    const is_sandbox = Boolean(data.sandbox_init_point);
 
     return NextResponse.json({
       id: data.id,
       init_point,
+      is_sandbox,
     });
   } catch (err: any) {
     console.error("[MP:create-preference] ", err);
