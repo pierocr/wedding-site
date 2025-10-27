@@ -65,6 +65,7 @@ export default function Story() {
             src={YT_EMBED}
             title="Nuestra historia"
             className="absolute inset-0 h-full w-full"
+            loading="lazy"
             referrerPolicy="strict-origin-when-cross-origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen

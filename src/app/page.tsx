@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 import {
   Calendar,
   Clock,
@@ -29,6 +30,7 @@ import Gallery from "@/components/sections/Gallery";
 import GiftSection from "@/components/sections/GiftSection";
 import RSVPSection from "@/components/sections/RSVPSection";
 import Timeline from '@/components/sections/Timeline';
+import { BRIDE, GROOM, CEREMONY, RECEPTION, WEDDING_DATE_ISO, BANK_TRANSFER } from "@/data/site";
 
 
 /* ==============================
@@ -81,50 +83,6 @@ const ICON_ANIMS: Record<
 
 // Fallback para secciones sin animación específica
 const ICON_DEFAULT = { animate: { y: [0, -2, 0] }, transition: { duration: 2.2, repeat: Infinity, repeatType: "mirror" } };
-
-/* ==============================
-   CONFIG
-============================== */
-const WEDDING_DATE_ISO = process.env.NEXT_PUBLIC_EVENT_DATE ?? "2026-11-21";
-
-const BRIDE = "Debby";
-const GROOM = "Piero";
-
-const CEREMONY = {
-  datePretty: "Sábado 21 de noviembre de 2026",
-  timePretty: "16:30 hrs",
-  venue: "Iglesia Santa Ursula de Vitacura",
-  venueAddress: "Vitacura, Chile",
-  mapsUrl: "https://maps.app.goo.gl/Hsxztok7HaTwegmm7",
-};
-
-const RECEPTION = {
-  venue: "Casona Santa Luz de Chicureo",
-  venueAddress: "Chicureo, Santiago",
-  mapsUrl: "https://maps.app.goo.gl/7u4oLZkD91fxuqdc7",
-  startTime: "18:30 hrs",
-};
-
-const BANK_TRANSFER = {
-  titular: "PIERO ALONSO CÉSPEDES",
-  rut: "16.292.075-8",
-  banco: "BCI",
-  tipo: "Cuenta Corriente",
-  numero: "32730098",
-  email: "piero@gmail.com",
-};
-
-// Imágenes de muestra (Unsplash). Reemplázalas luego por archivos en /public
-const GALLERY = [
-  "/hero/1.jpg",
-  "/hero/20240720_130310.jpg",
-  "/hero/IMG-20230923-WA0054~2.jpg",
-  "/hero/IMG-20231205-WA0010.jpg",
-  "/hero/20231208_143753.jpg",
-  "/hero/imagen6.jpeg",
-  "/hero/IMG-20240214-WA0313.jpg",
-  "/hero/IMG-20250816-WA0036.jpg",
-];
 
 /* ==============================
    HELPERS
@@ -273,6 +231,7 @@ const Nav = () => {
   // Ítems del menú (solo íconos lucide, sin emojis)
   const links: Array<{ href: string; label: string; Icon: React.ComponentType<any> }> = [
     { href: "#agenda",   label: "Agenda",                Icon: Calendar },
+    { href: "#programacion", label: "Programación",      Icon: Clock },
     { href: "#historia", label: "Historia",              Icon: Heart },
     { href: "#galeria",  label: "Galería",               Icon: ImageIcon },
     { href: "#regalo",   label: "Regalo",                Icon: Gift },
@@ -312,14 +271,14 @@ const Nav = () => {
   };
 
   return (
-    <div className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+    <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
       <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
         <a href="#inicio" className="text-lg font-semibold">
           {BRIDE} & {GROOM}
         </a>
 
         {/* Desktop */}
-        <nav className="hidden items-center gap-6 text-sm md:flex">
+        <nav aria-label="Secciones principales" className="hidden items-center gap-6 text-sm md:flex">
           {links.map((l) => (
             <a key={l.href} href={l.href} className="hover:underline">
               {l.label}
@@ -356,6 +315,7 @@ const Nav = () => {
             <aside
               role="dialog"
               aria-modal="true"
+              aria-label="Menú de navegación"
               className={`fixed right-0 inset-y-0 w-[86%] max-w-[22rem]
                           transform transition-transform duration-200 ease-out
                           ${open ? "translate-x-0" : "translate-x-full"}
@@ -375,7 +335,7 @@ const Nav = () => {
 
               {/* Contenido scrollable */}
               <div className="grow overflow-y-auto px-2 py-3">
-                <nav className="space-y-1">
+                <nav className="space-y-1" aria-label="Enlaces de sección">
                   {links.map(({ href, label, Icon }) => (
                     <a
                       key={href}
@@ -415,7 +375,7 @@ const Nav = () => {
           </div>,
           document.body
         )}
-    </div>
+    </header>
   );
 };
 
@@ -500,14 +460,17 @@ const Hero = () => {
       {/* Fondo del héroe */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {HERO_IMAGES.map((src, i) => (
-          <img
+          <Image
             key={src}
             src={src}
             alt=""
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+            fill
+            priority={i === 0}
+            className={`object-cover transition-opacity duration-700 ${
               i === idx ? "opacity-100" : "opacity-0"
             }`}
             style={{ objectPosition: "center 35%" }}
+            sizes="100vw"
           />
         ))}
         {/* Gradiente para legibilidad */}
@@ -618,8 +581,8 @@ const Schedule = () => (
       {
         title: "Ceremonia",
         time: CEREMONY.timePretty,
-        place: "Iglesia Santa Ursula de Vitacura",
-        address: "Vitacura, Chile",
+        place: CEREMONY.venue,
+        address: CEREMONY.venueAddress,
         link: CEREMONY.mapsUrl,
         image: "/hero/iglesia.png",
         icon: <Stars className="h-5 w-5" />,
@@ -978,7 +941,7 @@ export default function WeddingSite() {
         <RSVPSection />
       </Section>
       
-      <Section id="agenda" title="Programación" icon={Calendar} animation="up">
+      <Section id="programacion" title="Programación" icon={Calendar} animation="up">
         <Timeline />
       </Section>
 

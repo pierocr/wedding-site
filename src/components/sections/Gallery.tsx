@@ -19,7 +19,9 @@ const Gallery = () => {
   const [index, setIndex] = useState<number>(0);
 
   const total = GALLERY.length;
-  const src = GALLERY[index];
+  const current = GALLERY[index] ?? GALLERY[0];
+  const src = current?.src ?? "";
+  const alt = current?.alt ?? "Recuerdo de Piero y Debby";
 
   // Navegación
   const prev = () => setIndex((i) => (i - 1 + total) % total);
@@ -142,9 +144,9 @@ const Gallery = () => {
     <>
       {/* Grid de miniaturas */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {GALLERY.map((img, i) => (
+        {GALLERY.map(({ src, alt }, i) => (
           <button
-            key={img + i}
+            key={`${src}-${i}`}
             onClick={() => {
               setIndex(i);
               setOpen(true);
@@ -152,9 +154,11 @@ const Gallery = () => {
             className="group relative aspect-[4/5] overflow-hidden rounded-2xl border bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <img
-              src={img}
-              alt={`Foto ${i + 1}`}
+              src={src}
+              alt={alt}
               loading="lazy"
+              width={640}
+              height={800}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
@@ -191,7 +195,7 @@ const Gallery = () => {
             >
               <img
                 src={src}
-                alt={`Foto grande ${index + 1}`}
+                alt={alt}
                 className="pointer-events-none max-h-[80vh] w-auto select-none"
                 style={{
                   transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${scale})`,

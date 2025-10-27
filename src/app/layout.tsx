@@ -3,24 +3,19 @@ import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 import { fontSans, fontSerif, fontScript } from "./fonts";
 import SeoWebsite from "@/components/seo/SeoWebsite";
-
-/** Variables (puedes sobreescribirlas en tu hosting) */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pieroydebby.cl";
-const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "Piero & Debby";
-const SITE_TITLE = `${SITE_NAME} — ¡Nos casamos!`;
-const SITE_DESC =
-  "Acompáñanos en nuestro gran día. Revisa fecha, ubicación, dress code y confirma tu asistencia (RSVP).";
+import SeoWeddingEvent from "@/components/seo/SeoWeddingEvent";
+import { SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION } from "@/data/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: SITE_TITLE, template: `%s · ${SITE_NAME}` },
-  description: SITE_DESC,
+  description: SITE_DESCRIPTION,
   alternates: { canonical: "/", languages: { "es-CL": "/" } },
   openGraph: {
     type: "website",
     url: SITE_URL,
     title: SITE_TITLE,
-    description: SITE_DESC,
+    description: SITE_DESCRIPTION,
     siteName: SITE_NAME,
     locale: "es_CL",
     images: [
@@ -30,7 +25,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: SITE_TITLE,
-    description: SITE_DESC,
+    description: SITE_DESCRIPTION,
     images: ["/og.jpg"],
   },
   icons: { 
@@ -70,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ].join(" ")}
       >
         <SeoWebsite name={SITE_NAME} url={SITE_URL} />
+        <SeoWeddingEvent />
         {children}
       </body>
     </html>
