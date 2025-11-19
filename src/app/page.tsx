@@ -602,7 +602,7 @@ const Schedule = () => (
         place: "Elegante / Formal",
         address: "Ellas NO deben usar blanco ni tonos muy claros, eso déjenlo para la novia 😉",
         link: "#",
-        image: "/hero/dress_code.png",
+        image: "/hero/dress_code.jpg",
         icon: <Users className="h-5 w-5" />,
       },
     ].map((i, idx) => {
@@ -629,11 +629,13 @@ const Schedule = () => (
             <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)]">
               {/* Imagen superior 16:9 con overlay */}
               <div className="relative overflow-hidden rounded-t-2xl">
-                <div className="aspect-[16/9] w-full">
-                  <img
+                <div className="relative aspect-[16/9] w-full">
+                  <Image
                     src={i.image}
                     alt={`Imagen ${i.title}`}
-                    className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 45vw, 90vw"
+                    className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
                     loading="lazy"
                     draggable={false}
                   />

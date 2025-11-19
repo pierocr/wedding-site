@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 // Usas estos nombres en tu código, así que alias con lucide:
@@ -153,13 +154,13 @@ const Gallery = () => {
             }}
             className="group relative aspect-[4/5] overflow-hidden rounded-2xl border bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <img
+            <Image
               src={src}
               alt={alt}
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               loading="lazy"
-              width={640}
-              height={800}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
             <div className="absolute right-2 top-2 rounded-full bg-background/80 p-1 text-xs text-foreground shadow">
@@ -193,9 +194,11 @@ const Gallery = () => {
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             >
-              <img
+              <Image
                 src={src}
                 alt={alt}
+                width={1000}
+                height={1250}
                 className="pointer-events-none max-h-[80vh] w-auto select-none"
                 style={{
                   transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${scale})`,
@@ -203,6 +206,8 @@ const Gallery = () => {
                   willChange: "transform",
                 }}
                 draggable={false}
+                loading="lazy"
+                sizes="80vh"
               />
             </div>
 

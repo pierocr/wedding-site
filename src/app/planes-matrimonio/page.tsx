@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Check, Sparkles, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -123,13 +124,15 @@ export default function WeddingPlansPage() {
             {inspirationImages.map((image) => (
               <figure
                 key={image.src}
-                className="group relative overflow-hidden rounded-3xl border border-border/50 bg-muted/30 shadow-sm"
+                className="group relative h-48 overflow-hidden rounded-3xl border border-border/50 bg-muted/30 shadow-sm"
               >
-                <img
+                <Image
                   src={image.src}
                   alt={image.alt}
+                  fill
+                  sizes="(min-width: 640px) 30vw, 90vw"
+                  className="object-cover transition duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
-                  className="h-48 w-full object-cover transition duration-700 ease-out group-hover:scale-105"
                   referrerPolicy="no-referrer"
                 />
                 <figcaption className="sr-only">{image.alt}</figcaption>
