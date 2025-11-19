@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
   Calendar,
   Clock,
@@ -26,10 +27,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter} from "@/components/ui/card";
 import Story from "@/components/sections/Story";
-import Gallery from "@/components/sections/Gallery";
-import GiftSection from "@/components/sections/GiftSection";
-import RSVPSection from "@/components/sections/RSVPSection";
-import Timeline from '@/components/sections/Timeline';
+import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { BRIDE, GROOM, CEREMONY, RECEPTION, WEDDING_DATE_ISO, BANK_TRANSFER } from "@/data/site";
 
 
@@ -168,6 +166,54 @@ const Section = ({
     </motion.section>
   );
 };
+
+const SectionSkeleton = ({ label, rows = 3 }: { label: string; rows?: number }) => (
+  <div
+    className="rounded-2xl border border-border/60 bg-card/70 p-6 shadow-sm"
+    role="status"
+    aria-live="polite"
+  >
+    <p className="text-sm font-medium text-muted-foreground">{label}</p>
+    <div className="mt-4 space-y-3">
+      {Array.from({ length: rows }).map((_, idx) => (
+        <div
+          key={idx}
+          className="h-3.5 w-full animate-pulse rounded-full bg-muted/70"
+          style={{ opacity: 1 - idx * 0.15 }}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+const LazySectionBoundary = ({
+  children,
+  fallback,
+  rootMargin = "320px",
+}: {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+  rootMargin?: string;
+}) => {
+  const { ref, visible } = useInViewOnce<HTMLDivElement>({ rootMargin, threshold: 0.2 });
+  return <div ref={ref}>{visible ? children : fallback}</div>;
+};
+
+const LazyGallery = dynamic(() => import("@/components/sections/Gallery"), {
+  loading: () => <SectionSkeleton label="Cargando galería…" rows={6} />,
+});
+
+const LazyGiftSection = dynamic(() => import("@/components/sections/GiftSection"), {
+  loading: () => <SectionSkeleton label="Cargando formulario de regalos…" rows={5} />,
+});
+
+const LazyRSVPSection = dynamic(() => import("@/components/sections/RSVPSection"), {
+  loading: () => <SectionSkeleton label="Preparando formulario RSVP…" rows={5} />,
+});
+
+const LazyTimeline = dynamic(() => import("@/components/sections/Timeline"), {
+  loading: () => <SectionSkeleton label="Cargando timeline…" rows={4} />,
+});
 
 /* ==============================
    UI SECTIONS
@@ -427,6 +473,7 @@ const Micro = ({ v, l }: { v: number; l: string }) => (
 };
 
 const HERO_IMAGES = ["/hero/1.jpg"];
+// Estas fotos deben exportarse manualmente como WebP/AVIF (<200KB) antes de cada despliegue para sostener un LCP rápido.
 
 // === HERO (versión centrada, sin solaparse y sin altura excesiva en desktop) ===
 const Hero = () => {
@@ -463,18 +510,18 @@ const Hero = () => {
           <Image
             key={src}
             src={src}
-            alt=""
+            alt={`Fotografía de ${BRIDE} y ${GROOM}`}
             fill
             priority={i === 0}
             className={`object-cover transition-opacity duration-700 ${
               i === idx ? "opacity-100" : "opacity-0"
             }`}
             style={{ objectPosition: "center 35%" }}
-            sizes="100vw"
+            sizes="(max-width: 768px) 100vw, 1200px"
           />
         ))}
         {/* Gradiente para legibilidad */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/55 to-black/25" />
       </div>
 
       {/* Títulos tipográficos */}
@@ -578,6 +625,7 @@ const Schedule = () => (
     variants={STAGGER}
   >
     {[
+      // Nota: las imágenes /hero/* deben mantenerse comprimidas manualmente (<200KB, WebP/AVIF) para evitar penalizar el LCP real.
       {
         title: "Ceremonia",
         time: CEREMONY.timePretty,
@@ -928,23 +976,43 @@ export default function WeddingSite() {
       </div>
 
       <Section id="galeria" title="Galería" icon={ImageIcon}>
-        <Gallery />
+        <LazySectionBoundary
+          fallback={<SectionSkeleton label="Galería (se carga al desplazarte)" rows={6} />}
+          rootMargin="360px"
+        >
+          <LazyGallery />
+        </LazySectionBoundary>
       </Section>
 
       {/* Banda con acento muy tenue para Regalo */}
       <div className="bg-accent/20">
         <Section id="regalo" title="Regalo" icon={Gift}>
-          <GiftSection />
+          <LazySectionBoundary
+            fallback={<SectionSkeleton label="Preparando opciones de regalo…" rows={6} />}
+            rootMargin="420px"
+          >
+            <LazyGiftSection />
+          </LazySectionBoundary>
         </Section>
       </div>
 
       {/* RSVP en su propia sección */}
       <Section id="rsvp" title="Confirmar asistencia" icon={Heart}>
-        <RSVPSection />
+        <LazySectionBoundary
+          fallback={<SectionSkeleton label="Formulario RSVP disponible al desplazarte" rows={5} />}
+          rootMargin="420px"
+        >
+          <LazyRSVPSection />
+        </LazySectionBoundary>
       </Section>
       
       <Section id="programacion" title="Programación" icon={Calendar} animation="up">
-        <Timeline />
+        <LazySectionBoundary
+          fallback={<SectionSkeleton label="Timeline (se cargará automáticamente)" rows={4} />}
+          rootMargin="400px"
+        >
+          <LazyTimeline />
+        </LazySectionBoundary>
       </Section>
 
       <Section id="faq" title="Preguntas frecuentes" icon={Stars}>

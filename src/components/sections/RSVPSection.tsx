@@ -39,6 +39,15 @@ const RSVPSection = () => {
   const [status, setStatus] = React.useState<Status>(STATUS.Idle);
   const [serverMsg, setServerMsg] = React.useState<string | null>(null);
 
+  const FIELD_IDS = {
+    name: "rsvp-name",
+    email: "rsvp-email",
+    phone: "rsvp-phone",
+    attending: "rsvp-attending",
+    vegetarian: "rsvp-vegetarian",
+    message: "rsvp-message",
+  } as const;
+
   const onChange =
     (key: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -126,9 +135,12 @@ const RSVPSection = () => {
           {/* Nombre + Email */}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium">Nombre completo</label>
+              <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.name}>
+                Nombre completo
+              </label>
               <input
                 type="text"
+                id={FIELD_IDS.name}
                 value={form.name}
                 onChange={onChange("name")}
                 onBlur={() => setTouched((t) => ({ ...t, name: true }))}
@@ -139,9 +151,12 @@ const RSVPSection = () => {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Email</label>
+              <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.email}>
+                Email
+              </label>
               <input
                 type="email"
+                id={FIELD_IDS.email}
                 value={form.email}
                 onChange={onChange("email")}
                 onBlur={() => setTouched((t) => ({ ...t, email: true }))}
@@ -157,9 +172,12 @@ const RSVPSection = () => {
 
           {/* Teléfono */}
           <div>
-            <label className="mb-1 block text-sm font-medium">Teléfono (opcional)</label>
+            <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.phone}>
+              Teléfono (opcional)
+            </label>
             <input
               type="tel"
+              id={FIELD_IDS.phone}
               value={form.phone}
               onChange={onChange("phone")}
               placeholder="+56 9 1234 5678"
@@ -171,8 +189,15 @@ const RSVPSection = () => {
           {/* Asistencia + Preferencias */}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium">¿Asistirás?</label>
-              <select value={form.attending} onChange={onChange("attending")} className={inputBase}>
+              <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.attending}>
+                ¿Asistirás?
+              </label>
+              <select
+                id={FIELD_IDS.attending}
+                value={form.attending}
+                onChange={onChange("attending")}
+                className={inputBase}
+              >
                 <option>{ATTENDING_LABELS.yes}</option>
                 <option>{ATTENDING_LABELS.no}</option>
                 <option>{ATTENDING_LABELS.later}</option>
@@ -180,10 +205,13 @@ const RSVPSection = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">Preferencias</label>
+              <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.vegetarian}>
+                Preferencias
+              </label>
               <label className="flex items-center gap-2 rounded-md border bg-background p-3">
                 <input
                   type="checkbox"
+                  id={FIELD_IDS.vegetarian}
                   checked={form.vegetarian}
                   onChange={onChange("vegetarian")}
                 />
@@ -197,8 +225,11 @@ const RSVPSection = () => {
 
           {/* Mensaje */}
           <div>
-            <label className="mb-1 block text-sm font-medium">Mensaje para los novios (opcional)</label>
+            <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.message}>
+              Mensaje para los novios (opcional)
+            </label>
             <textarea
+              id={FIELD_IDS.message}
               value={form.message}
               onChange={onChange("message")}
               placeholder="Escribe aquí tu mensaje…"
