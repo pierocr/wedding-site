@@ -21,45 +21,43 @@ const plans = [
   {
     title: "Plan Básico – Página informativa",
     description: "Ideal para parejas que desean una página simple, delicada y funcional.",
-    price: "Valor de referencia: $180.000 – $300.000 CLP",
-    note: "Tiempo estimado: 10 a 15 horas de trabajo",
+    price: "Valor de referencia: $200.000 – $260.000 CLP",
     features: [
-      "Home con información principal",
+      "Portada con toda la información principal",
       "Cuenta regresiva para el día del matrimonio",
-      "Historia y fotografías destacadas",
+      "Sección con su historia y fotografías",
       "Información del evento (lugar, fecha, hora)",
-      "Dress code y recomendaciones para invitados",
+      "Código de vestimenta y recomendaciones para invitados",
       "Ubicación con mapa o enlace directo",
-      "Formulario simple de confirmación de asistencia (RSVP)",
+      "Formulario sencillo de confirmación de asistencia",
     ],
   },
   {
     title: "Plan Completo – Estilo Piero & Debby",
     description: "Una experiencia similar a https://www.pieroydebby.cl/, cuidando cada detalle visual.",
     price: "Valor de referencia: $400.000 – $500.000 CLP",
-    note: "Trabajo estimado: 25 a 40 horas",
     features: [
-      "Diseño personalizado en Next.js + Tailwind",
-      "Animaciones y UI optimizada para móvil y desktop",
-      "RSVP con almacenamiento en base de datos",
+      "Diseño completamente personalizado con acabados elegantes",
+      "Animaciones suaves y experiencia adaptada a móvil y desktop",
+      "Confirmación de asistencia con registro seguro",
       "Formulario de mensajes o contacto",
       "Sección de regalos o datos de transferencia",
-      "Deploy en Cloudflare Pages",
-      "Optimización SEO básica",
+      "Publicación y configuración para que el sitio siempre esté disponible",
+      "Ajustes básicos para que sus invitados encuentren el sitio fácilmente",
     ],
   },
   {
     title: "Plan Premium – Todo incluido",
     description: "Pensado para proyectos a medida con más integración y herramientas para la pareja.",
-    price: "Valor de referencia: $600.000 – $1.200.000 CLP",
-    note: "Pensado para proyectos más personalizados y con mayor integración.",
+    price: "Valor de referencia: $700.000 – $950.000 CLP",
     features: [
-      "Panel simple para editar textos y fotos",
-      "Galería fotográfica más completa",
-      "Timeline ilustrado y mejorado",
-      "Integración de pasarela de pago para regalos (ej: Mercado Pago)",
-      "Gift registry dinámica",
-      "Hosting + dominio + soporte por 1 año",
+      "Panel muy sencillo para editar textos y fotos",
+      "Galería fotográfica extendida para mostrar más recuerdos",
+      "Cronología ilustrada y personalizada",
+      "Conexión a un sistema de pagos para regalos (como Mercado Pago)",
+      "Lista dinámica de regalos para compartir con los invitados",
+      "Hosting, dominio y acompañamiento durante 1 año",
+      "Pensado para proyectos con alto nivel de personalización",
     ],
   },
 ];
@@ -167,9 +165,8 @@ export default function WeddingPlansPage() {
                     ))}
                   </ul>
                 </CardContent>
-                <CardFooter className="flex flex-col items-start gap-2 border-t border-dashed border-border/60 pt-4">
-                  <p className="text-base font-medium text-foreground">{plan.price}</p>
-                  <p className="text-sm text-muted-foreground">{plan.note}</p>
+                <CardFooter className="border-t border-dashed border-border/60 pt-4">
+                  <p className="text-base font-semibold text-foreground">{plan.price}</p>
                 </CardFooter>
               </Card>
             ))}
