@@ -856,7 +856,6 @@ const MusicPlayer = ({ src, className = "" }: MusicPlayerProps) => {
     a.loop = true;
     (a as any).playsInline = true;
 
-
     // Intento de autoplay
     const tryPlay = () => a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     tryPlay();
@@ -957,7 +956,7 @@ export default function WeddingSite() {
   return (
     <div className="min-h-screen">
       <Nav />
-      {/* Mantener desactivado para evitar doble audio con Spotify */}
+      {/* Reproductor MP3 (autoplay) */}
       <MusicPlayer src="/music/Sonreir.mp3" />
       {/* <MiniCountdownBar />   <= countdown fuera del Hero */}
       <div id="inicio">
