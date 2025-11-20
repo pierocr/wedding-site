@@ -390,7 +390,7 @@ export default function WeddingPlansPage() {
                 {plan.highlight && (
                   <div className="absolute inset-x-0 top-0 flex justify-center">
                     <div className="mt-3 rounded-full bg-foreground px-4 py-1 text-[11px] font-semibold tracking-[0.2em] text-background">
-                      ¡POPULAR!
+                      ¡RECOMENDADO!
                     </div>
                   </div>
                 )}
