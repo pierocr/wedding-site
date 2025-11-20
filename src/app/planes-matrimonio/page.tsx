@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -44,14 +45,14 @@ type Plan = {
   id: string;
   name: string;
   subtitle: string;
-  description: string;
+  description: ReactNode;
   price: number;
   tone: "silver" | "gold" | "diamond";
   highlight?: boolean;
   features: Record<FeatureKey, boolean | string>;
 };
 
-const featureCatalog: Array<{ key: FeatureKey; label: string }> = [
+const featureCatalog: Array<{ key: FeatureKey; label: ReactNode }> = [
   { key: "informacion", label: "Landing con toda la información importante" },
   { key: "galeria", label: "Galería fotográfica para tus recuerdos" },
   { key: "agenda", label: "Agenda del día con mapas y horarios" },
@@ -62,7 +63,19 @@ const featureCatalog: Array<{ key: FeatureKey; label: string }> = [
   { key: "pasarela", label: "Lista de regalos interactiva y pagos vía Mercado Pago (Tarjeta de Crédito) 💳" },
   {
     key: "estiloPremium",
-    label: "Experiencia visual similar a pieroydebby.cl",
+    label: (
+      <>
+        Experiencia visual similar a{" "}
+        <a
+          href="https://www.pieroydebby.cl"
+          className="underline-offset-4 hover:underline"
+          target="_blank"
+          rel="noreferrer"
+        >
+          pieroydebby.cl
+        </a>
+      </>
+    ),
   },
 ];
 
@@ -119,8 +132,20 @@ const plans: Plan[] = [
     id: "diamante",
     name: "Anillo de diamante",
     subtitle: "Leyenda",
-    description:
-      "La experiencia completa similar a pieroydebby.cl, con extras y soporte extendido.",
+    description: (
+      <>
+        La experiencia completa similar a{" "}
+        <a
+          href="https://www.pieroydebby.cl"
+          className="underline-offset-4 hover:underline"
+          target="_blank"
+          rel="noreferrer"
+        >
+          pieroydebby.cl
+        </a>
+        , con extras y soporte extendido.
+      </>
+    ),
     price: 750_000,
     tone: "diamond",
     features: {
@@ -292,9 +317,14 @@ export default function WeddingPlansPage() {
             </div>
             <div className="mt-4 rounded-2xl border border-border/60 bg-background/90 px-5 py-3 text-xs text-muted-foreground shadow-sm">
               Inspirado en{" "}
-              <span className="font-medium text-foreground">
+              <a
+                href="https://www.pieroydebby.cl"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
                 pieroydebby.cl
-              </span>{" "}
+              </a>{" "}
               y adaptado a la historia de cada pareja.
             </div>
           </div>
