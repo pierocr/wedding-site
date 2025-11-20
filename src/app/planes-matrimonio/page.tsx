@@ -139,9 +139,9 @@ const plans: Plan[] = [
 
 const steps = [
   {
-    title: "Nos cuentan su historia",
+    title: "Nos cuentas tu historia",
     description:
-      "Conversamos sobre su celebración, preferencias visuales y los detalles importantes.",
+      "Conversamos sobre tu celebración, preferencias visuales y los detalles importantes.",
   },
   {
     title: "Elegimos el plan ideal",
@@ -151,7 +151,7 @@ const steps = [
   {
     title: "Diseñamos y lanzamos",
     description:
-      "Creamos el sitio, iteramos con ustedes y publicamos en la plataforma seleccionada.",
+      "Creamos el sitio, iteramos contigo y publicamos en la plataforma seleccionada.",
   },
 ];
 
@@ -175,11 +175,11 @@ const reasons = [
     icon: HeartHandshake,
     title: "Hecho por novios, para novios",
     description:
-      "Vivimos este proceso y sabemos exactamente la mezcla entre emoción, diseño bonito y cero complicaciones que están buscando.",
+      "Vivimos este proceso y sabemos exactamente la mezcla entre emoción, diseño bonito y cero complicaciones que estás buscando.",
   },
   {
     icon: CalendarHeart,
-    title: "Todo pensado para sus invitados",
+    title: "Todo pensado para tus invitados",
     description:
       "Horarios, mapas, dress code, RSVP y más: todo ordenado en un solo lugar para que cada invitado se sienta acompañado desde el primer clic.",
   },
@@ -195,17 +195,17 @@ const faqs = [
   {
     question: "¿Cómo se contrata el servicio?",
     answer:
-      "Nos escriben por correo o WhatsApp, coordinamos una breve reunión online para conocernos, elegimos el plan ideal y les enviamos una propuesta formal con valores, plazos y formas de pago.",
+      "Nos escribes por correo o WhatsApp, coordinamos una breve reunión online para conocernos, elegimos el plan ideal y te enviamos una propuesta formal con valores, plazos y formas de pago.",
   },
   {
     question: "¿Puedo contratar abonando solo una parte?",
     answer:
-      "Sí. Pueden reservar el servicio abonando el 50% del valor del plan. El 50% restante se paga al finalizar el sitio, justo antes de publicarlo y entregarlo listo para compartir.",
+      "Sí. Puedes reservar el servicio abonando el 50% del valor del plan. El 50% restante se paga al finalizar el sitio, justo antes de publicarlo y entregarlo listo para compartir.",
   },
   {
     question: "¿Cuánto se demora en estar listo el sitio?",
     answer:
-      "Dependiendo del plan y de la rapidez con que nos envíen la información, el tiempo estimado va entre 2 y 4 semanas. Les damos un cronograma con fechas claras para que puedan organizarse sin estrés.",
+      "Dependiendo del plan y de la rapidez con que nos envíes la información, el tiempo estimado va entre 2 y 4 semanas. Te damos un cronograma con fechas claras para que puedas organizarte sin estrés.",
   },
   {
     question: "¿Qué pasa si necesitamos hacer cambios después?",
@@ -220,7 +220,7 @@ const faqs = [
   {
     question: "¿Incluye dominio y hosting?",
     answer:
-      "En el plan de Anillo de oro podemos gestionar dominio y hosting por ustedes. En el Anillo de diamante, el dominio propio y el hosting están incluidos y contemplados en el presupuesto.",
+      "En el plan de Anillo de oro podemos gestionar dominio y hosting por ti. En el Anillo de diamante, el dominio propio y el hosting están incluidos y contemplados en el presupuesto.",
   },
 ];
 
@@ -245,7 +245,7 @@ export default function WeddingPlansPage() {
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground lg:mx-0">
               Diseñamos sitios web de matrimonio cálidos, cercanos y
-              totalmente personalizados, para que compartir los detalles de su
+              totalmente personalizados, para que compartir los detalles de tu
               boda sea tan especial como el gran día.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
@@ -309,11 +309,11 @@ export default function WeddingPlansPage() {
               Diseñado con cariño
             </p>
             <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-4xl">
-              Más que una página, una experiencia para ustedes y sus invitados
+              Más que una página, una experiencia para ti y tus invitados
             </h2>
             <p className="mx-auto mt-4 max-w-3xl text-base text-muted-foreground">
               Nos enfocamos en que cada sitio se sienta único: alineado con la
-              estética de su boda, fácil de usar para sus invitados y con la
+              estética de tu boda, fácil de usar para tus invitados y con la
               calidez de una invitación hecha a mano.
             </p>
           </div>
@@ -356,7 +356,7 @@ export default function WeddingPlansPage() {
               Planes
             </p>
             <h2 className="mt-3 font-serif text-3xl font-semibold sm:text-4xl">
-              Elijan el anillo que mejor cuenta su historia
+              Elige el anillo que mejor cuenta tu historia
             </h2>
             <p className="mt-4 text-base text-muted-foreground">
               Todos los planes incluyen un sitio web de matrimonio cercano y
@@ -480,7 +480,7 @@ export default function WeddingPlansPage() {
                     <Link href="#contacto">Empezar con este plan</Link>
                   </Button>
                   <p className="text-center text-[11px] text-muted-foreground">
-                    Enviaremos una propuesta detallada según su fecha, lugar y
+                    Enviaremos una propuesta detallada según tu fecha, lugar y
                     tipo de celebración.
                   </p>
                 </CardFooter>
@@ -538,7 +538,7 @@ export default function WeddingPlansPage() {
               Todo lo que necesitas saber antes de reservar
             </h2>
             <p className="mt-4 text-base text-muted-foreground">
-              Si aún tienen dudas, aquí respondemos las preguntas más comunes
+              Si aún tienes dudas, aquí respondemos las preguntas más comunes
               que nos hacen las parejas antes de contratar.
             </p>
           </div>
@@ -586,16 +586,16 @@ export default function WeddingPlansPage() {
               Cotización
             </p>
             <h2 className="mt-5 font-serif text-3xl font-semibold sm:text-4xl">
-              ¿Listos para crear su sitio de matrimonio?
+              ¿Listo para crear tu sitio de matrimonio?
             </h2>
             <p className="mx-auto mt-4 max-w-3xl text-base text-muted-foreground">
-              Cuéntennos la fecha de la boda, el estilo que imaginan y el plan
-              que más les llamó la atención. Les responderemos con una propuesta
+              Cuéntanos la fecha de la boda, el estilo que imaginas y el plan
+              que más te llamó la atención. Te responderemos con una propuesta
               personalizada, tiempos estimados y próximos pasos claros.
             </p>
 
             <div className="mt-8 space-y-3 text-sm text-muted-foreground">
-              <p>Pueden escribirnos directamente a:</p>
+              <p>Puedes escribirnos directamente a:</p>
               <div className="flex flex-col items-center gap-2 text-base font-medium sm:flex-row sm:justify-center">
                 <a
                   href="mailto:pierocr@gmail.com?subject=Cotizaci%C3%B3n%20sitio%20web%20de%20matrimonio"
@@ -645,7 +645,7 @@ export default function WeddingPlansPage() {
             <div className="mt-8 inline-flex items-center gap-2 text-xs text-muted-foreground">
               <Heart className="h-4 w-4 text-primary" />
               <span>
-                Nos encantaría ser parte de este capítulo en su historia 💍
+                Nos encantaría ser parte de este capítulo en tu historia 💍
               </span>
             </div>
           </div>
