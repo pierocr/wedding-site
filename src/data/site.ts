@@ -43,3 +43,20 @@ export const BANK_TRANSFER = {
   numero: "32730098",
   email: "piero@gmail.com",
 };
+
+// Feature Flags
+export const FEATURE_FLAGS = {
+  rsvpEnabled: process.env.NEXT_PUBLIC_RSVP_ENABLED === "true",
+  blackFridayEnabled: process.env.NEXT_PUBLIC_BLACK_FRIDAY_ENABLED === "true",
+} as const;
+
+// Black Friday Promotion Configuration
+export const BLACK_FRIDAY = {
+  enabled: FEATURE_FLAGS.blackFridayEnabled,
+  discounts: {
+    plata: 20,
+    oro: 40,
+    diamante: 40,
+  },
+  eligiblePlans: ["plata", "oro", "diamante"], // IDs de planes con descuento
+} as const;

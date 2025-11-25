@@ -13,6 +13,7 @@ import {
   Info,
   CreditCard,
   Clock,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { BLACK_FRIDAY } from "@/data/site";
 
 export const metadata: Metadata = {
   title: "Planes para sitio web de matrimonio | Piero & Debby",
@@ -85,6 +87,33 @@ const formatPriceCLP = (value: number) =>
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(value);
+
+const calculateDiscount = (planId: string, originalPrice: number) => {
+  const isEligible = BLACK_FRIDAY.enabled && (BLACK_FRIDAY.eligiblePlans as readonly string[]).includes(planId);
+
+  if (!isEligible) {
+    return {
+      hasDiscount: false,
+      originalPrice,
+      discountedPrice: originalPrice,
+      savings: 0,
+      discountPercent: 0
+    };
+  }
+
+  // Obtener el porcentaje de descuento específico para este plan
+  const discountPercent = BLACK_FRIDAY.discounts[planId as keyof typeof BLACK_FRIDAY.discounts] || 0;
+  const discountedPrice = originalPrice * (1 - discountPercent / 100);
+  const savings = originalPrice - discountedPrice;
+
+  return {
+    hasDiscount: true,
+    originalPrice,
+    discountedPrice,
+    savings,
+    discountPercent
+  };
+};
 
 const plans: Plan[] = [
   {
@@ -375,6 +404,30 @@ export default function WeddingPlansPage() {
         </div>
       </section>
 
+      {/* BLACK FRIDAY BANNER */}
+      {BLACK_FRIDAY.enabled && (
+        <section className="border-y border-amber-600/30 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 py-6">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-center sm:gap-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2">
+                <Tag className="h-5 w-5 text-amber-400" />
+                <span className="text-sm font-bold uppercase tracking-wider text-amber-200">
+                  Oferta especial por Black Friday
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+                <h3 className="font-serif text-2xl font-semibold text-white sm:text-3xl">
+                  Hasta 40% de descuento
+                </h3>
+                <p className="text-sm text-zinc-300">
+                  en todos los planes
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* PRICING */}
       <section
         id="precios"
@@ -405,22 +458,43 @@ export default function WeddingPlansPage() {
               <Clock className="h-3.5 w-3.5" />
               <span>Reserva con el 50% y el resto al entregar.</span>
             </div>
+            {BLACK_FRIDAY.enabled && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-600/70 bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-4 py-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                <span className="font-semibold text-amber-900">
+                  Hasta 40% OFF en todos los planes - Oferta especial por Black Friday
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {plans.map((plan) => (
-              <Card
-                key={plan.id}
-                className={`relative flex h-full flex-col border-border/80 bg-background/95 ${
-                  plan.highlight
-                    ? "shadow-xl shadow-primary/15 ring-2 ring-primary/30"
-                    : "shadow-sm"
-                }`}
-              >
+            {plans.map((plan) => {
+              const discount = calculateDiscount(plan.id, plan.price);
+
+              return (
+                <Card
+                  key={plan.id}
+                  className={`relative flex h-full flex-col border-border/80 bg-background/95 ${
+                    plan.highlight
+                      ? "shadow-xl shadow-primary/15 ring-2 ring-primary/30"
+                      : "shadow-sm"
+                  }`}
+                >
                 {plan.highlight && (
                   <div className="absolute inset-x-0 top-0 flex justify-center">
                     <div className="mt-3 rounded-full bg-foreground px-4 py-1 text-[11px] font-semibold tracking-[0.2em] text-background">
                       ¡RECOMENDADO!
+                    </div>
+                  </div>
+                )}
+
+                {discount.hasDiscount && (
+                  <div className="absolute right-3 top-3">
+                    <div className="rounded-full bg-gradient-to-br from-amber-500 to-amber-600 px-3 py-1 shadow-lg">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+                        -{discount.discountPercent}%
+                      </span>
                     </div>
                   </div>
                 )}
@@ -439,14 +513,40 @@ export default function WeddingPlansPage() {
 
                 <CardContent className="flex-1 space-y-4">
                   <div className="text-center">
-                    <p className="text-3xl font-semibold">
-                      {formatPriceCLP(plan.price)}
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      Pago único. Puedes contratar abonando el{" "}
-                      <span className="font-semibold text-foreground">50%</span>
-                      .
-                    </p>
+                    {discount.hasDiscount ? (
+                      <>
+                        <div className="flex items-center justify-center gap-2">
+                          <p className="text-lg text-muted-foreground line-through opacity-60">
+                            {formatPriceCLP(discount.originalPrice)}
+                          </p>
+                          <div className="rounded-full bg-destructive/10 px-2 py-0.5">
+                            <span className="text-xs font-semibold text-destructive">
+                              -{discount.discountPercent}%
+                            </span>
+                          </div>
+                        </div>
+                        <p className="mt-1 text-4xl font-bold text-foreground">
+                          {formatPriceCLP(discount.discountedPrice)}
+                        </p>
+                        <p className="mt-2 text-sm font-medium text-primary">
+                          Ahorras {formatPriceCLP(discount.savings)}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Precio especial Black Friday
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-3xl font-semibold">
+                          {formatPriceCLP(plan.price)}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Pago único. Puedes contratar abonando el{" "}
+                          <span className="font-semibold text-foreground">50%</span>
+                          .
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <ul className="space-y-2 text-sm">
@@ -506,8 +606,10 @@ export default function WeddingPlansPage() {
                 </CardContent>
 
                 <CardFooter className="flex flex-col gap-3 border-t border-dashed border-border/60 pt-4">
-                  <Button asChild className="w-full">
-                    <Link href="#contacto">Empezar con este plan</Link>
+                  <Button asChild className={`w-full ${discount.hasDiscount ? 'bg-gradient-to-r from-primary to-primary/80 shadow-lg' : ''}`}>
+                    <Link href="#contacto">
+                      {discount.hasDiscount ? '¡Aprovechar oferta!' : 'Empezar con este plan'}
+                    </Link>
                   </Button>
                   <p className="text-center text-[11px] text-muted-foreground">
                     Enviaremos una propuesta detallada según tu fecha, lugar y
@@ -515,7 +617,8 @@ export default function WeddingPlansPage() {
                   </p>
                 </CardFooter>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

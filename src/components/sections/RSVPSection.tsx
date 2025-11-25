@@ -1,9 +1,10 @@
 "use client";
 import * as React from "react";
-import { Heart, Send, Salad } from "lucide-react";
+import { Heart, Send, Salad, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabaseClient";
+import { FEATURE_FLAGS } from "@/data/site";
 
 // 🔒 Fuente única de verdad para los estados (evita strings sueltos)
 const STATUS = {
@@ -21,7 +22,7 @@ const ATTENDING_LABELS = {
 } as const;
 type AttendingKey = keyof typeof ATTENDING_LABELS;
 
-const RSVPSection = () => {
+const RSVPSectionForm = () => {
   const [form, setForm] = React.useState({
     name: "",
     email: "",
@@ -270,6 +271,42 @@ const RSVPSection = () => {
       </CardContent>
     </Card>
   );
+};
+
+const RSVPSection = () => {
+  if (!FEATURE_FLAGS.rsvpEnabled) {
+    return (
+      <div className="relative">
+        {/* Formulario borroso detrás */}
+        <div className="filter blur-[4px] pointer-events-none select-none" aria-hidden="true">
+          <RSVPSectionForm />
+        </div>
+
+        {/* Overlay con mensaje */}
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="max-w-md shadow-lg border-2">
+            <CardContent className="pt-6 text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="rounded-full bg-primary/10 p-3">
+                  <Lock className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Pronto disponible
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Esta sección estará disponible cuando se entreguen las invitaciones
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return <RSVPSectionForm />;
 };
 
 export default RSVPSection;
