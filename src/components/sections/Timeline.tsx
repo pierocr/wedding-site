@@ -3,6 +3,8 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
+import { FEATURE_FLAGS } from '@/data/site';
+import { LockedOverlay } from '@/components/ui/LockedOverlay';
 
 type EventItem = {
   id: string;
@@ -95,7 +97,12 @@ export default function Timeline() {
   const mobilePath = buildMobileZigZagPath(EVENTS.length, 76, 244, 20, mobileStep);
 
   return (
-    <section className="relative mx-auto w-full max-w-6xl px-4 py-0 sm:py-14">
+    <LockedOverlay
+      isLocked={!FEATURE_FLAGS.eventDetailsVisible}
+      title="Próximamente"
+      description="La programación detallada del día se compartirá pronto"
+    >
+      <section className="relative mx-auto w-full max-w-6xl px-4 py-0 sm:py-14">
       {/* Header */}
       <div className="mb-8 text-center">
 {/*         <h2 className="font-medium text-3xl leading-tight tracking-[0.02em] text-primary md:text-4xl">
@@ -176,6 +183,7 @@ export default function Timeline() {
       {/* Glows sutiles */}
       <div className="pointer-events-none absolute -left-24 -top-20 h-56 w-56 rounded-full bg-teal-200/30 blur-3xl md:h-72 md:w-72" />
       <div className="pointer-events-none absolute -right-24 -bottom-10 h-56 w-56 rounded-full bg-amber-200/30 blur-3xl md:h-72 md:w-72" />
-    </section>
+      </section>
+    </LockedOverlay>
   );
 }

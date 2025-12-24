@@ -10,6 +10,7 @@ import {
   EVENT_TIME_OFFSET,
   CEREMONY,
   RECEPTION,
+  FEATURE_FLAGS,
 } from "@/data/site";
 
 const toAbsoluteUrl = (path: string) => {
@@ -23,6 +24,34 @@ const toAbsoluteUrl = (path: string) => {
 const HERO_IMAGES = ["/og.jpg", "/hero/1.jpg", "/hero/iglesia.png"];
 
 export default function SeoWeddingEvent() {
+  // Si eventDetailsVisible es false, retornar schema genérico
+  if (!FEATURE_FLAGS.eventDetailsVisible) {
+    const jsonLdGeneric = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      "@id": `${SITE_URL}/#wedding`,
+      name: `${BRIDE} & ${GROOM} — Boda`,
+      description: "Celebración de boda. Detalles próximamente.",
+      eventStatus: "https://schema.org/EventScheduled",
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      inLanguage: "es-CL",
+      url: SITE_URL,
+      image: HERO_IMAGES.map(toAbsoluteUrl),
+      organizer: [
+        { "@type": "Person", name: BRIDE },
+        { "@type": "Person", name: GROOM },
+      ],
+      about: [
+        { "@type": "Person", name: BRIDE },
+        { "@type": "Person", name: GROOM },
+      ],
+    };
+
+    const cleaned = JSON.parse(JSON.stringify(jsonLdGeneric));
+    return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(cleaned) }} />;
+  }
+
+  // Schema completo cuando eventDetailsVisible es true
   const startDate = `${WEDDING_DATE_ISO}T${CEREMONY.timeIso ?? "16:30:00"}${EVENT_TIME_OFFSET}`;
   const receptionStart = `${WEDDING_DATE_ISO}T${RECEPTION.startTimeIso ?? "18:30:00"}${EVENT_TIME_OFFSET}`;
   const endDate = `${WEDDING_DATE_ISO}T23:59:00${EVENT_TIME_OFFSET}`;

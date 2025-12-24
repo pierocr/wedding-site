@@ -28,7 +28,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter} from "@/components/ui/card";
 import Story from "@/components/sections/Story";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
-import { BRIDE, GROOM, CEREMONY, RECEPTION, WEDDING_DATE_ISO, BANK_TRANSFER } from "@/data/site";
+import { BRIDE, GROOM, CEREMONY, RECEPTION, WEDDING_DATE_ISO, BANK_TRANSFER, FEATURE_FLAGS } from "@/data/site";
+import { LockedOverlay } from "@/components/ui/LockedOverlay";
 
 
 /* ==============================
@@ -574,56 +575,68 @@ const Hero = () => {
         variants={REVEAL_UP}
       >
         <div className="rounded-2xl border border-transparent bg-transparent">
-          <div className="flex flex-wrap items-center justify-center gap-[clamp(8px,1vw,12px)] p-[clamp(8px,1.2vw,12px)]">
-            {/* Contador */}
-            <div className="flex flex-wrap items-center justify-center gap-[clamp(6px,0.9vw,10px)]">
-              <TimerChip v={days} l="D" />
-              <TimerChip v={hours} l="H" />
-              <TimerChip v={minutes} l="M" />
-              <TimerChip v={seconds} l="S" />
-            </div>
+          <LockedOverlay
+            isLocked={!FEATURE_FLAGS.eventDetailsVisible}
+            title="Próximamente"
+            description="La fecha y hora exactas se revelarán pronto"
+          >
+            <div className="flex flex-wrap items-center justify-center gap-[clamp(8px,1vw,12px)] p-[clamp(8px,1.2vw,12px)]">
+              {/* Contador */}
+              <div className="flex flex-wrap items-center justify-center gap-[clamp(6px,0.9vw,10px)]">
+                <TimerChip v={days} l="D" />
+                <TimerChip v={hours} l="H" />
+                <TimerChip v={minutes} l="M" />
+                <TimerChip v={seconds} l="S" />
+              </div>
 
-            {/* Separador fino */}
-            <div className="hidden md:block md:h-6 md:w-px bg-white/20 mx-1 md:mx-2" />
+              {/* Separador fino */}
+              <div className="hidden md:block md:h-6 md:w-px bg-white/20 mx-1 md:mx-2" />
 
-            {/* Fecha */}
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/70 px-3 py-2 text-[clamp(11px,1.5vw,13px)] text-black">
-              <Calendar className="h-4 w-4" />
-              {CEREMONY.datePretty}
-            </div>
+              {/* Fecha */}
+              <div className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/70 px-3 py-2 text-[clamp(11px,1.5vw,13px)] text-black">
+                <Calendar className="h-4 w-4" />
+                {CEREMONY.datePretty}
+              </div>
 
-            {/* Botones */}
-            <div className="w-full flex items-center justify-center gap-2 sm:gap-3 mt-[clamp(4px,0.8vw,8px)]">
-              <a href="#regalo">
-                <Button className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)]">
-                  <Gift className="mr-2 h-4 w-4" />
-                  Hacer Regalo
-                </Button>
-              </a>
-              <a href="#rsvp">
-                <Button
-                  variant="secondary"
-                  className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)] bg-white text-foreground hover:bg-white/90"
-                >
-                  Confirmar Asistencia
-                </Button>
-              </a>
+              {/* Botones */}
+              <div className="w-full flex items-center justify-center gap-2 sm:gap-3 mt-[clamp(4px,0.8vw,8px)]">
+                <a href="#regalo">
+                  <Button className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)]">
+                    <Gift className="mr-2 h-4 w-4" />
+                    Hacer Regalo
+                  </Button>
+                </a>
+                <a href="#rsvp">
+                  <Button
+                    variant="secondary"
+                    className="h-10 rounded-xl px-4 min-w-[clamp(7.5rem,15vw,11rem)] bg-white text-foreground hover:bg-white/90"
+                  >
+                    Confirmar Asistencia
+                  </Button>
+                </a>
+              </div>
             </div>
-          </div>
+          </LockedOverlay>
         </div>
       </motion.div>
     </section>
   );
 };
 
-const Schedule = () => (
-  <motion.div
-    className="grid gap-6 md:grid-cols-3"
-    initial="hidden"
-    whileInView="show"
-    viewport={{ once: true, amount: 0.2 }}
-    variants={STAGGER}
-  >
+const Schedule = () => {
+  return (
+    <LockedOverlay
+      isLocked={!FEATURE_FLAGS.eventDetailsVisible}
+      title="Próximamente"
+      description="Los detalles de ceremonia y recepción se compartirán pronto"
+    >
+      <motion.div
+        className="grid gap-6 md:grid-cols-3"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={STAGGER}
+      >
     {[
       // Nota: las imágenes /hero/* deben mantenerse comprimidas manualmente (<200KB, WebP/AVIF) para evitar penalizar el LCP real.
       {
@@ -727,8 +740,10 @@ const Schedule = () => (
         </motion.div>
       );
     })}
-  </motion.div>
-);
+      </motion.div>
+    </LockedOverlay>
+  );
+};
 
 // 👉 FAQ (bloque completo: items + helper + componente + JSON-LD)
 
@@ -931,7 +946,7 @@ const Footer = () => (
       </div>
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <a
-          href="mailto:pierocr@gmail.com"
+          href="mailto:contacto@teilen.cl"
           className="inline-flex items-center gap-1 hover:underline"
         >
           <Mail className="h-4 w-4" />

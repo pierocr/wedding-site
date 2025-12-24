@@ -13,7 +13,7 @@ import {
   Info,
   CreditCard,
   Clock,
-  Tag,
+  Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { BLACK_FRIDAY } from "@/data/site";
+import { CHRISTMAS_PROMO, isChristmasPromoActive } from "@/data/site";
 
 export const metadata: Metadata = {
   title: "Planes para sitio web de matrimonio | Piero & Debby",
@@ -89,7 +89,7 @@ const formatPriceCLP = (value: number) =>
   }).format(value);
 
 const calculateDiscount = (planId: string, originalPrice: number) => {
-  const isEligible = BLACK_FRIDAY.enabled && (BLACK_FRIDAY.eligiblePlans as readonly string[]).includes(planId);
+  const isEligible = isChristmasPromoActive() && (CHRISTMAS_PROMO.eligiblePlans as readonly string[]).includes(planId);
 
   if (!isEligible) {
     return {
@@ -102,7 +102,7 @@ const calculateDiscount = (planId: string, originalPrice: number) => {
   }
 
   // Obtener el porcentaje de descuento específico para este plan
-  const discountPercent = BLACK_FRIDAY.discounts[planId as keyof typeof BLACK_FRIDAY.discounts] || 0;
+  const discountPercent = CHRISTMAS_PROMO.discounts[planId as keyof typeof CHRISTMAS_PROMO.discounts] || 0;
   const discountedPrice = originalPrice * (1 - discountPercent / 100);
   const savings = originalPrice - discountedPrice;
 
@@ -404,22 +404,22 @@ export default function WeddingPlansPage() {
         </div>
       </section>
 
-      {/* BLACK FRIDAY BANNER */}
-      {BLACK_FRIDAY.enabled && (
-        <section className="border-y border-amber-600/30 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 py-6">
+      {/* CHRISTMAS PROMO BANNER */}
+      {isChristmasPromoActive() && (
+        <section className="border-y border-amber-600/40 bg-gradient-to-br from-red-950 via-red-900 to-red-950 py-6">
           <div className="mx-auto max-w-6xl px-4">
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-center sm:gap-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2">
-                <Tag className="h-5 w-5 text-amber-400" />
-                <span className="text-sm font-bold uppercase tracking-wider text-amber-200">
-                  Oferta especial por Black Friday
+              <div className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-red-100 px-4 py-2">
+                <Gift className="h-5 w-5 text-red-600" />
+                <span className="text-sm font-bold uppercase tracking-wider text-red-800">
+                  Oferta especial de Navidad
                 </span>
               </div>
               <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
-                <h3 className="font-serif text-2xl font-semibold text-white sm:text-3xl">
+                <h3 className="font-serif text-2xl font-semibold text-amber-50 sm:text-3xl">
                   Hasta 40% de descuento
                 </h3>
-                <p className="text-sm text-zinc-300">
+                <p className="text-sm text-red-100">
                   en todos los planes
                 </p>
               </div>
@@ -458,11 +458,11 @@ export default function WeddingPlansPage() {
               <Clock className="h-3.5 w-3.5" />
               <span>Reserva con el 50% y el resto al entregar.</span>
             </div>
-            {BLACK_FRIDAY.enabled && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-600/70 bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-4 py-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                <span className="font-semibold text-amber-900">
-                  Hasta 40% OFF en todos los planes - Oferta especial por Black Friday
+            {isChristmasPromoActive() && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-red-400 bg-gradient-to-r from-red-100 to-amber-100 px-4 py-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-red-600" />
+                <span className="font-semibold text-red-900">
+                  Hasta 40% OFF en todos los planes - Oferta especial de Navidad
                 </span>
               </div>
             )}
@@ -491,7 +491,7 @@ export default function WeddingPlansPage() {
 
                 {discount.hasDiscount && (
                   <div className="absolute right-3 top-3">
-                    <div className="rounded-full bg-gradient-to-br from-amber-500 to-amber-600 px-3 py-1 shadow-lg">
+                    <div className="rounded-full bg-gradient-to-br from-red-600 to-red-700 px-3 py-1 shadow-lg">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-white">
                         -{discount.discountPercent}%
                       </span>
@@ -519,8 +519,8 @@ export default function WeddingPlansPage() {
                           <p className="text-lg text-muted-foreground line-through opacity-60">
                             {formatPriceCLP(discount.originalPrice)}
                           </p>
-                          <div className="rounded-full bg-destructive/10 px-2 py-0.5">
-                            <span className="text-xs font-semibold text-destructive">
+                          <div className="rounded-full bg-red-50 px-2 py-0.5">
+                            <span className="text-xs font-semibold text-red-700">
                               -{discount.discountPercent}%
                             </span>
                           </div>
@@ -528,11 +528,11 @@ export default function WeddingPlansPage() {
                         <p className="mt-1 text-4xl font-bold text-foreground">
                           {formatPriceCLP(discount.discountedPrice)}
                         </p>
-                        <p className="mt-2 text-sm font-medium text-primary">
+                        <p className="mt-2 text-sm font-medium text-red-700">
                           Ahorras {formatPriceCLP(discount.savings)}
                         </p>
                         <p className="mt-1 text-[11px] text-muted-foreground">
-                          Precio especial Black Friday
+                          Precio especial de Navidad
                         </p>
                       </>
                     ) : (
@@ -606,7 +606,7 @@ export default function WeddingPlansPage() {
                 </CardContent>
 
                 <CardFooter className="flex flex-col gap-3 border-t border-dashed border-border/60 pt-4">
-                  <Button asChild className={`w-full ${discount.hasDiscount ? 'bg-gradient-to-r from-primary to-primary/80 shadow-lg' : ''}`}>
+                  <Button asChild className={`w-full ${discount.hasDiscount ? 'bg-gradient-to-r from-red-700 to-red-800 shadow-lg hover:from-red-800 hover:to-red-900' : ''}`}>
                     <Link href="#contacto">
                       {discount.hasDiscount ? '¡Aprovechar oferta!' : 'Empezar con este plan'}
                     </Link>
@@ -731,19 +731,10 @@ export default function WeddingPlansPage() {
               <p>Puedes escribirnos directamente a:</p>
               <div className="flex flex-col items-center gap-2 text-base font-medium sm:flex-row sm:justify-center">
                 <a
-                  href="mailto:pierocr@gmail.com?subject=Cotizaci%C3%B3n%20sitio%20web%20de%20matrimonio"
+                  href="mailto:contacto@teilen.cl?subject=Cotizaci%C3%B3n%20sitio%20web%20de%20matrimonio"
                   className="underline-offset-4 hover:text-foreground hover:underline"
                 >
-                  pierocr@gmail.com
-                </a>
-                <span className="hidden text-muted-foreground sm:inline">
-                  /
-                </span>
-                <a
-                  href="mailto:debby.gutierrez.parra@gmail.com?subject=Cotizaci%C3%B3n%20sitio%20web%20de%20matrimonio"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  debby.gutierrez.parra@gmail.com
+                  contacto@teilen.cl
                 </a>
               </div>
             </div>

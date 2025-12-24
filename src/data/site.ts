@@ -47,12 +47,14 @@ export const BANK_TRANSFER = {
 // Feature Flags
 export const FEATURE_FLAGS = {
   rsvpEnabled: process.env.NEXT_PUBLIC_RSVP_ENABLED === "true",
-  blackFridayEnabled: process.env.NEXT_PUBLIC_BLACK_FRIDAY_ENABLED === "true",
+  christmasPromoEnabled: process.env.NEXT_PUBLIC_CHRISTMAS_PROMO_ENABLED === "true",
+  eventDetailsVisible: process.env.NEXT_PUBLIC_EVENT_DETAILS_VISIBLE === "true",
 } as const;
 
-// Black Friday Promotion Configuration
-export const BLACK_FRIDAY = {
-  enabled: FEATURE_FLAGS.blackFridayEnabled,
+// Christmas Promotion Configuration
+export const CHRISTMAS_PROMO = {
+  enabled: FEATURE_FLAGS.christmasPromoEnabled,
+  endDate: "2025-12-31T23:59:59-03:00",
   discounts: {
     plata: 20,
     oro: 40,
@@ -60,3 +62,11 @@ export const BLACK_FRIDAY = {
   },
   eligiblePlans: ["plata", "oro", "diamante"], // IDs de planes con descuento
 } as const;
+
+// Helper function to check if promo is active
+export const isChristmasPromoActive = () => {
+  if (!CHRISTMAS_PROMO.enabled) return false;
+  const now = new Date();
+  const endDate = new Date(CHRISTMAS_PROMO.endDate);
+  return now <= endDate;
+};
