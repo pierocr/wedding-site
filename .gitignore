@@ -31,11 +31,8 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env
-.env.development
-.env.production
-.env.test
-# .env.local - permitido para subir al repo
+.env*
+# Las feature flags ahora están en src/config/featureFlags.ts
 
 # vercel
 .vercel

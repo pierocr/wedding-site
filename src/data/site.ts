@@ -44,16 +44,13 @@ export const BANK_TRANSFER = {
   email: "piero@gmail.com",
 };
 
-// Feature Flags
-export const FEATURE_FLAGS = {
-  rsvpEnabled: process.env.NEXT_PUBLIC_RSVP_ENABLED === "true",
-  christmasPromoEnabled: process.env.NEXT_PUBLIC_CHRISTMAS_PROMO_ENABLED === "true",
-  eventDetailsVisible: process.env.NEXT_PUBLIC_EVENT_DETAILS_VISIBLE === "true",
-} as const;
+// Feature Flags - importadas desde archivo de configuración
+import { FEATURE_FLAGS as FLAGS } from "@/config/featureFlags";
+export { FEATURE_FLAGS } from "@/config/featureFlags";
 
 // Christmas Promotion Configuration
 export const CHRISTMAS_PROMO = {
-  enabled: FEATURE_FLAGS.christmasPromoEnabled,
+  enabled: FLAGS.christmasPromoEnabled,
   endDate: "2025-12-31T23:59:59-03:00",
   discounts: {
     plata: 20,
