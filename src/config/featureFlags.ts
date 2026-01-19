@@ -7,7 +7,7 @@ export const FEATURE_FLAGS = {
   rsvpEnabled: false,
 
   // Christmas Promotion - activa hasta 31 de diciembre
-  christmasPromoEnabled: true,
+  christmasPromoEnabled: false,
 
   // Event Details - cambiar a true para revelar fecha, lugares y horarios
   eventDetailsVisible: true,
