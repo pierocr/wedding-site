@@ -128,8 +128,10 @@ export async function POST(req: Request) {
     finalRaffle;
 
   if (shouldEmail) {
+    const target = updatedPayment || update;
+    const rawCart = target?.cart ?? nextMeta.cart_snapshot ?? null;
+    const cart = Array.isArray(rawCart) ? rawCart : null;
     try {
-      const target = updatedPayment || update;
       await sendFlowReceiptEmail({
         donor_name: String(target?.donor_name || "amig@"),
         donor_email: String(target?.donor_email),
@@ -138,7 +140,7 @@ export async function POST(req: Request) {
         external_reference: target?.external_reference ?? statusData.commerceOrder ?? token,
         flow_order: statusData.flowOrder || nextMeta.flow_order || null,
         flow_token: token,
-        cart: (target as any)?.cart || nextMeta.cart_snapshot || null,
+        cart,
         message: nextMeta.message || null,
       });
       nextMeta.email_sent_at = new Date().toISOString();
@@ -150,6 +152,15 @@ export async function POST(req: Request) {
         console.error("[flow/webhook] no se pudo guardar email_sent_at", err);
       }
     } catch (err) {
+      nextMeta.email_error = (err as any)?.message || String(err);
+      nextMeta.email_failed_at = new Date().toISOString();
+      try {
+        if (updatedPayment?.id) {
+          await supabase.from("payments").update({ meta: nextMeta }).eq("id", updatedPayment.id);
+        }
+      } catch (updateErr) {
+        console.error("[flow/webhook] no se pudo guardar email_error", updateErr);
+      }
       console.error("[flow/webhook] email error", err);
     }
   }

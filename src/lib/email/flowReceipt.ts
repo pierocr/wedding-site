@@ -125,7 +125,10 @@ const toBase64 = (bytes: Uint8Array) => {
 
 export async function sendFlowReceiptEmail(payload: ReceiptPayload) {
   const apiKey = env("RESEND_API_KEY");
-  const from = env("THANKS_FROM", { optional: true }) || "Piero & Debby <no-reply@resend.dev>";
+  const from =
+    env("EMAIL_FROM", { optional: true }) ||
+    env("THANKS_FROM", { optional: true }) ||
+    "Piero & Debby <noreply@teilen.cl>";
   const bccRaw = env("EMAIL_BCC", { optional: true }) || env("THANKS_BCC", { optional: true }) || "";
   const bcc = bccRaw
     .split(",")
@@ -235,6 +238,23 @@ export async function sendFlowReceiptEmail(payload: ReceiptPayload) {
 
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(`Resend error: ${txt || res.statusText}`);
+    const err = new Error(`Resend error: ${txt || res.statusText}`);
+    (err as any).status = res.status;
+    (err as any).details = txt || res.statusText;
+    throw err;
   }
+
+  let data: { id?: string } | null = null;
+  try {
+    data = (await res.json()) as any;
+  } catch {
+    data = null;
+  }
+
+  return {
+    id: data?.id,
+    subject,
+    from,
+    to: [payload.donor_email],
+  };
 }
