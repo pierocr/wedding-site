@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, XCircle, Home, RefreshCw } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, Home, RefreshCw, AlertCircle } from "lucide-react";
 
 type StatusResponse = {
   status: "pending" | "paid" | "rejected" | "cancelled" | "unknown";
@@ -30,16 +30,55 @@ export default function ResultadoClient() {
   const [data, setData] = useState<StatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [noToken, setNoToken] = useState(false);
+  const [invalidToken, setInvalidToken] = useState(false);
 
-  const status = data?.status || "pending";
+  const status = data?.status || (noToken || invalidToken ? "unknown" : "pending");
   const statusInfo = useMemo(() => {
-    if (status === "paid") return { icon: CheckCircle2, color: "text-emerald-600", title: "Pago recibido ✅", desc: "¡Gracias! Tu regalo fue procesado exitosamente." };
+    if (noToken) {
+      return {
+        icon: AlertCircle,
+        color: "text-amber-700",
+        title: "Falta el código del pago",
+        desc: "Si acabas de pagar, vuelve a intentar desde el botón al final de Flow. Si entraste manualmente, no tenemos el token.",
+      };
+    }
+    if (invalidToken) {
+      return {
+        icon: AlertCircle,
+        color: "text-rose-700",
+        title: "Pago no encontrado",
+        desc: "El token que recibimos no es válido o el pago no existe.",
+      };
+    }
+    if (status === "paid")
+      return {
+        icon: CheckCircle2,
+        color: "text-emerald-600",
+        title: "Pago recibido ✅",
+        desc: "¡Gracias! Tu regalo fue procesado exitosamente.",
+      };
     if (status === "rejected" || status === "cancelled")
-      return { icon: XCircle, color: "text-rose-600", title: "Pago rechazado o cancelado", desc: "No se realizó el cobro. Puedes intentar nuevamente." };
+      return {
+        icon: XCircle,
+        color: "text-rose-600",
+        title: "Pago rechazado o cancelado",
+        desc: "No se realizó el cobro. Puedes intentar nuevamente.",
+      };
     if (status === "pending")
-      return { icon: Clock, color: "text-amber-600", title: "Pago pendiente", desc: "Estamos esperando la confirmación de Flow. Esto puede tardar unos segundos." };
-    return { icon: Clock, color: "text-slate-500", title: "Estado en revisión", desc: "Estamos verificando el estado de tu pago." };
-  }, [status]);
+      return {
+        icon: Clock,
+        color: "text-amber-600",
+        title: "Pago pendiente",
+        desc: "Estamos esperando la confirmación de Flow. Esto puede tardar unos segundos.",
+      };
+    return {
+      icon: Clock,
+      color: "text-slate-500",
+      title: "Estado en revisión",
+      desc: "Estamos verificando el estado de tu pago.",
+    };
+  }, [invalidToken, noToken, status]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +86,7 @@ export default function ResultadoClient() {
 
     async function load() {
       if (!token) {
+        setNoToken(true);
         setError("Falta el token de pago entregado por Flow.");
         return;
       }
@@ -56,7 +96,10 @@ export default function ResultadoClient() {
           cache: "no-store",
         });
         const json = await res.json();
-        if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+        if (!res.ok) {
+          setInvalidToken(true);
+          throw new Error(json?.error || `HTTP ${res.status}`);
+        }
         if (!cancelled) {
           setData(json as StatusResponse);
           setError(null);
