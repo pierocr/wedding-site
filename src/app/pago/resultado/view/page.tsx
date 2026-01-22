@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ResultadoClient from "./client";
+import ResultadoClient from "../client";
 
 export const dynamic = "force-dynamic"; // evita SSG/ISR en build
 export const runtime = "edge";          // Cloudflare Workers

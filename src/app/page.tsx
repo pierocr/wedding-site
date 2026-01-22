@@ -787,11 +787,11 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "🎁 ¿Cómo puedo hacer el regalo?",
-    a: "En la sección “Regalo” podrás elegir un mensaje con Mercado Pago o usar los datos de transferencia. ¡El mejor regalo es que estés con nosotros!"
+    a: "En la sección “Regalo” podrás elegir un mensaje y pagar con Flow (Webpay) o usar los datos de transferencia. ¡El mejor regalo es que estés con nosotros!"
   },
   {
     q: "💳 ¿Puedo pagar en cuotas con tarjeta?",
-    a: "Sí. Al pagar por Mercado Pago podrás seleccionar cuotas según tu banco y tarjeta, incluso podrás elegir cuotas sin interes dependiendo del banco (sujeto a condiciones de cada emisor)."
+    a: "Sí. Al pagar por Flow (Webpay) podrás seleccionar cuotas según tu banco y tarjeta, incluso podrás elegir cuotas sin interés dependiendo del emisor (sujeto a condiciones de cada banco)."
   },
   {
     q: "🥗 Tengo restricciones alimentarias",

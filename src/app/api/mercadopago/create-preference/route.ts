@@ -1,4 +1,5 @@
 // src/app/api/mercadopago/create-preference/route.ts
+// ⚠️ Legacy (Flow es el nuevo flujo). Se mantiene para historial, no usar en UI nueva.
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 

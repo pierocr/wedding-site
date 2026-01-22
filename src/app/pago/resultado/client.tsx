@@ -2,72 +2,178 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { CheckCircle2, Clock, XCircle, Home, RefreshCw } from "lucide-react";
 
-type MPReturn = {
-  collection_id?: string | null;
-  collection_status?: string | null;
-  payment_id?: string | null;
-  status?: string | null;
-  preference_id?: string | null;
+type StatusResponse = {
+  status: "pending" | "paid" | "rejected" | "cancelled" | "unknown";
+  raffle_number?: number | null;
+  amount?: number | null;
+  donor_name?: string | null;
+  donor_email?: string | null;
+  cart?: Array<{ title?: string; unitPrice?: number; qty?: number }> | null;
+  message?: string | null;
   external_reference?: string | null;
-  merchant_order_id?: string | null;
 };
+
+const priceFmt = (n?: number | null) =>
+  typeof n === "number" && !Number.isNaN(n)
+    ? new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0,
+      }).format(n)
+    : null;
 
 export default function ResultadoClient() {
   const sp = useSearchParams();
-  const [submitted, setSubmitted] = useState(false);
+  const token = sp.get("token");
+  const [data, setData] = useState<StatusResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const data: MPReturn = useMemo(
-    () => ({
-      collection_id: sp.get("collection_id"),
-      collection_status: sp.get("collection_status"),
-      payment_id: sp.get("payment_id") || sp.get("paymentId"),
-      status: sp.get("status") || sp.get("collection_status"),
-      preference_id: sp.get("preference_id") || sp.get("preferenceId"),
-      external_reference: sp.get("external_reference"),
-      merchant_order_id: sp.get("merchant_order_id"),
-    }),
-    [sp]
-  );
+  const status = data?.status || "pending";
+  const statusInfo = useMemo(() => {
+    if (status === "paid") return { icon: CheckCircle2, color: "text-emerald-600", title: "Pago recibido ✅", desc: "¡Gracias! Tu regalo fue procesado exitosamente." };
+    if (status === "rejected" || status === "cancelled")
+      return { icon: XCircle, color: "text-rose-600", title: "Pago rechazado o cancelado", desc: "No se realizó el cobro. Puedes intentar nuevamente." };
+    if (status === "pending")
+      return { icon: Clock, color: "text-amber-600", title: "Pago pendiente", desc: "Estamos esperando la confirmación de Flow. Esto puede tardar unos segundos." };
+    return { icon: Clock, color: "text-slate-500", title: "Estado en revisión", desc: "Estamos verificando el estado de tu pago." };
+  }, [status]);
 
-  // Opcional: notificar a tu backend para registrar el retorno (idempotente)
   useEffect(() => {
-    if (!submitted && (data.payment_id || data.collection_id)) {
-      setSubmitted(true);
-      fetch("/api/mp/registrar-retorno", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...data, source: "return_url" }),
-      }).catch(() => {});
-    }
-  }, [data, submitted]);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-  const approved = (data.status || "").toLowerCase() === "approved";
+    async function load() {
+      if (!token) {
+        setError("Falta el token de pago entregado por Flow.");
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/flow/status?token=${encodeURIComponent(token)}`, {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+        if (!cancelled) {
+          setData(json as StatusResponse);
+          setError(null);
+          if (json?.status === "pending") {
+            timer = setTimeout(load, 3500);
+          }
+        }
+      } catch (err: any) {
+        if (!cancelled) setError(err?.message || "No pudimos obtener el estado.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [token]);
+
+  const Icon = statusInfo.icon;
 
   return (
     <main className="mx-auto max-w-xl p-6">
       <div className="rounded-2xl border p-6 shadow-sm">
-        <h1 className="mb-2 text-2xl font-semibold">
-          {approved ? "¡Pago aprobado!" : "Estado del pago"}
-        </h1>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Te mostraremos el resultado de tu pago y guardaremos un respaldo.
-        </p>
+        <div className="flex items-start gap-3">
+          <Icon className={`mt-1 h-8 w-8 ${statusInfo.color}`} />
+          <div>
+            <h1 className="text-2xl font-semibold">{statusInfo.title}</h1>
+            <p className="text-sm text-muted-foreground">{statusInfo.desc}</p>
+            {data?.raffle_number && status === "paid" && (
+              <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
+                Número de concurso: {data.raffle_number}
+              </p>
+            )}
+          </div>
+        </div>
 
-        <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-          {Object.entries(data).map(([k, v]) =>
-            v ? (
-              <div key={k} className="flex justify-between gap-4 border-b py-2">
-                <dt className="font-medium">{k}</dt>
-                <dd className="truncate">{v}</dd>
-              </div>
-            ) : null
+        {error && (
+          <div className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {error}
+          </div>
+        )}
+
+        <div className="mt-6 space-y-2 text-sm">
+          {data?.amount && (
+            <div className="flex justify-between gap-3 border-b py-2">
+              <span className="text-muted-foreground">Monto</span>
+              <span className="font-semibold">{priceFmt(data.amount)}</span>
+            </div>
           )}
-        </dl>
+          {data?.donor_name && (
+            <div className="flex justify-between gap-3 border-b py-2">
+              <span className="text-muted-foreground">Nombre</span>
+              <span className="font-medium">{data.donor_name}</span>
+            </div>
+          )}
+          {data?.donor_email && (
+            <div className="flex justify-between gap-3 border-b py-2">
+              <span className="text-muted-foreground">Email</span>
+              <span className="truncate text-right">{data.donor_email}</span>
+            </div>
+          )}
+          {data?.external_reference && (
+            <div className="flex justify-between gap-3 border-b py-2">
+              <span className="text-muted-foreground">Referencia</span>
+              <span className="font-mono text-xs">{data.external_reference}</span>
+            </div>
+          )}
+          {data?.message && (
+            <div className="rounded-lg border bg-muted/40 px-3 py-2">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">Mensaje</div>
+              <div className="mt-1 text-sm">{data.message}</div>
+            </div>
+          )}
+          {data?.cart && data.cart.length > 0 && (
+            <div className="rounded-lg border bg-muted/40 px-3 py-2">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                Regalos
+              </div>
+              <ul className="mt-1 space-y-1">
+                {data.cart.map((l, idx) => (
+                  <li key={`${l.title}-${idx}`} className="flex justify-between text-sm">
+                    <span>
+                      {l.qty ? `${l.qty}× ` : ""}
+                      {l.title}
+                    </span>
+                    {l.unitPrice ? (
+                      <span className="text-muted-foreground">{priceFmt(l.unitPrice * (l.qty ?? 1))}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
 
-        <a href="/" className="mt-6 inline-block rounded-xl border px-4 py-2">
-          Volver al inicio
-        </a>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {status !== "paid" && (
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm"
+              disabled={loading}
+            >
+              <RefreshCw className="h-4 w-4" />
+              {loading ? "Actualizando..." : "Reintentar"}
+            </button>
+          )}
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-rose-600"
+          >
+            <Home className="h-4 w-4" />
+            Volver al inicio
+          </a>
+        </div>
       </div>
     </main>
   );

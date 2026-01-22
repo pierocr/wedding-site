@@ -62,7 +62,7 @@ const featureCatalog: Array<{ key: FeatureKey; label: ReactNode }> = [
   { key: "regalos", label: "Sección de regalos y datos bancarios" },
   { key: "dominio", label: "Dominio propio .cl listo para compartir" },
   { key: "panel", label: "Panel intuitivo para editar textos y fotos" },
-  { key: "pasarela", label: "Lista de regalos interactiva y pagos vía Mercado Pago (Tarjeta de Crédito) 💳" },
+  { key: "pasarela", label: "Lista de regalos interactiva y pagos vía Flow (Webpay) 💳" },
   {
     key: "estiloPremium",
     label: (

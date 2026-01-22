@@ -22,15 +22,20 @@ export default function PayWithMPRedirect({
   async function handlePay() {
     setLoading(true);
     try {
-      const res = await fetch("/api/mercadopago/create-preference", {
+      const res = await fetch("/api/flow/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, amount, name, email }),
+        body: JSON.stringify({
+          donor_name: name,
+          donor_email: email,
+          amount,
+          cart: [{ id: "custom", title, unitPrice: amount, qty: 1 }],
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error al crear preferencia");
-      if (!data?.init_point) throw new Error("Falta init_point");
-      window.location.href = data.init_point as string; // redirección a Checkout Pro
+      if (!res.ok) throw new Error(data?.error || "Error al crear pago en Flow");
+      if (!data?.redirectUrl) throw new Error("Falta redirectUrl");
+      window.location.href = data.redirectUrl as string;
     } catch (e) {
       console.error(e);
       alert("No pudimos iniciar el pago. Intenta nuevamente.");
@@ -45,7 +50,7 @@ export default function PayWithMPRedirect({
       disabled={loading}
       className={className ?? "rounded-md border px-4 py-2"}
     >
-      {loading ? "Redirigiendo…" : "Pagar con Mercado Pago"}
+      {loading ? "Redirigiendo…" : "Pagar con Flow"}
     </button>
   );
 }

@@ -69,7 +69,7 @@ export default function GraciasClient() {
     pending: {
       icon: <Hourglass className="h-8 w-8 text-amber-600" />,
       title: "Tu pago está en revisión",
-      desc: "Mercado Pago está validando la transacción. Te avisaremos por correo cuando se confirme.",
+      desc: "Flow/Webpay está validando la transacción. Te avisaremos por correo cuando se confirme.",
       note: "Si ves que tarda demasiado, puedes volver a intentar más tarde.",
       accent: "text-amber-700",
       bg: "bg-amber-50",

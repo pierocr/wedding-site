@@ -1,17 +1,17 @@
 ├── public/
 │   ├── gallery/
-│   │   ├── 1.jpg (1329.0 KB)
+│   │   ├── 1.jpg (103.0 KB)
 │   │   ├── 2.jpg (612.1 KB)
 │   │   ├── 3.jpg (130.2 KB)
 │   │   ├── 4.jpg (552.6 KB)
-│   │   ├── 5.jpg (1337.6 KB)
+│   │   ├── 5.jpg (421.0 KB)
 │   │   ├── 6.jpg (93.4 KB)
 │   │   ├── 7.jpg (112.1 KB)
 │   │   └── 8.jpg (756.4 KB)
 │   ├── hero/
 │   │   ├── 1.jpg (1329.0 KB)
 │   │   ├── centrodeeventos.jpg (55.7 KB)
-│   │   ├── dress_code.png (1266.0 KB)
+│   │   ├── dress_code.jpg (68.4 KB)
 │   │   └── iglesia.png (731.5 KB)
 │   ├── imgs/
 │   │   └── timeline/
@@ -20,13 +20,17 @@
 │   │       ├── couple_gold.svg (0.6 KB)
 │   │       ├── dinner_gold.svg (0.6 KB)
 │   │       ├── heart_gold.svg (0.2 KB)
-│   │       └── party_gold.svg (0.6 KB)
+│   │       ├── party_gold.svg (0.6 KB)
+│   │       ├── pexels-hannaauramenka-8669230.jpg (75.4 KB)
+│   │       ├── pexels-jonathanborba-12846017.jpg (156.4 KB)
+│   │       └── pexels-marina-abrosimova-3319804-5222109.jpg (83.3 KB)
 │   ├── music/
 │   │   └── Sonreir.mp3 (1633.9 KB)
 │   ├── file.svg (0.4 KB)
 │   ├── globe.svg (1.0 KB)
 │   ├── next.svg (1.3 KB)
 │   ├── og.jpg (247.4 KB)
+│   ├── robots.txt (0.1 KB)
 │   ├── vercel.svg (0.1 KB)
 │   └── window.svg (0.4 KB)
 ├── src/
@@ -51,25 +55,27 @@
 │   │   │   │   ├── client.tsx (2.4 KB)
 │   │   │   │   └── page.tsx (0.4 KB)
 │   │   │   └── page.tsx (2.9 KB)
+│   │   ├── planes-matrimonio/
+│   │   │   └── page.tsx (31.2 KB)
 │   │   ├── apple-touch-icon.png (25.3 KB)
 │   │   ├── favicon.ico (21.5 KB)
 │   │   ├── fonts.ts (0.7 KB)
 │   │   ├── globals.css (4.6 KB)
-│   │   ├── layout.tsx (2.0 KB)
-│   │   ├── page.tsx (33.6 KB)
+│   │   ├── layout.tsx (3.5 KB)
+│   │   ├── page.tsx (36.8 KB)
 │   │   ├── robots.ts (0.3 KB)
 │   │   └── sitemap.ts (0.5 KB)
 │   ├── components/
 │   │   ├── sections/
-│   │   │   ├── Gallery.tsx (8.8 KB)
+│   │   │   ├── Gallery.tsx (9.0 KB)
 │   │   │   ├── GiftSection.tsx (18.1 KB)
-│   │   │   ├── RSVPSection.tsx (8.5 KB)
-│   │   │   ├── Story.tsx (3.1 KB)
-│   │   │   └── Timeline.tsx (6.7 KB)
+│   │   │   ├── RSVPSection.tsx (10.6 KB)
+│   │   │   ├── Story.tsx (5.1 KB)
+│   │   │   └── Timeline.tsx (7.0 KB)
 │   │   ├── seo/
 │   │   │   ├── SeoFaq.tsx (0.6 KB)
 │   │   │   ├── SeoWebsite.tsx (0.4 KB)
-│   │   │   └── SeoWeddingEvent.tsx (2.8 KB)
+│   │   │   └── SeoWeddingEvent.tsx (3.8 KB)
 │   │   ├── ui/
 │   │   │   ├── accordion.tsx (2.1 KB)
 │   │   │   ├── badge.tsx (1.1 KB)
@@ -77,15 +83,20 @@
 │   │   │   ├── card.tsx (1.8 KB)
 │   │   │   ├── dialog.tsx (3.8 KB)
 │   │   │   ├── input.tsx (0.8 KB)
+│   │   │   ├── LockedOverlay.tsx (0.7 KB)
 │   │   │   ├── separator.tsx (0.8 KB)
 │   │   │   ├── SpotifyEmbed.tsx (0.8 KB)
 │   │   │   ├── tabs.tsx (1.9 KB)
 │   │   │   └── textarea.tsx (0.7 KB)
 │   │   ├── FloatingSpotify.tsx (2.6 KB)
 │   │   └── PayWithMPRedirect.tsx (1.2 KB)
+│   ├── config/
+│   │   └── featureFlags.ts (0.4 KB)
 │   ├── data/
 │   │   ├── gallery.ts (0.8 KB)
-│   │   └── site.ts (1.4 KB)
+│   │   └── site.ts (2.2 KB)
+│   ├── hooks/
+│   │   └── useInViewOnce.ts (0.9 KB)
 │   ├── lib/
 │   │   ├── utils/
 │   │   ├── rsvpSchema.ts (0.5 KB)
@@ -95,11 +106,12 @@
 ├── components.json (0.3 KB)
 ├── eslint.config.mjs (0.1 KB)
 ├── next-env.d.ts (0.3 KB)
-├── next.config.ts (0.3 KB)
+├── next.config.ts (0.4 KB)
 ├── package.json (1.5 KB)
-├── pnpm-lock.yaml (179.4 KB)
+├── pnpm-lock.yaml (177.1 KB)
 ├── postcss.config.js (0.1 KB)
 ├── postcss.config.mjs (0.1 KB)
+├── project-structure.txt (4.3 KB)
 ├── README.md (1.4 KB)
 ├── robots.txt (0.1 KB)
 ├── tailwind.config.js (2.7 KB)

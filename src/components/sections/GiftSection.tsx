@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import clsx from "clsx";
 
 type CatalogItem = {
@@ -79,15 +80,15 @@ export default function GiftSection() {
     }
   }
 
-  function loadDonor(): { name: string; email: string } {
-    if (typeof window === "undefined") return { name: "", email: "" };
+  function loadDonor(): { name: string; email: string; message: string } {
+    if (typeof window === "undefined") return { name: "", email: "", message: "" };
     try {
       const raw = localStorage.getItem(DONOR_KEY);
-      if (!raw) return { name: "", email: "" };
-      const { name = "", email = "" } = JSON.parse(raw) ?? {};
-      return { name: String(name), email: String(email) };
+      if (!raw) return { name: "", email: "", message: "" };
+      const { name = "", email = "", message = "" } = JSON.parse(raw) ?? {};
+      return { name: String(name), email: String(email), message: String(message) };
     } catch {
-      return { name: "", email: "" };
+      return { name: "", email: "", message: "" };
     }
   }
 
@@ -95,6 +96,7 @@ export default function GiftSection() {
   const donor = React.useMemo(loadDonor, []);
   const [name, setName] = React.useState(donor.name);
   const [email, setEmail] = React.useState(donor.email);
+  const [message, setMessage] = React.useState(donor.message);
   const [customMsg, setCustomMsg] = React.useState("");
   const [customAmount, setCustomAmount] = React.useState<number | "">("");
   const [loading, setLoading] = React.useState(false);
@@ -108,6 +110,7 @@ export default function GiftSection() {
     const d = loadDonor();
     if (d.name) setName(d.name);
     if (d.email) setEmail(d.email);
+    if (d.message) setMessage(d.message);
   }, []);
 
   const priceFmt = (n: number) =>
@@ -133,11 +136,11 @@ export default function GiftSection() {
   React.useEffect(() => {
     const t = setTimeout(() => {
       try {
-        localStorage.setItem(DONOR_KEY, JSON.stringify({ name, email }));
+        localStorage.setItem(DONOR_KEY, JSON.stringify({ name, email, message }));
       } catch {}
     }, 250);
     return () => clearTimeout(t);
-  }, [name, email]);
+  }, [name, email, message]);
 
   // ===== Helpers carrito =====
   const qtyFor = (id: string) => cart.find((l) => l.id === id)?.qty ?? 0;
@@ -184,32 +187,35 @@ export default function GiftSection() {
   const subtotal = (l: CartLine) => l.unitPrice * l.qty;
   const total = cart.reduce((a, l) => a + subtotal(l), 0);
 
-  const canPay = !!name.trim() && EMAIL_RE.test(email) && cart.length > 0 && !loading;
+  const canPay =
+    !!name.trim() && EMAIL_RE.test(email) && cart.length > 0 && !!message.trim() && !loading;
 
   async function pay() {
     if (!canPay) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/mercadopago/create-preference", {
+      const res = await fetch("/api/flow/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          email,
+          donor_name: name,
+          donor_email: email,
+          message,
           currency: CURRENCY,
-          external_reference: `gift:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-          cart: cart.map(l => ({
+          amount: total,
+          cart: cart.map((l) => ({
             id: l.id,
             title: l.title,
             unitPrice: l.unitPrice,
-            qty: l.qty
-          }))
+            qty: l.qty,
+          })),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      window.location.href = data.init_point;
+      if (!data?.redirectUrl) throw new Error("No se pudo iniciar el pago en Flow");
+      window.location.href = data.redirectUrl as string;
     } catch (e: any) {
       console.error(e);
       alert(e?.message || "No pudimos iniciar el pago. Intenta nuevamente.");
@@ -227,7 +233,7 @@ export default function GiftSection() {
         <CardDescription>
           El mejor regalo es tu presencia. Si quieres dejarnos un detalle, elige
           uno (o varios) de estos gestos románticos y realiza el aporte por
-          Mercado Pago. Gracias por ser parte de este capítulo de amor.{" "}
+          Flow (Webpay). Gracias por ser parte de este capítulo de amor.{" "}
           <Heart className="inline-block h-4 w-4" />
         </CardDescription>
       </CardHeader>
@@ -393,6 +399,17 @@ export default function GiftSection() {
               placeholder="nombre@correo.cl"
             />
           </div>
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium">
+              Mensaje para los novios (obligatorio)
+            </label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Déjanos un mensaje bonito que acompañe tu regalo 💌"
+              rows={3}
+            />
+          </div>
         </div>
 
         {/* Carrito */}
@@ -509,7 +526,7 @@ export default function GiftSection() {
             disabled={!mounted || !canPay}
           >
             <CreditCard className="mr-2 h-4 w-4" />
-            {loading ? "Conectando a Mercado Pago…" : "Pagar con Mercado Pago"}
+            {loading ? "Conectando a Flow…" : "Pagar con Flow (Webpay)"}
           </Button>
         </div>
       </CardContent>
