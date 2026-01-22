@@ -5,10 +5,12 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  // Reescribe a la página React ubicada en /pago/resultado/view
-  const dest = new URL(`/pago/resultado/view${url.search}`, req.url);
-  return NextResponse.rewrite(dest);
+  // Proxy hacia la página React ubicada en /pago/resultado/view sin usar rewrite (no soportado en route handlers)
+  const dest = new URL("/pago/resultado/view", req.url);
+  dest.search = new URL(req.url).search;
+  return fetch(dest.toString(), {
+    headers: req.headers,
+  });
 }
 
 export async function POST(req: Request) {
@@ -21,7 +23,9 @@ export async function POST(req: Request) {
   }
 
   const dest = new URL(
-    `/pago/resultado${token ? `?token=${encodeURIComponent(token)}` : ""}`,
+    `/pago/resultado${
+      token ? `?token=${encodeURIComponent(token)}` : "?error=missing_token"
+    }`,
     req.url
   );
   return NextResponse.redirect(dest, 303);
