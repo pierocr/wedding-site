@@ -1,5 +1,5 @@
 // src/app/api/email/send-pending/route.ts
-export const runtime = "nodejs"; // Usar Node.js runtime para evitar timeouts
+export const runtime = "edge"; // Requerido por Cloudflare Pages / next-on-pages
 export const maxDuration = 60; // 60 segundos máximo
 
 import { NextResponse } from "next/server";
