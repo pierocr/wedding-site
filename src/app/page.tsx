@@ -779,7 +779,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "📅 ¿Hasta cuándo puedo confirmar mi asistencia?",
-    a: "Hasta el 22 de septiembre de 2026 (60 días antes) o lo antes posible para cerrar banquete y logística. Si necesitas más tiempo, cuéntanos y vemos cómo ayudarte. Puedes confirmar en la sección RSVP."
+    a: "Hasta el 22 de septiembre de 2026 (60 días antes) o lo antes posible para cerrar banquete y logística. Si necesitas más tiempo, cuéntanos y vemos cómo ayudarte. Puedes confirmar tu asistencia más arriba en esta página."
   },
   {
     q: "🅿️ ¿Hay estacionamientos disponibles?",
