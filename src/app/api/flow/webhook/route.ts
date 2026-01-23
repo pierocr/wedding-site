@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { fetchFlowStatus, randomRaffleNumber } from "@/lib/flow";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { sendFlowReceiptEmail } from "@/lib/email/flowReceipt";
 
 async function parseForm(req: Request) {
   try {
@@ -129,14 +130,40 @@ export async function POST(req: Request) {
     finalRaffle;
 
   if (shouldMarkPending) {
-    nextMeta.email_pending = true;
-    nextMeta.email_pending_since = new Date().toISOString();
+    try {
+      console.log("[flow/webhook] Enviando comprobante Resend", {
+        paymentId: updatedPayment?.id,
+        email: updatedPayment?.donor_email || update.donor_email,
+        external_reference: updatedPayment?.external_reference || update.external_reference,
+        raffle: finalRaffle,
+      });
+      await sendFlowReceiptEmail({
+        donor_name: updatedPayment?.donor_name || update.donor_name || "amig@",
+        donor_email: updatedPayment?.donor_email || update.donor_email || "",
+        amount: Number(updatedPayment?.amount || update.amount || 0),
+        raffle_number: finalRaffle as number,
+        external_reference: updatedPayment?.external_reference || update.external_reference || null,
+        flow_order: nextMeta.flow_order || null,
+        flow_token: nextMeta.flow_token || token || null,
+        cart: (updatedPayment as any)?.cart || nextMeta.cart_snapshot || null,
+        message: nextMeta.message || null,
+      });
+      nextMeta.email_sent_at = new Date().toISOString();
+      nextMeta.email_pending = false;
+      delete nextMeta.email_pending_since;
+      delete nextMeta.email_error;
+    } catch (err) {
+      console.error("[flow/webhook] error enviando correo", (err as any)?.message || err);
+      nextMeta.email_pending = true;
+      nextMeta.email_pending_since = new Date().toISOString();
+      nextMeta.email_error = (err as any)?.message || "send email failed";
+    }
     try {
       if (updatedPayment?.id) {
         await supabase.from("payments").update({ meta: nextMeta }).eq("id", updatedPayment.id);
       }
     } catch (err) {
-      console.error("[flow/webhook] no se pudo marcar email_pending", err);
+      console.error("[flow/webhook] no se pudo actualizar meta tras email", err);
     }
   }
 

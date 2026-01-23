@@ -61,14 +61,14 @@ const toRgb = (hex: string) => {
   };
 };
 
-const loadImage = async (filename: string): Promise<Buffer | null> => {
+const loadImage = async (filename: string): Promise<Uint8Array | null> => {
   try {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pieroydebby.cl";
     const imageUrl = `${siteUrl.replace(/\/$/, "")}/gallery/${filename}`;
     const response = await fetch(imageUrl);
     if (!response.ok) return null;
     const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    return new Uint8Array(arrayBuffer);
   } catch {
     return null;
   }
@@ -852,6 +852,13 @@ export async function sendFlowReceiptEmail(payload: ReceiptPayload) {
 
   const subject = `Comprobante de regalo – #${payload.raffle_number}`;
 
+  console.log("[resend] Enviando comprobante", {
+    to: payload.donor_email,
+    subject,
+    external_reference: payload.external_reference,
+    flow_token: payload.flow_token,
+  });
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -875,6 +882,7 @@ export async function sendFlowReceiptEmail(payload: ReceiptPayload) {
 
   if (!res.ok) {
     const txt = await res.text();
+    console.error("[resend] Error HTTP", res.status, txt);
     const err = new Error(`Resend error: ${txt || res.statusText}`);
     (err as any).status = res.status;
     (err as any).details = txt || res.statusText;
@@ -888,10 +896,13 @@ export async function sendFlowReceiptEmail(payload: ReceiptPayload) {
     data = null;
   }
 
-  return {
+  const result = {
     id: data?.id,
     subject,
     from,
     to: [payload.donor_email],
   };
+
+  console.log("[resend] Envío exitoso", result);
+  return result;
 }
