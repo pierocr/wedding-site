@@ -1,14 +1,16 @@
 "use client";
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Gift,
-  CreditCard,
   Plus,
   Minus,
   Trash2,
   ShoppingCart,
   Heart,
   Check,
+  Sparkles,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,43 +24,180 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import clsx from "clsx";
+import Image from "next/image";
 
-type CatalogItem = {
+// ============ TYPES ============
+type GiftItem = {
   id: string;
-  emoji: string;
-  label: string;
+  icon: string;
+  title: string;
+  description: string;
   price: number;
 };
 
 type CartLine = {
   id: string;
   title: string;
+  icon: string;
   unitPrice: number;
   qty: number;
 };
 
+// ============ GIFT CATALOG ============
+const GIFT_CATALOG: GiftItem[] = [
+  // Momentos Íntimos ($30,000 - $50,000)
+  {
+    id: "primer-cafe",
+    icon: "☕",
+    title: "El Primer Café Juntos",
+    description: "Cada mañana con aroma a café y miradas que lo dicen todo.",
+    price: 40000,
+  },
+  {
+    id: "abrazo-infinito",
+    icon: "💫",
+    title: "Un Abrazo Infinito",
+    description: "Refugio seguro donde el mundo se detiene en dos latidos.",
+    price: 45000,
+  },
+  {
+    id: "brindis-estrellas",
+    icon: "🥂",
+    title: "Brindis Bajo las Estrellas",
+    description: "Copas al cielo para celebrar que se encontraron.",
+    price: 50000,
+  },
+  {
+    id: "risas-domingo",
+    icon: "🌸",
+    title: "Risas de Domingo",
+    description: "Sábanas livianas, risa suave y tiempo que se estira.",
+    price: 60000,
+  },
+  {
+    id: "baile-cocina",
+    icon: "🎶",
+    title: "Baile en la Cocina",
+    description: "Música improvisada y pasos descalzos antes de la cena.",
+    price: 70000,
+  },
+  // Experiencias ($60,000 - $100,000)
+  {
+    id: "pelicula-manta",
+    icon: "🎬",
+    title: "Noche de Película y Manta",
+    description: "Sofá, manta y la excusa perfecta para estar juntos.",
+    price: 80000,
+  },
+  {
+    id: "picnic-secreto",
+    icon: "🧺",
+    title: "Picnic en su Lugar Secreto",
+    description: "Un rincón verde solo para ustedes y las nubes.",
+    price: 90000,
+  },
+  {
+    id: "paseo-atardecer",
+    icon: "🌅",
+    title: "Paseo al Atardecer",
+    description: "El sol pintando el cielo mientras caminan de la mano.",
+    price: 100000,
+  },
+  {
+    id: "cena-velas",
+    icon: "🕯️",
+    title: "Cena a la Luz de las Velas",
+    description: "Luz suave, conversación lenta y miradas que eligen.",
+    price: 120000,
+  },
+  {
+    id: "noche-estrellas",
+    icon: "✨",
+    title: "Noche Bajo las Estrellas",
+    description: "Perderse en el cielo y soñar despiertos juntos.",
+    price: 140000,
+  },
+  // Sueños Grandes ($120,000 - $250,000)
+  {
+    id: "escapada",
+    icon: "🧳",
+    title: "Escapada de Fin de Semana",
+    description: "Dos días para perderse del mundo y encontrarse.",
+    price: 180000,
+  },
+  {
+    id: "sesion-fotos",
+    icon: "📸",
+    title: "Recuerdos para Siempre",
+    description: "Fotos que guardan su complicidad sin palabras.",
+    price: 220000,
+  },
+  {
+    id: "aventura",
+    icon: "🗺️",
+    title: "La Gran Aventura",
+    description: "Explorar juntos con risas y valentía en la mochila.",
+    price: 280000,
+  },
+  {
+    id: "amanecer-luna-miel",
+    icon: "🌄",
+    title: "Amanecer de Luna de Miel",
+    description: "Primer sol dorado de su nueva vida a dúo.",
+    price: 350000,
+  },
+  {
+    id: "nido",
+    icon: "🏡",
+    title: "Construyendo su Nido",
+    description: "Un ladrillo más para el hogar donde crece su amor.",
+    price: 500000,
+  },
+];
+
+// ============ ANIMATION VARIANTS ============
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.06,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.96 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.5, ease: EASE },
+  },
+};
+
+const badgeVariants = {
+  initial: { scale: 0, opacity: 0 },
+  animate: {
+    scale: 1,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 500, damping: 25 },
+  },
+  exit: { scale: 0, opacity: 0, transition: { duration: 0.15 } },
+};
+
+// ============ COMPONENT ============
 export default function GiftSection() {
   const CURRENCY = "CLP";
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
   const MAX_QTY = 10;
 
-  // Claves de localStorage
   const CART_KEY = "gift_cart";
   const DONOR_KEY = "gift_donor";
 
-  // Catálogo
-  const ITEMS: CatalogItem[] = [
-    { id: "brindis",   emoji: "🥂", label: "Brindis bajo las estrellas",       price: 40000 },
-    { id: "cafe",      emoji: "☕️", label: "Café de domingo para dos",        price: 50000 },
-    { id: "pelis",     emoji: "🎬", label: "Noche de películas y mantita",     price: 60000 },
-    { id: "atardecer", emoji: "🌇", label: "Paseo al atardecer de la mano",    price: 70000 },
-    { id: "vela",      emoji: "🕯️", label: "Cena a la luz de las velas",      price: 80000 },
-    { id: "fotos",     emoji: "📸", label: "Sesión de fotos de luna de miel",  price: 150000 },
-    { id: "escapada",  emoji: "🧳", label: "Escapada de fin de semana",        price: 120000 },
-    { id: "amanecer",  emoji: "🌅", label: "Amanecer de luna de miel",         price: 200000 },
-  ];
-
-  // ------- Carga segura desde storage (evita hydration issues) -------
+  // ------- Safe localStorage loading -------
   function loadCart(): CartLine[] {
     if (typeof window === "undefined") return [];
     try {
@@ -71,6 +210,7 @@ export default function GiftSection() {
         .map((l: any) => ({
           id: String(l.id),
           title: String(l.title ?? ""),
+          icon: String(l.icon ?? "💝"),
           unitPrice: Number(l.unitPrice ?? 0),
           qty: Number(l.qty ?? 0),
         }))
@@ -104,7 +244,6 @@ export default function GiftSection() {
 
   React.useEffect(() => {
     setMounted(true);
-    // Reconciliar con localStorage al montar (cliente)
     const ls = loadCart();
     if (ls.length) setCart(ls);
     const d = loadDonor();
@@ -120,7 +259,7 @@ export default function GiftSection() {
       maximumFractionDigits: 0,
     }).format(n);
 
-  // Guardar carrito + notificar al nav
+  // Save cart + notify nav
   React.useEffect(() => {
     try {
       localStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -132,7 +271,7 @@ export default function GiftSection() {
     } catch {}
   }, [cart]);
 
-  // Guardar nombre/email con debounce
+  // Save donor info with debounce
   React.useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -142,15 +281,15 @@ export default function GiftSection() {
     return () => clearTimeout(t);
   }, [name, email, message]);
 
-  // ===== Helpers carrito =====
+  // ===== Cart helpers =====
   const qtyFor = (id: string) => cart.find((l) => l.id === id)?.qty ?? 0;
 
-  const setQty = (id: string, title: string, unitPrice: number, qty: number) => {
+  const setQty = (id: string, title: string, icon: string, unitPrice: number, qty: number) => {
     const q = Math.max(0, Math.min(MAX_QTY, qty));
     setCart((prev) => {
       const idx = prev.findIndex((l) => l.id === id);
       if (idx === -1) {
-        return q > 0 ? [...prev, { id, title, unitPrice, qty: q }] : prev;
+        return q > 0 ? [...prev, { id, title, icon, unitPrice, qty: q }] : prev;
       }
       if (q === 0) return prev.filter((l) => l.id !== id);
       const next = [...prev];
@@ -159,33 +298,36 @@ export default function GiftSection() {
     });
   };
 
-  const addItem = (item: CatalogItem) =>
-    setQty(item.id, `${item.emoji} ${item.label}`, item.price, qtyFor(item.id) + 1);
+  const addItem = (item: GiftItem) =>
+    setQty(item.id, item.title, item.icon, item.price, qtyFor(item.id) + 1);
 
   const inc = (id: string) => {
     const l = cart.find((x) => x.id === id);
-    if (l) setQty(id, l.title, l.unitPrice, l.qty + 1);
+    if (l) setQty(id, l.title, l.icon, l.unitPrice, l.qty + 1);
   };
   const dec = (id: string) => {
     const l = cart.find((x) => x.id === id);
-    if (l) setQty(id, l.title, l.unitPrice, l.qty - 1);
+    if (l) setQty(id, l.title, l.icon, l.unitPrice, l.qty - 1);
   };
-  const removeLine = (id: string) => setQty(id, "", 0, 0);
+  const removeLine = (id: string) => setQty(id, "", "", 0, 0);
   const clearCart = () => setCart([]);
 
   const addCustomToCart = () => {
     if (!customMsg.trim() || !customAmount || Number(customAmount) <= 0) {
-      alert("Completa tu mensaje y un monto válido 💌");
+      alert("Completa tu mensaje y un monto válido");
       return;
     }
     const id = `custom:${customMsg.trim()}:${customAmount}`;
-    const title = `💖 ${customMsg.trim()}`;
+    const title = customMsg.trim();
     const unitPrice = Number(customAmount);
-    setQty(id, title, unitPrice, qtyFor(id) + 1);
+    setQty(id, title, "💝", unitPrice, qtyFor(id) + 1);
+    setCustomMsg("");
+    setCustomAmount("");
   };
 
   const subtotal = (l: CartLine) => l.unitPrice * l.qty;
   const total = cart.reduce((a, l) => a + subtotal(l), 0);
+  const itemCount = cart.reduce((a, l) => a + l.qty, 0);
 
   const canPay =
     !!name.trim() && EMAIL_RE.test(email) && cart.length > 0 && !!message.trim() && !loading;
@@ -205,7 +347,7 @@ export default function GiftSection() {
           amount: total,
           cart: cart.map((l) => ({
             id: l.id,
-            title: l.title,
+            title: `${l.icon} ${l.title}`,
             unitPrice: l.unitPrice,
             qty: l.qty,
           })),
@@ -214,7 +356,7 @@ export default function GiftSection() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      if (!data?.redirectUrl) throw new Error("No se pudo iniciar el pago en Flow");
+      if (!data?.redirectUrl) throw new Error("No se pudo iniciar el pago");
       window.location.href = data.redirectUrl as string;
     } catch (e: any) {
       console.error(e);
@@ -225,227 +367,266 @@ export default function GiftSection() {
   }
 
   return (
-    <Card className="rounded-2xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-serif">
-          <Gift className="h-5 w-5" /> Regalos con mensaje
+    <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-border/50">
+      <CardHeader className="text-center pb-2">
+        <div className="flex justify-center mb-3">
+          <div className="rounded-full bg-primary/10 p-3">
+            <Gift className="h-6 w-6 text-primary" />
+          </div>
+        </div>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">
+          Con amor y gratitud
+        </p>
+        <CardTitle className="font-serif text-2xl md:text-3xl">
+          Regalos con Mensaje
         </CardTitle>
-        <CardDescription>
-          El mejor regalo es tu presencia. Si quieres dejarnos un detalle, elige
-          uno (o varios) de estos gestos románticos y realiza el aporte por
-          Flow (Webpay). Gracias por ser parte de este capítulo de amor.{" "}
-          <Heart className="inline-block h-4 w-4" />
+        <CardDescription className="max-w-xl mx-auto mt-3 text-base leading-relaxed">
+          El mejor regalo es tu presencia. Si deseas dejarnos un detalle,
+          cada uno de estos gestos lleva un deseo especial para nuestro nuevo comienzo.{" "}
+          <Heart className="inline-block h-4 w-4 text-accent" />
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Catálogo */}
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {ITEMS.map((o) => {
-            const qty = qtyFor(o.id);
-            const visible = mounted && qty > 0;
-            const title = `${o.emoji} ${o.label}`;
+      <CardContent className="space-y-8 pt-6">
+        {/* Gift Catalog Grid */}
+        <motion.div
+          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.1 }}
+        >
+          {GIFT_CATALOG.map((gift) => {
+            const qty = qtyFor(gift.id);
+            const isSelected = mounted && qty > 0;
+
             return (
-              <div
-                key={o.id}
-                className="group relative overflow-hidden rounded-xl border p-2 text-left shadow-sm transition hover:shadow-md"
+              <motion.div
+                key={gift.id}
+                variants={cardVariants}
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                className={clsx(
+                  "group relative overflow-hidden rounded-2xl border bg-card transition-all duration-300",
+                  isSelected
+                    ? "border-primary/40 shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
+                    : "border-border/40 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:border-primary/20"
+                )}
               >
-                {/* Contenido */}
-                <div className="relative">
-                  {/* Encabezado compacto: emoji + nombre; permite wrap */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex flex-1 items-start gap-2 pr-2">
-                      <span className="text-lg leading-none">{o.emoji}</span>
-                      <span className="font-medium leading-snug whitespace-normal break-words text-[15px] sm:text-[16px]">
-                        {o.label}
+                {/* Selected Badge */}
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      variants={badgeVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      className="absolute top-3 left-3 z-10"
+                    >
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm">
+                        <Check className="h-3 w-3" />
+                        {qty}
                       </span>
-                    </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                    <div className="flex shrink-0 items-center gap-2">
-                      {/* Badge estable: siempre <span>, solo cambia visibilidad */}
-                      <span
-                        className={clsx(
-                          "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px]",
-                          "text-emerald-700 border-emerald-200 bg-emerald-50",
-                          !visible && "opacity-0 pointer-events-none select-none"
-                        )}
-                        aria-hidden={!visible}
-                        suppressHydrationWarning
-                      >
-                        <Check className="h-3.5 w-3.5" /> {visible ? qty : 0}
-                      </span>
-
-                      <div className="text-sm font-semibold tabular-nums">
-                        {priceFmt(o.price)}
-                      </div>
-                    </div>
+                {/* Icon Area */}
+                <div className="relative h-28 bg-gradient-to-br from-secondary/50 via-secondary/30 to-transparent flex items-center justify-center overflow-hidden">
+                  <span className="text-5xl transition-transform duration-300 group-hover:scale-110">
+                    {gift.icon}
+                  </span>
+                  {/* Decorative flourish */}
+                  <div className="absolute top-3 right-3 text-accent/40 font-serif text-lg">
+                    ❦
                   </div>
+                </div>
 
-                  {/* Controles compactos */}
-                  <div className="mt-1.5">
-                    {(mounted && qty === 0) ? (
+                {/* Content */}
+                <div className="p-5 space-y-3">
+                  <h3 className="font-serif text-lg font-semibold text-foreground leading-tight">
+                    {gift.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                    {gift.description}
+                  </p>
+
+                  {/* Price & Action */}
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <span className="font-serif text-xl font-bold text-primary tabular-nums">
+                      {priceFmt(gift.price)}
+                    </span>
+
+                    {!mounted ? (
+                      <div className="h-9 w-24 rounded-xl bg-muted/40 animate-pulse" />
+                    ) : qty === 0 ? (
                       <Button
                         type="button"
                         size="sm"
-                        onClick={() => addItem(o)}
-                        className="rounded-lg"
-                        aria-label={`Agregar ${title}`}
+                        onClick={() => addItem(gift)}
+                        className="rounded-xl bg-primary hover:bg-primary/90"
+                        aria-label={`Agregar ${gift.title}`}
                       >
-                        <Plus className="mr-1 h-4 w-4" />
+                        <Plus className="mr-1.5 h-4 w-4" />
                         Agregar
                       </Button>
-                    ) : (mounted && qty > 0) ? (
+                    ) : (
                       <div className="flex items-center gap-2">
                         <Button
                           type="button"
                           size="icon"
                           variant="outline"
-                          onClick={() => dec(o.id)}
-                          className="h-8 w-8"
-                          aria-label={`Quitar una unidad de ${title}`}
+                          onClick={() => dec(gift.id)}
+                          className="h-8 w-8 rounded-lg"
+                          aria-label={`Quitar una unidad de ${gift.title}`}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <div className="w-8 text-center text-sm tabular-nums">
+                        <span className="w-8 text-center text-sm font-medium tabular-nums">
                           {qty}
-                        </div>
+                        </span>
                         <Button
                           type="button"
                           size="icon"
                           variant="outline"
-                          onClick={() =>
-                            setQty(
-                              o.id,
-                              title,
-                              o.price,
-                              Math.min(MAX_QTY, qty + 1)
-                            )
-                          }
-                          className="h-8 w-8"
-                          aria-label={`Agregar una unidad de ${title}`}
+                          onClick={() => addItem(gift)}
+                          className="h-8 w-8 rounded-lg"
+                          aria-label={`Agregar una unidad de ${gift.title}`}
                           disabled={qty >= MAX_QTY}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
-                    ) : (
-                      // Placeholder estable antes de montar
-                      <div className="h-8 w-24 rounded-md bg-muted/40" aria-hidden />
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
 
-          {/* Personalizado */}
-          <div className="rounded-xl border p-3 shadow-sm">
-            <div className="font-medium">Mensaje y monto personalizados</div>
-            <div className="mt-2 space-y-2">
-              <Input
-                placeholder="Tu mensaje (ej: 'Una tarde para recordar')"
-                value={customMsg}
-                onChange={(e) => setCustomMsg(e.target.value)}
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Monto</span>
-                <Input
-                  type="number"
-                  className="w-40"
-                  min={1000}
-                  step={1000}
-                  placeholder="40000"
-                  value={customAmount}
-                  onChange={(e) =>
-                    setCustomAmount(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
-                  }
-                />
+          {/* Custom Gift Card */}
+          <motion.div
+            variants={cardVariants}
+            className="rounded-2xl border-2 border-dashed border-accent/40 bg-gradient-to-br from-accent/5 to-transparent p-6 space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-accent/20 p-2.5">
+                <Sparkles className="h-5 w-5 text-accent" />
               </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={addCustomToCart}
-                className="rounded-lg"
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Agregar personalizado
-              </Button>
+              <div>
+                <h3 className="font-serif text-lg font-semibold">Tu Propio Deseo</h3>
+                <p className="text-sm text-muted-foreground">Crea un mensaje personalizado</p>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <Separator />
-
-        {/* Datos del regalante */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="text-sm font-medium">Tu nombre (obligatorio)</label>
             <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Carolina Pérez"
+              placeholder="Escribe tu bendición o deseo..."
+              value={customMsg}
+              onChange={(e) => setCustomMsg(e.target.value)}
+              className="bg-background/80"
             />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Email (obligatorio)</label>
-            <Input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nombre@correo.cl"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium">
-              Mensaje para los novios (obligatorio)
-            </label>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Déjanos un mensaje bonito que acompañe tu regalo 💌"
-              rows={3}
-            />
-          </div>
-        </div>
 
-        {/* Carrito */}
-        <div className="rounded-xl border bg-muted/20">
-          <div className="flex items-center gap-2 border-b px-4 py-3">
-            <ShoppingCart className="h-4 w-4" />
-            <div className="font-medium">Tu selección</div>
-            <div
-              className="ml-auto text-sm text-muted-foreground"
-              suppressHydrationWarning
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">Monto</span>
+              <Input
+                type="number"
+                placeholder="50000"
+                min={1000}
+                step={1000}
+                value={customAmount}
+                onChange={(e) =>
+                  setCustomAmount(e.target.value === "" ? "" : Number(e.target.value))
+                }
+                className="w-32 bg-background/80"
+              />
+              <span className="text-sm text-muted-foreground">CLP</span>
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={addCustomToCart}
+              className="w-full rounded-xl"
             >
-              {mounted ? (
-                <>
-                  {cart.length} ítem{cart.length === 1 ? "" : "s"}
-                </>
-              ) : (
-                "—"
-              )}
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar Deseo Personalizado
+            </Button>
+          </motion.div>
+        </motion.div>
+
+        <Separator className="my-8" />
+
+        {/* Donor Form */}
+        <div className="space-y-4">
+          <h3 className="font-serif text-lg font-semibold text-center">Tus Datos</h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tu nombre (obligatorio)</label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Carolina Pérez"
+                className="bg-background"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email (obligatorio)</label>
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nombre@correo.cl"
+                className="bg-background"
+              />
+            </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-sm font-medium">
+                Mensaje para los novios (obligatorio)
+              </label>
+              <Textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Déjanos un mensaje bonito que acompañe tu regalo..."
+                rows={3}
+                className="bg-background resize-none"
+              />
             </div>
           </div>
+        </div>
 
+        {/* Cart Summary */}
+        <div className="rounded-2xl border bg-card/50 backdrop-blur-sm overflow-hidden">
+          {/* Cart Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b bg-secondary/30">
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              <span className="font-serif font-semibold">Tu Selección</span>
+            </div>
+            <span className="text-sm text-muted-foreground" suppressHydrationWarning>
+              {mounted ? `${itemCount} ${itemCount === 1 ? "regalo" : "regalos"}` : "—"}
+            </span>
+          </div>
+
+          {/* Cart Items */}
           {!mounted ? (
-            <div className="px-4 py-6 text-sm text-muted-foreground">Cargando…</div>
+            <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+              Cargando...
+            </div>
           ) : cart.length === 0 ? (
-            <div className="px-4 py-6 text-sm text-muted-foreground">
-              Aún no agregas regalos. Elige uno del catálogo o crea el tuyo 💝
+            <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+              Aún no agregas regalos. Elige uno del catálogo o crea el tuyo.
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-border/50">
               {cart.map((l) => (
-                <div key={l.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="flex-1">
-                    <div className="font-medium">{l.title}</div>
-                    <div className="text-xs text-muted-foreground">
+                <div key={l.id} className="flex items-center gap-4 px-5 py-4">
+                  <span className="text-2xl">{l.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{l.title}</p>
+                    <p className="text-sm text-muted-foreground">
                       {priceFmt(l.unitPrice)} c/u
-                    </div>
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -453,33 +634,33 @@ export default function GiftSection() {
                       size="icon"
                       variant="outline"
                       onClick={() => dec(l.id)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 rounded-lg"
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <div className="w-8 text-center text-sm tabular-nums">
+                    <span className="w-8 text-center text-sm font-medium tabular-nums">
                       {l.qty}
-                    </div>
+                    </span>
                     <Button
                       type="button"
                       size="icon"
                       variant="outline"
                       onClick={() => inc(l.id)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 rounded-lg"
                       disabled={l.qty >= MAX_QTY}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="w-24 text-right text-sm font-medium">
+                  <span className="font-semibold tabular-nums w-24 text-right">
                     {priceFmt(subtotal(l))}
-                  </div>
+                  </span>
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
                     onClick={() => removeLine(l.id)}
-                    className="h-8 w-8"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     aria-label="Quitar"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -489,45 +670,69 @@ export default function GiftSection() {
             </div>
           )}
 
-          <div className="flex items-center gap-3 border-t px-4 py-3">
-            <div className="text-sm text-muted-foreground">Total:</div>
-            <div className="ml-auto text-base font-semibold" suppressHydrationWarning>
-              {mounted ? priceFmt(total) : "—"}
+          {/* Cart Footer */}
+          <div className="px-5 py-5 bg-secondary/20 border-t">
+            <div className="flex items-center justify-between mb-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearCart}
+                disabled={!mounted || cart.length === 0}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                Vaciar
+              </Button>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Total</p>
+                <p
+                  className="font-serif text-2xl font-bold text-primary tabular-nums"
+                  suppressHydrationWarning
+                >
+                  {mounted ? priceFmt(total) : "—"}
+                </p>
+              </div>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearCart}
-              disabled={!mounted || cart.length === 0}
-            >
-              Vaciar
-            </Button>
           </div>
         </div>
 
-        {/* Pagar */}
-        <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-          <div className="text-sm" suppressHydrationWarning>
-            <div className="font-medium">Resumen:</div>
-            <div className="text-muted-foreground">
-              {!mounted
-                ? "—"
-                : cart.length === 0
-                ? "Sin ítems aún"
-                : cart.map((l) => `${l.qty}× ${l.title}`).join(", ")}
+        {/* Payment Button */}
+        <div className="pt-2 space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              size="lg"
+              className="w-full sm:w-auto rounded-xl bg-[#c03221] hover:bg-[#a92a1c] text-primary-foreground shadow-lg h-14 sm:h-12 sm:px-6 sm:text-sm md:text-base font-semibold"
+              onClick={pay}
+              disabled={!mounted || !canPay}
+            >
+              {loading ? (
+                <>
+                  <span className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  Preparando tu regalo...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Pagar (WebPay)
+                </>
+              )}
+            </Button>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Puedes pagar con tarjeta de débito, crédito (hasta 12 cuotas sin interés) o transferencia bancaria.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Image
+                src="/1.Webpay_FB_800px.png"
+                alt="WebPay"
+                width={110}
+                height={28}
+                className="h-7 w-auto object-contain"
+                priority
+              />
             </div>
           </div>
-
-          <Button
-            size="lg"
-            className="bg-rose-500 text-white hover:bg-rose-600 shadow-lg rounded-xl"
-            onClick={pay}
-            disabled={!mounted || !canPay}
-          >
-            <CreditCard className="mr-2 h-4 w-4" />
-            {loading ? "Conectando a Flow…" : "Pagar con Flow (Webpay)"}
-          </Button>
         </div>
       </CardContent>
     </Card>

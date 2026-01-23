@@ -121,6 +121,18 @@ export default function ResultadoClient() {
     };
   }, [token]);
 
+  // Clear local cart after a successful payment so the home page starts fresh.
+  useEffect(() => {
+    if (data?.status === "paid") {
+      try {
+        localStorage.removeItem("gift_cart");
+        localStorage.removeItem("gift_donor");
+      } catch {
+        // no-op
+      }
+    }
+  }, [data?.status]);
+
   const Icon = statusInfo.icon;
 
   return (

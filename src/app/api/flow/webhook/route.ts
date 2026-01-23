@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { fetchFlowStatus, randomRaffleNumber } from "@/lib/flow";
-import { sendFlowReceiptEmail } from "@/lib/email/flowReceipt";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 async function parseForm(req: Request) {
@@ -121,47 +120,23 @@ export async function POST(req: Request) {
     console.error("[flow/webhook] update error", err);
   }
 
-  const shouldEmail =
+  // Marcar email como pendiente si el pago fue exitoso y no se ha enviado
+  const shouldMarkPending =
     statusData.status === "paid" &&
     !nextMeta.email_sent_at &&
+    !nextMeta.email_pending &&
     (updatedPayment?.donor_email || update.donor_email) &&
     finalRaffle;
 
-  if (shouldEmail) {
-    const target = updatedPayment || update;
-    const rawCart = target?.cart ?? nextMeta.cart_snapshot ?? null;
-    const cart = Array.isArray(rawCart) ? rawCart : null;
+  if (shouldMarkPending) {
+    nextMeta.email_pending = true;
+    nextMeta.email_pending_since = new Date().toISOString();
     try {
-      await sendFlowReceiptEmail({
-        donor_name: String(target?.donor_name || "amig@"),
-        donor_email: String(target?.donor_email),
-        amount: Number(target?.amount || statusData.amount || 0),
-        raffle_number: Number(finalRaffle),
-        external_reference: target?.external_reference ?? statusData.commerceOrder ?? token,
-        flow_order: statusData.flowOrder || nextMeta.flow_order || null,
-        flow_token: token,
-        cart,
-        message: nextMeta.message || null,
-      });
-      nextMeta.email_sent_at = new Date().toISOString();
-      try {
-        if (updatedPayment?.id) {
-          await supabase.from("payments").update({ meta: nextMeta }).eq("id", updatedPayment.id);
-        }
-      } catch (err) {
-        console.error("[flow/webhook] no se pudo guardar email_sent_at", err);
+      if (updatedPayment?.id) {
+        await supabase.from("payments").update({ meta: nextMeta }).eq("id", updatedPayment.id);
       }
     } catch (err) {
-      nextMeta.email_error = (err as any)?.message || String(err);
-      nextMeta.email_failed_at = new Date().toISOString();
-      try {
-        if (updatedPayment?.id) {
-          await supabase.from("payments").update({ meta: nextMeta }).eq("id", updatedPayment.id);
-        }
-      } catch (updateErr) {
-        console.error("[flow/webhook] no se pudo guardar email_error", updateErr);
-      }
-      console.error("[flow/webhook] email error", err);
+      console.error("[flow/webhook] no se pudo marcar email_pending", err);
     }
   }
 

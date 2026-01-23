@@ -321,7 +321,7 @@ const Nav = () => {
     <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
       <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
         <a href="#inicio" className="text-lg font-semibold">
-          {BRIDE} & {GROOM}
+          {GROOM} & {BRIDE}
         </a>
 
         {/* Desktop */}
@@ -370,7 +370,7 @@ const Nav = () => {
                           flex flex-col`}
             >
               <div className="flex h-16 items-center justify-between border-b px-4">
-                <span className="font-semibold">{BRIDE} & {GROOM}</span>
+                <span className="font-semibold">{GROOM} & {BRIDE}</span>
                 <button
                   className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-foreground/10"
                   aria-label="Cerrar menú"
@@ -511,7 +511,7 @@ const Hero = () => {
           <Image
             key={src}
             src={src}
-            alt={`Fotografía de ${BRIDE} y ${GROOM}`}
+            alt={`Fotografía de ${GROOM} y ${BRIDE}`}
             fill
             priority={i === 0}
             className={`object-cover transition-opacity duration-700 ${
@@ -548,13 +548,13 @@ const Hero = () => {
           variants={REVEAL_UP}
         >
           <span className="font-script text-[clamp(52px,8vw,102px)] [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">
-            {BRIDE}
+            {GROOM}
           </span>
           <span className="mx-[0.35em] align-baseline font-serif text-[clamp(30px,5vw,64px)] font-extrabold [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">
             &
           </span>
           <span className="font-script text-[clamp(52px,8vw,102px)] [text-shadow:0_1px_1px_rgba(0,0,0,0.35)]">
-            {GROOM}
+            {BRIDE}
           </span>
         </motion.h1>
 
@@ -942,7 +942,7 @@ const Footer = () => (
   <footer className="mt-12 border-t py-10">
     <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 md:flex-row">
       <div className="text-sm text-muted-foreground">
-        © {new Date().getFullYear()} {BRIDE} & {GROOM}
+        © {new Date().getFullYear()} {GROOM} & {BRIDE}
       </div>
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <a
