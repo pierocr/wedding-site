@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Gift,
   Plus,
@@ -158,7 +158,7 @@ const GIFT_CATALOG: GiftItem[] = [
 // ============ ANIMATION VARIANTS ============
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {},
   show: {
     transition: {
@@ -168,7 +168,7 @@ const containerVariants = {
   },
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 24, scale: 0.96 },
   show: {
     opacity: 1,
@@ -178,12 +178,12 @@ const cardVariants = {
   },
 };
 
-const badgeVariants = {
+const badgeVariants: Variants = {
   initial: { scale: 0, opacity: 0 },
   animate: {
     scale: 1,
     opacity: 1,
-    transition: { type: "spring", stiffness: 500, damping: 25 },
+    transition: { type: "spring" as const, stiffness: 500, damping: 25 },
   },
   exit: { scale: 0, opacity: 0, transition: { duration: 0.15 } },
 };
