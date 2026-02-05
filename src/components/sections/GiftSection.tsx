@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Gift,
   Plus,
@@ -155,38 +154,6 @@ const GIFT_CATALOG: GiftItem[] = [
   },
 ];
 
-// ============ ANIMATION VARIANTS ============
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-
-const containerVariants: Variants = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.06,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 24, scale: 0.96 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.5, ease: EASE },
-  },
-};
-
-const badgeVariants: Variants = {
-  initial: { scale: 0, opacity: 0 },
-  animate: {
-    scale: 1,
-    opacity: 1,
-    transition: { type: "spring" as const, stiffness: 500, damping: 25 },
-  },
-  exit: { scale: 0, opacity: 0, transition: { duration: 0.15 } },
-};
 
 // ============ COMPONENT ============
 export default function GiftSection() {
@@ -389,46 +356,30 @@ export default function GiftSection() {
 
       <CardContent className="space-y-8 pt-6">
         {/* Gift Catalog Grid */}
-        <motion.div
-          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-        >
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {GIFT_CATALOG.map((gift) => {
             const qty = qtyFor(gift.id);
             const isSelected = mounted && qty > 0;
 
             return (
-              <motion.div
+              <div
                 key={gift.id}
-                variants={cardVariants}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.98 }}
                 className={clsx(
-                  "group relative overflow-hidden rounded-2xl border bg-card transition-all duration-300",
+                  "group relative overflow-hidden rounded-2xl border bg-card transition-all duration-300 hover:-translate-y-1 active:scale-[0.98]",
                   isSelected
                     ? "border-primary/40 shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
                     : "border-border/40 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:border-primary/20"
                 )}
               >
                 {/* Selected Badge */}
-                <AnimatePresence>
-                  {isSelected && (
-                    <motion.div
-                      variants={badgeVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      className="absolute top-3 left-3 z-10"
-                    >
-                      <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm">
-                        <Check className="h-3 w-3" />
-                        {qty}
-                      </span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {isSelected && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm">
+                      <Check className="h-3 w-3" />
+                      {qty}
+                    </span>
+                  </div>
+                )}
 
                 {/* Icon Area */}
                 <div className="relative h-28 bg-gradient-to-br from-secondary/50 via-secondary/30 to-transparent flex items-center justify-center overflow-hidden">
@@ -499,15 +450,12 @@ export default function GiftSection() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
 
           {/* Custom Gift Card */}
-          <motion.div
-            variants={cardVariants}
-            className="rounded-2xl border-2 border-dashed border-accent/40 bg-gradient-to-br from-accent/5 to-transparent p-6 space-y-4"
-          >
+          <div className="rounded-2xl border-2 border-dashed border-accent/40 bg-gradient-to-br from-accent/5 to-transparent p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-accent/20 p-2.5">
                 <Sparkles className="h-5 w-5 text-accent" />
@@ -550,8 +498,8 @@ export default function GiftSection() {
               <Plus className="mr-2 h-4 w-4" />
               Agregar Deseo Personalizado
             </Button>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         <Separator className="my-8" />
 
