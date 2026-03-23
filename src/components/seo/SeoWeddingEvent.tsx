@@ -22,6 +22,19 @@ const toAbsoluteUrl = (path: string) => {
 };
 
 const HERO_IMAGES = ["/og.jpg", "/hero/1.jpg", "/hero/iglesia.png"];
+const EVENT_URL = `${SITE_URL}/`;
+const ORGANIZERS = [
+  { "@type": "Person", name: BRIDE, url: EVENT_URL },
+  { "@type": "Person", name: GROOM, url: EVENT_URL },
+];
+const FREE_EVENT_OFFER = {
+  "@type": "Offer",
+  url: EVENT_URL,
+  price: 0,
+  priceCurrency: "CLP",
+  availability: "https://schema.org/InStock",
+  validFrom: `${WEDDING_DATE_ISO}T00:00:00${EVENT_TIME_OFFSET}`,
+};
 
 export default function SeoWeddingEvent() {
   // Si eventDetailsVisible es false, retornar schema genérico
@@ -29,18 +42,18 @@ export default function SeoWeddingEvent() {
     const jsonLdGeneric = {
       "@context": "https://schema.org",
       "@type": "Event",
+      additionalType: "https://schema.org/WeddingEvent",
       "@id": `${SITE_URL}/#wedding`,
       name: `${BRIDE} & ${GROOM} — Boda`,
       description: "Celebración de boda. Detalles próximamente.",
       eventStatus: "https://schema.org/EventScheduled",
       eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
       inLanguage: "es-CL",
-      url: SITE_URL,
+      url: EVENT_URL,
       image: HERO_IMAGES.map(toAbsoluteUrl),
-      organizer: [
-        { "@type": "Person", name: BRIDE },
-        { "@type": "Person", name: GROOM },
-      ],
+      organizer: ORGANIZERS,
+      performer: ORGANIZERS,
+      offers: FREE_EVENT_OFFER,
       about: [
         { "@type": "Person", name: BRIDE },
         { "@type": "Person", name: GROOM },
@@ -58,7 +71,8 @@ export default function SeoWeddingEvent() {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "WeddingEvent",
+    "@type": "Event",
+    additionalType: "https://schema.org/WeddingEvent",
     "@id": `${SITE_URL}/#wedding`,
     name: `${BRIDE} & ${GROOM} — Boda`,
     description: SITE_DESCRIPTION,
@@ -68,12 +82,10 @@ export default function SeoWeddingEvent() {
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     inLanguage: "es-CL",
     isAccessibleForFree: true,
-    url: `${SITE_URL}/`,
+    url: EVENT_URL,
     image: HERO_IMAGES.map(toAbsoluteUrl),
-    organizer: [
-      { "@type": "Person", name: BRIDE },
-      { "@type": "Person", name: GROOM },
-    ],
+    organizer: ORGANIZERS,
+    offers: FREE_EVENT_OFFER,
     about: [
       { "@type": "Person", name: BRIDE },
       { "@type": "Person", name: GROOM },
@@ -110,10 +122,7 @@ export default function SeoWeddingEvent() {
         },
       },
     ],
-    performer: [
-      { "@type": "Person", name: BRIDE },
-      { "@type": "Person", name: GROOM },
-    ],
+    performer: ORGANIZERS,
     eventSchedule: {
       "@type": "Schedule",
       startDate,
