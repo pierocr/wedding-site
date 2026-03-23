@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
-function env(k: string, opts?: { fallback?: string }) {
+function env(k: string, opts?: { fallback?: string | undefined }) {
   const v = process.env[k] ?? opts?.fallback;
   if (!v) throw new Error(`Missing env ${k}`);
   return v;

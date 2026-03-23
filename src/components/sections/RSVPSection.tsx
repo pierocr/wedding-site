@@ -3,7 +3,7 @@ import * as React from "react";
 import { Heart, Send, Salad, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { FEATURE_FLAGS } from "@/data/site";
 
 // 🔒 Fuente única de verdad para los estados (evita strings sueltos)
@@ -95,7 +95,7 @@ const RSVPSectionForm = () => {
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     } as const;
 
-    const { error } = await supabase.from("rsvp").insert([payload]);
+    const { error } = await getSupabaseClient().from("rsvp").insert([payload]);
 
     if (error) {
       // 23505 => unique_violation (email duplicado)
@@ -277,9 +277,22 @@ const RSVPSection = () => {
   if (!FEATURE_FLAGS.rsvpEnabled) {
     return (
       <div className="relative">
-        {/* Formulario borroso detrás */}
+        {/* Placeholder borroso detrás para no inicializar Supabase cuando la feature está apagada */}
         <div className="filter blur-[4px] pointer-events-none select-none" aria-hidden="true">
-          <RSVPSectionForm />
+          <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <CardContent className="pt-6">
+              <div className="space-y-5 opacity-70">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="h-16 rounded-md border bg-background" />
+                  <div className="h-16 rounded-md border bg-background" />
+                </div>
+                <div className="h-10 rounded-md border bg-background" />
+                <div className="h-10 rounded-md border bg-background" />
+                <div className="h-32 rounded-md border bg-background" />
+                <div className="h-10 w-48 rounded-xl bg-primary/20" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Overlay con mensaje */}
