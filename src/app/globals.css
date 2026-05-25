@@ -97,7 +97,7 @@
 
   /* Headings: serif, tracking sutil, tamaño fluido y buen interlineado */
   h1, .h1, h2, .h2, h3, .h3, .font-display {
-    @apply font-serif;
+    @apply font-sans;
     letter-spacing: var(--tracking-title);
     text-wrap: balance;              /* evita viudas/huérfanas en títulos modernos */
   }

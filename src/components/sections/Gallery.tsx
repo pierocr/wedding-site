@@ -7,6 +7,8 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 // Usas estos nombres en tu código, así que alias con lucide:
 import {
   Camera,
+  Minus as MinusIcon,
+  Plus as PlusIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   X as XIcon,
@@ -32,7 +34,13 @@ const Gallery = () => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const dragRef = React.useRef<{ dragging: boolean; startX: number; startY: number; origX: number; origY: number }>({
+  const dragRef = React.useRef<{
+    dragging: boolean;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+  }>({
     dragging: false,
     startX: 0,
     startY: 0,
@@ -73,6 +81,16 @@ const Gallery = () => {
     };
   };
 
+  const setClampedZoom = (nextScale: number) => {
+    const newScale = Math.max(1, Math.min(4, nextScale));
+    setScale(newScale);
+    setOffset((currentOffset) =>
+      newScale === 1
+        ? { x: 0, y: 0 }
+        : clampOffset(currentOffset.x, currentOffset.y, newScale),
+    );
+  };
+
   // Click / tap para alternar zoom
   const toggleZoom = (e: React.MouseEvent) => {
     const el = containerRef.current;
@@ -82,7 +100,7 @@ const Gallery = () => {
       const rect = el.getBoundingClientRect();
       const cx = e.clientX - rect.left - rect.width / 2;
       const cy = e.clientY - rect.top - rect.height / 2;
-      const newScale = 2.5;
+      const newScale = 2.75;
       const nx = (-cx * (newScale - 1)) / newScale;
       const ny = (-cy * (newScale - 1)) / newScale;
       const lim = clampOffset(nx, ny, newScale);
@@ -131,20 +149,26 @@ const Gallery = () => {
     if (!dragRef.current.dragging) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
-    const lim = clampOffset(dragRef.current.origX + dx, dragRef.current.origY + dy, scale);
+    const lim = clampOffset(
+      dragRef.current.origX + dx,
+      dragRef.current.origY + dy,
+      scale,
+    );
     setOffset(lim);
   };
   const onPointerUp: React.PointerEventHandler = (e) => {
     if (!dragRef.current.dragging) return;
     const el = e.currentTarget as HTMLDivElement;
-    el.releasePointerCapture(e.pointerId);
+    if (el.hasPointerCapture(e.pointerId)) {
+      el.releasePointerCapture(e.pointerId);
+    }
     dragRef.current.dragging = false;
   };
 
   return (
     <>
       {/* Grid de miniaturas */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
         {GALLERY.map(({ src, alt }, i) => (
           <button
             key={`${src}-${i}`}
@@ -152,14 +176,15 @@ const Gallery = () => {
               setIndex(i);
               setOpen(true);
             }}
-            className="group relative aspect-[4/5] overflow-hidden rounded-2xl border bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
+            className="group relative aspect-[4/5] overflow-hidden rounded-lg border bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <Image
               src={src}
               alt={alt}
               fill
-              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-              loading="lazy"
+              sizes="(min-width: 1024px) 16vw, (min-width: 768px) 20vw, (min-width: 640px) 25vw, 33vw"
+              loading={i < 6 ? "eager" : "lazy"}
+              quality={72}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
@@ -172,67 +197,97 @@ const Gallery = () => {
 
       {/* Lightbox */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[92vw] border-0 bg-black/90 p-2 sm:max-w-5xl [&>button]:hidden">
+        <DialogContent className="h-[100dvh] max-h-[100dvh] w-screen max-w-none border-0 bg-black/95 p-0 shadow-none sm:rounded-none [&>button]:hidden">
           {/* Requisito de accesibilidad de Radix: título (oculto visualmente) */}
           <VisuallyHidden>
             <DialogTitle>Visor de fotos</DialogTitle>
           </VisuallyHidden>
 
-          <div className="relative">
+          <div className="relative flex h-full w-full flex-col">
             <div
               ref={containerRef}
-              className={`mx-auto flex max-h-[80vh] w-full select-none items-center justify-center overflow-hidden rounded-lg bg-black/20 ${
-                scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
+              className={`relative min-h-0 flex-1 select-none overflow-hidden bg-black ${
+                scale > 1
+                  ? "cursor-grab active:cursor-grabbing"
+                  : "cursor-zoom-in"
               }`}
               onDoubleClick={toggleZoom}
               onClick={(e) => {
                 // en móvil, un solo tap alterna zoom
-                if (window.matchMedia("(hover: none)").matches) toggleZoom(e as any);
+                if (window.matchMedia("(hover: none)").matches)
+                  toggleZoom(e as any);
               }}
               onWheel={onWheel}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+              style={{ touchAction: scale > 1 ? "none" : "manipulation" }}
             >
               <Image
+                key={src}
                 src={src}
                 alt={alt}
-                width={1000}
-                height={1250}
-                className="pointer-events-none max-h-[80vh] w-auto select-none"
+                fill
+                className="pointer-events-none select-none object-contain"
                 style={{
                   transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${scale})`,
-                  transition: dragRef.current.dragging ? "none" : "transform 150ms ease-out",
+                  transition: dragRef.current.dragging
+                    ? "none"
+                    : "transform 150ms ease-out",
                   willChange: "transform",
                 }}
                 draggable={false}
-                loading="lazy"
-                sizes="80vh"
+                priority
+                quality={92}
+                sizes="100vw"
               />
             </div>
 
             {/* Cerrar */}
             <button
               onClick={() => setOpen(false)}
-              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
+              className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
               aria-label="Cerrar"
             >
               <XIcon className="h-5 w-5" />
             </button>
+
+            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-2 py-2 text-white backdrop-blur">
+              <button
+                onClick={() => setClampedZoom(scale - 0.5)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white disabled:opacity-45"
+                aria-label="Alejar"
+                disabled={scale <= 1}
+              >
+                <MinusIcon className="h-5 w-5" />
+              </button>
+              <div className="min-w-14 text-center text-xs tabular-nums text-white/90">
+                {Math.round(scale * 100)}%
+              </div>
+              <button
+                onClick={() => setClampedZoom(scale + 0.5)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white disabled:opacity-45"
+                aria-label="Acercar"
+                disabled={scale >= 4}
+              >
+                <PlusIcon className="h-5 w-5" />
+              </button>
+            </div>
 
             {/* Controles izq/der */}
             {total > 1 && (
               <>
                 <button
                   onClick={prev}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
+                  className="absolute left-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
                   aria-label="Anterior"
                 >
                   <ChevronLeftIcon className="h-6 w-6" />
                 </button>
                 <button
                   onClick={next}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
+                  className="absolute right-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow hover:bg-white"
                   aria-label="Siguiente"
                 >
                   <ChevronRightIcon className="h-6 w-6" />
@@ -241,7 +296,7 @@ const Gallery = () => {
             )}
 
             {/* Indicador */}
-            <div className="mt-3 text-center text-xs text-white/80">
+            <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-center text-xs text-white/85 backdrop-blur">
               {index + 1} / {total}
             </div>
           </div>

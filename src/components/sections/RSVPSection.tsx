@@ -16,7 +16,7 @@ const STATUS = {
 type Status = typeof STATUS[keyof typeof STATUS];
 
 const ATTENDING_LABELS = {
-  yes: "Sí, allí estaré",
+  yes: "Sí, confirmo mi asistencia",
   no: "No podré asistir",
   later: "Lo confirmaré más adelante",
 } as const;
@@ -119,11 +119,11 @@ const RSVPSectionForm = () => {
   };
 
   const inputBase =
-    "h-10 w-full rounded-md bg-background px-3 border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+    "h-11 w-full rounded-md bg-background px-3 border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
   const invalidRing = "ring-2 ring-destructive/70 focus-visible:ring-destructive";
 
   return (
-    <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+    <Card className="rounded-xl shadow-[0_4px_18px_rgba(0,0,0,0.035)]">
       <CardHeader className="pb-1">
         {/* Si quieres mostrar el título dentro del Card: */}
         {/* <CardTitle className="flex items-center gap-2 font-serif">

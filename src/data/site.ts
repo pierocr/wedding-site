@@ -16,10 +16,10 @@ export const CEREMONY = {
   datePretty: "Sábado 21 de noviembre de 2026",
   timePretty: "16:30 hrs",
   timeIso: "16:30:00",
-  venue: "Iglesia Santa Ursula de Vitacura",
+  venue: "Iglesia Santa Úrsula de Vitacura",
   venueAddress: "Vitacura, Chile",
   locality: "Vitacura",
-  region: "Region Metropolitana de Santiago",
+  region: "Región Metropolitana de Santiago",
   country: "CL",
   mapsUrl: "https://maps.app.goo.gl/Hsxztok7HaTwegmm7",
 };
@@ -30,7 +30,7 @@ export const RECEPTION = {
   venue: "Casona Santa Luz de Chicureo",
   venueAddress: "Chicureo, Santiago",
   locality: "Chicureo",
-  region: "Region Metropolitana de Santiago",
+  region: "Región Metropolitana de Santiago",
   country: "CL",
   mapsUrl: "https://maps.app.goo.gl/7u4oLZkD91fxuqdc7",
 };

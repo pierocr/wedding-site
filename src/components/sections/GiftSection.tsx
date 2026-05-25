@@ -299,6 +299,24 @@ export default function GiftSection() {
   const canPay =
     !!name.trim() && EMAIL_RE.test(email) && cart.length > 0 && !!message.trim() && !loading;
 
+  const groupedGifts = [
+    {
+      title: "Detalles",
+      description: "Gestos simples para acompanar nuestro nuevo comienzo.",
+      items: GIFT_CATALOG.filter((gift) => gift.price <= 70000),
+    },
+    {
+      title: "Experiencias",
+      description: "Momentos para celebrar, descansar y recordar.",
+      items: GIFT_CATALOG.filter((gift) => gift.price > 70000 && gift.price <= 140000),
+    },
+    {
+      title: "Luna de miel y hogar",
+      description: "Aportes para nuestros primeros planes como matrimonio.",
+      items: GIFT_CATALOG.filter((gift) => gift.price > 140000),
+    },
+  ];
+
   async function pay() {
     if (!canPay) return;
     setLoading(true);
@@ -334,7 +352,7 @@ export default function GiftSection() {
   }
 
   return (
-    <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-border/50">
+    <Card className="rounded-xl border-border/50 shadow-[0_4px_18px_rgba(0,0,0,0.035)]">
       <CardHeader className="text-center pb-2">
         <div className="flex justify-center mb-3">
           <div className="rounded-full bg-primary/10 p-3">
@@ -344,7 +362,7 @@ export default function GiftSection() {
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">
           Con amor y gratitud
         </p>
-        <CardTitle className="font-serif text-2xl md:text-3xl">
+        <CardTitle className="text-2xl md:text-3xl">
           Regalos con Mensaje
         </CardTitle>
         <CardDescription className="max-w-xl mx-auto mt-3 text-base leading-relaxed">
@@ -354,9 +372,9 @@ export default function GiftSection() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-8 pt-6">
+      <CardContent className="space-y-6 pt-6">
         {/* Gift Catalog Grid */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2 lg:grid-cols-2">
           {GIFT_CATALOG.map((gift) => {
             const qty = qtyFor(gift.id);
             const isSelected = mounted && qty > 0;
@@ -365,16 +383,16 @@ export default function GiftSection() {
               <div
                 key={gift.id}
                 className={clsx(
-                  "group relative overflow-hidden rounded-2xl border bg-card transition-all duration-300 hover:-translate-y-1 active:scale-[0.98]",
+                  "group relative flex items-start gap-3 overflow-hidden rounded-xl border bg-card p-2.5 transition active:scale-[0.99]",
                   isSelected
-                    ? "border-primary/40 shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
-                    : "border-border/40 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:border-primary/20"
+                    ? "border-primary/45 bg-primary/5 pr-32"
+                    : "border-border/55 pr-14 hover:border-primary/25"
                 )}
               >
                 {/* Selected Badge */}
                 {isSelected && (
-                  <div className="absolute top-3 left-3 z-10">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm">
+                  <div className="hidden">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-sm">
                       <Check className="h-3 w-3" />
                       {qty}
                     </span>
@@ -382,57 +400,56 @@ export default function GiftSection() {
                 )}
 
                 {/* Icon Area */}
-                <div className="relative h-28 bg-gradient-to-br from-secondary/50 via-secondary/30 to-transparent flex items-center justify-center overflow-hidden">
-                  <span className="text-5xl transition-transform duration-300 group-hover:scale-110">
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary/70">
+                  <span className="text-xl transition-transform duration-300 group-hover:scale-110">
                     {gift.icon}
                   </span>
                   {/* Decorative flourish */}
-                  <div className="absolute top-3 right-3 text-accent/40 font-serif text-lg">
+                  <div className="hidden">
                     ❦
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-5 space-y-3">
-                  <h3 className="font-serif text-lg font-semibold text-foreground leading-tight">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <h3 className="line-clamp-2 text-sm font-semibold text-foreground leading-tight">
                     {gift.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                  <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
                     {gift.description}
                   </p>
 
                   {/* Price & Action */}
-                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                    <span className="font-serif text-xl font-bold text-primary tabular-nums">
+                  <div className="flex items-center gap-2 pt-0">
+                    <span className="text-sm font-bold text-primary tabular-nums">
                       {priceFmt(gift.price)}
                     </span>
 
                     {!mounted ? (
-                      <div className="h-9 w-24 rounded-xl bg-muted/40 animate-pulse" />
+                      <div className="absolute right-2.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg bg-muted/40 animate-pulse" />
                     ) : qty === 0 ? (
                       <Button
                         type="button"
-                        size="sm"
+                        size="icon"
                         onClick={() => addItem(gift)}
-                        className="rounded-xl bg-primary hover:bg-primary/90"
+                        className="absolute right-2.5 top-1/2 h-10 w-10 -translate-y-1/2 shrink-0 rounded-lg bg-primary hover:bg-primary/90"
                         aria-label={`Agregar ${gift.title}`}
                       >
-                        <Plus className="mr-1.5 h-4 w-4" />
-                        Agregar
+                        <Plus className="h-4 w-4" />
                       </Button>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
                         <Button
                           type="button"
                           size="icon"
                           variant="outline"
                           onClick={() => dec(gift.id)}
-                          className="h-8 w-8 rounded-lg"
+                          className="h-10 w-10 rounded-lg"
                           aria-label={`Quitar una unidad de ${gift.title}`}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-8 text-center text-sm font-medium tabular-nums">
+                        <span className="w-5 text-center text-sm font-medium tabular-nums">
                           {qty}
                         </span>
                         <Button
@@ -440,7 +457,7 @@ export default function GiftSection() {
                           size="icon"
                           variant="outline"
                           onClick={() => addItem(gift)}
-                          className="h-8 w-8 rounded-lg"
+                          className="h-10 w-10 rounded-lg"
                           aria-label={`Agregar una unidad de ${gift.title}`}
                           disabled={qty >= MAX_QTY}
                         >
@@ -455,13 +472,13 @@ export default function GiftSection() {
           })}
 
           {/* Custom Gift Card */}
-          <div className="rounded-2xl border-2 border-dashed border-accent/40 bg-gradient-to-br from-accent/5 to-transparent p-6 space-y-4">
+          <div className="space-y-4 rounded-xl border border-dashed border-accent/50 bg-accent/5 p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-accent/20 p-2.5">
                 <Sparkles className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <h3 className="font-serif text-lg font-semibold">Tu Propio Deseo</h3>
+                <h3 className="text-base font-semibold">Tu propio deseo</h3>
                 <p className="text-sm text-muted-foreground">Crea un mensaje personalizado</p>
               </div>
             </div>
@@ -470,11 +487,10 @@ export default function GiftSection() {
               placeholder="Escribe tu bendición o deseo..."
               value={customMsg}
               onChange={(e) => setCustomMsg(e.target.value)}
-              className="bg-background/80"
+              className="h-11 bg-background/80"
             />
 
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Monto</span>
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
               <Input
                 type="number"
                 placeholder="50000"
@@ -484,7 +500,7 @@ export default function GiftSection() {
                 onChange={(e) =>
                   setCustomAmount(e.target.value === "" ? "" : Number(e.target.value))
                 }
-                className="w-32 bg-background/80"
+                className="h-11 bg-background/80"
               />
               <span className="text-sm text-muted-foreground">CLP</span>
             </div>
@@ -496,16 +512,16 @@ export default function GiftSection() {
               className="w-full rounded-xl"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Agregar Deseo Personalizado
+              Agregar deseo
             </Button>
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="my-6" />
 
         {/* Donor Form */}
         <div className="space-y-4">
-          <h3 className="font-serif text-lg font-semibold text-center">Tus Datos</h3>
+          <h3 className="text-lg font-semibold text-center">Tus Datos</h3>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Tu nombre (obligatorio)</label>
@@ -513,7 +529,7 @@ export default function GiftSection() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej: Carolina Pérez"
-                className="bg-background"
+                className="h-11 bg-background"
               />
             </div>
             <div className="space-y-2">
@@ -524,7 +540,7 @@ export default function GiftSection() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nombre@correo.cl"
-                className="bg-background"
+                className="h-11 bg-background"
               />
             </div>
             <div className="md:col-span-2 space-y-2">
@@ -543,12 +559,12 @@ export default function GiftSection() {
         </div>
 
         {/* Cart Summary */}
-        <div className="rounded-2xl border bg-card/50 backdrop-blur-sm overflow-hidden">
+        <div className="rounded-xl border bg-card/50 backdrop-blur-sm overflow-hidden">
           {/* Cart Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b bg-secondary/30">
             <div className="flex items-center gap-3">
               <ShoppingCart className="h-5 w-5 text-primary" />
-              <span className="font-serif font-semibold">Tu Selección</span>
+              <span className="font-semibold">Tu Selección</span>
             </div>
             <span className="text-sm text-muted-foreground" suppressHydrationWarning>
               {mounted ? `${itemCount} ${itemCount === 1 ? "regalo" : "regalos"}` : "—"}
@@ -567,51 +583,71 @@ export default function GiftSection() {
           ) : (
             <div className="divide-y divide-border/50">
               {cart.map((l) => (
-                <div key={l.id} className="flex items-center gap-4 px-5 py-4">
-                  <span className="text-2xl">{l.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{l.title}</p>
-                    <p className="text-sm text-muted-foreground">
+                <div
+                  key={l.id}
+                  className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:items-center sm:gap-4"
+                >
+                  <span className="row-span-3 flex h-10 w-10 items-center justify-center rounded-full bg-secondary/70 text-2xl sm:row-span-1 sm:h-auto sm:w-auto sm:bg-transparent">
+                    {l.icon}
+                  </span>
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight sm:truncate sm:text-base">
+                      {l.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                       {priceFmt(l.unitPrice)} c/u
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      onClick={() => dec(l.id)}
-                      className="h-8 w-8 rounded-lg"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center text-sm font-medium tabular-nums">
-                      {l.qty}
+
+                  <div className="text-left sm:text-right">
+                    <span className="block text-xs text-muted-foreground sm:hidden">
+                      Subtotal
                     </span>
+                    <span className="block whitespace-nowrap text-base font-semibold tabular-nums sm:w-24">
+                      {priceFmt(subtotal(l))}
+                    </span>
+                  </div>
+
+                  <div className="col-start-2 flex items-center justify-between pt-1 sm:col-auto sm:justify-start sm:gap-3 sm:pt-0">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={() => dec(l.id)}
+                        className="h-9 w-9 rounded-lg"
+                        aria-label={`Quitar una unidad de ${l.title}`}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-7 text-center text-sm font-medium tabular-nums">
+                        {l.qty}
+                      </span>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={() => inc(l.id)}
+                        className="h-9 w-9 rounded-lg"
+                        disabled={l.qty >= MAX_QTY}
+                        aria-label={`Agregar una unidad de ${l.title}`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
                     <Button
                       type="button"
                       size="icon"
-                      variant="outline"
-                      onClick={() => inc(l.id)}
-                      className="h-8 w-8 rounded-lg"
-                      disabled={l.qty >= MAX_QTY}
+                      variant="ghost"
+                      onClick={() => removeLine(l.id)}
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                      aria-label={`Quitar ${l.title}`}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <span className="font-semibold tabular-nums w-24 text-right">
-                    {priceFmt(subtotal(l))}
-                  </span>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => removeLine(l.id)}
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    aria-label="Quitar"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
             </div>
@@ -633,7 +669,7 @@ export default function GiftSection() {
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Total</p>
                 <p
-                  className="font-serif text-2xl font-bold text-primary tabular-nums"
+                  className="text-2xl font-bold text-primary tabular-nums"
                   suppressHydrationWarning
                 >
                   {mounted ? priceFmt(total) : "—"}

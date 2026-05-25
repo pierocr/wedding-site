@@ -4,7 +4,7 @@
 
 export const FEATURE_FLAGS = {
   // RSVP - cambiar a true cuando se entreguen invitaciones
-  rsvpEnabled: false,
+  rsvpEnabled: true,
 
   // Christmas Promotion - activa hasta 31 de diciembre
   christmasPromoEnabled: false,

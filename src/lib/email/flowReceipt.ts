@@ -154,7 +154,7 @@ export async function sendFlowReceiptEmail(payload: ReceiptPayload) {
               <p style="margin:0 0 12px 0;font-size:14px;color:#5f6b5f;line-height:1.6;">
                 Este correo es tu comprobante de regalo. ¡Gracias por estar con nosotros!
               </p>
-              <div style="font-size:13px;color:#b8956e;font-weight:600;letter-spacing:0.02em;">Estamos contando los dias para celebrarlo contigo</div>
+              <div style="font-size:13px;color:#b8956e;font-weight:600;letter-spacing:0.02em;">Estamos contando los días para celebrarlo contigo</div>
               <div style="width:40px;height:1px;background:#e6dccf;margin:16px auto;"></div>
               <div style="font-size:14px;color:#5f6b5f;font-style:italic;">Con amor,</div>
               <div style="font-weight:700;font-size:18px;color:#3f5c4a;margin-top:4px;">Piero &amp; Debby</div>

@@ -141,7 +141,32 @@ export default function Timeline() {
       </div>
 
       {/* MOBILE: 2 columnas en zig-zag */}
-      <div className="relative md:hidden">
+      <div className="relative mx-auto max-w-md md:hidden">
+        <div className="absolute bottom-4 left-5 top-4 w-px bg-border" aria-hidden="true" />
+        <div className="space-y-3">
+          {EVENTS.map((event) => (
+            <div key={event.id} className="relative flex items-center gap-4 rounded-xl border bg-card p-3">
+              <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground tabular-nums">
+                {event.time}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">{event.title}</p>
+              </div>
+              {event.iconSrc ? (
+                <Image
+                  src={event.iconSrc}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-9 w-9 shrink-0 object-contain"
+                />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="hidden">
         {/* Línea serpenteante animada */}
         <svg
           viewBox="0 0 320 1000"
@@ -181,8 +206,8 @@ export default function Timeline() {
       </div>
 
       {/* Glows sutiles */}
-      <div className="pointer-events-none absolute -left-24 -top-20 h-56 w-56 rounded-full bg-teal-200/30 blur-3xl md:h-72 md:w-72" />
-      <div className="pointer-events-none absolute -right-24 -bottom-10 h-56 w-56 rounded-full bg-amber-200/30 blur-3xl md:h-72 md:w-72" />
+      <div className="hidden" />
+      <div className="hidden" />
       </section>
     </LockedOverlay>
   );
