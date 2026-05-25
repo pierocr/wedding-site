@@ -4,6 +4,7 @@ import "@/app/globals.css";
 import { fontSans, fontSerif, fontScript } from "./fonts";
 import SeoWebsite from "@/components/seo/SeoWebsite";
 import SeoWeddingEvent from "@/components/seo/SeoWeddingEvent";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import { SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION } from "@/data/site";
 
 export const metadata: Metadata = {
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <SeoWebsite name={SITE_NAME} url={SITE_URL} />
         <SeoWeddingEvent />
+        <GoogleAnalytics />
         <div className="flex min-h-screen flex-col">
           <main className="flex-1">{children}</main>
         </div>

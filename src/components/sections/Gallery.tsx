@@ -16,6 +16,7 @@ import {
 
 // Si tu array estaba dentro de page.tsx, muévelo a un data file e impórtalo:
 import { GALLERY } from "@/data/gallery";
+import { trackEvent } from "@/lib/analytics";
 
 const Gallery = () => {
   const [open, setOpen] = useState(false);
@@ -175,6 +176,10 @@ const Gallery = () => {
             onClick={() => {
               setIndex(i);
               setOpen(true);
+              trackEvent("gallery_view", {
+                photo_index: i + 1,
+                photo_src: src,
+              });
             }}
             className="group relative aspect-[4/5] overflow-hidden rounded-lg border bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
           >

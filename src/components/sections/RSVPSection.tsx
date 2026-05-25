@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { FEATURE_FLAGS } from "@/data/site";
+import { trackEvent } from "@/lib/analytics";
 
 // 🔒 Fuente única de verdad para los estados (evita strings sueltos)
 const STATUS = {
@@ -77,6 +78,11 @@ const RSVPSectionForm = () => {
 
     // 'yes' | 'no' | 'later'
     const statusKey = toStatusCode(form.attending);
+    trackEvent("rsvp_click", {
+      location: "rsvp_form",
+      attending_status: statusKey,
+      vegetarian: form.vegetarian,
+    });
     // boolean para tu columna antigua NOT NULL
     const attendingBool = statusKey === "yes";
 

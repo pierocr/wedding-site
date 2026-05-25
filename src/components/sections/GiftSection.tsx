@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import clsx from "clsx";
 import Image from "next/image";
+import { trackEvent } from "@/lib/analytics";
 
 // ============ TYPES ============
 type GiftItem = {
@@ -265,8 +266,16 @@ export default function GiftSection() {
     });
   };
 
-  const addItem = (item: GiftItem) =>
+  const addItem = (item: GiftItem) => {
+    trackEvent("gift_info_click", {
+      action: "add_catalog_item",
+      gift_id: item.id,
+      gift_title: item.title,
+      value: item.price,
+      currency: CURRENCY,
+    });
     setQty(item.id, item.title, item.icon, item.price, qtyFor(item.id) + 1);
+  };
 
   const inc = (id: string) => {
     const l = cart.find((x) => x.id === id);
@@ -287,6 +296,11 @@ export default function GiftSection() {
     const id = `custom:${customMsg.trim()}:${customAmount}`;
     const title = customMsg.trim();
     const unitPrice = Number(customAmount);
+    trackEvent("gift_info_click", {
+      action: "add_custom_item",
+      value: unitPrice,
+      currency: CURRENCY,
+    });
     setQty(id, title, "💝", unitPrice, qtyFor(id) + 1);
     setCustomMsg("");
     setCustomAmount("");
@@ -319,6 +333,12 @@ export default function GiftSection() {
 
   async function pay() {
     if (!canPay) return;
+    trackEvent("gift_info_click", {
+      action: "start_payment",
+      value: total,
+      currency: CURRENCY,
+      items: itemCount,
+    });
     setLoading(true);
     try {
       const res = await fetch("/api/flow/create-payment", {

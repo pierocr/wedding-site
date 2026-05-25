@@ -50,6 +50,7 @@ import {
   FEATURE_FLAGS,
 } from "@/data/site";
 import { LockedOverlay } from "@/components/ui/LockedOverlay";
+import { trackEvent, trackPageView } from "@/lib/analytics";
 
 /* ==============================
    ANIMATION PRESETS (Framer Motion)
@@ -400,6 +401,7 @@ const Nav = () => {
       clearScrollCorrections();
 
       window.history.pushState(null, "", href);
+      trackPageView(`${window.location.pathname}${window.location.search}${href}`);
       requestAnimationFrame(() => scrollToSection(href, "auto"));
 
       const cancelOnUserScroll = () => clearScrollCorrections();
@@ -437,7 +439,13 @@ const Nav = () => {
       <a
         href="#regalo"
         aria-label={hasItems ? `Regalo (${cartQty} ítems)` : "Hacer regalo"}
-        onClick={(event) => handleAnchorClick(event, "#regalo")}
+        onClick={(event) => {
+          trackEvent("gift_info_click", {
+            location: fullWidth ? "mobile_nav" : "desktop_nav",
+            destination: "#regalo",
+          });
+          handleAnchorClick(event, "#regalo");
+        }}
       >
         <Button
           size="sm"
@@ -778,13 +786,31 @@ const Hero = () => {
                   asChild
                   className="h-12 w-full rounded-xl px-5 shadow-[0_12px_30px_rgba(31,74,56,0.35)] sm:w-auto sm:min-w-[clamp(13rem,24vw,15rem)]"
                 >
-                  <a href="#rsvp">Confirmar Asistencia</a>
+                  <a
+                    href="#rsvp"
+                    onClick={() =>
+                      trackEvent("rsvp_click", {
+                        location: "hero",
+                        destination: "#rsvp",
+                      })
+                    }
+                  >
+                    Confirmar Asistencia
+                  </a>
                 </Button>
                 <Button
                   asChild
                   className="h-12 w-full rounded-xl border border-white/70 bg-[#f4efe6] px-5 font-bold text-[#241f18] shadow-[0_14px_34px_rgba(244,239,230,0.3)] ring-1 ring-black/10 hover:bg-[#fffaf1] sm:w-auto sm:min-w-[clamp(12rem,20vw,14rem)]"
                 >
-                  <a href="#regalo">
+                  <a
+                    href="#regalo"
+                    onClick={() =>
+                      trackEvent("gift_info_click", {
+                        location: "hero",
+                        destination: "#regalo",
+                      })
+                    }
+                  >
                     <Gift className="h-4 w-4" />
                     Hacer regalo
                   </a>
@@ -863,6 +889,16 @@ const Schedule = () => {
             >
               <Wrapper
                 {...wrapperProps}
+                onClick={
+                  hasLink
+                    ? () =>
+                        trackEvent("map_click", {
+                          location: "schedule",
+                          venue: i.title,
+                          destination: i.link,
+                        })
+                    : undefined
+                }
                 className={`group block rounded-xl focus:outline-none focus:ring-2 focus:ring-primary ${
                   hasLink ? "cursor-pointer" : ""
                 }`}
@@ -1095,6 +1131,10 @@ const MusicPlayer = ({ src, className = "" }: MusicPlayerProps) => {
   const togglePlay = async () => {
     const a = audioRef.current;
     if (!a) return;
+    trackEvent("music_request_click", {
+      action: playing ? "pause" : "play",
+      source: src,
+    });
     if (playing) {
       a.pause();
       setPlaying(false);
