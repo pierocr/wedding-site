@@ -44,7 +44,7 @@ function ConsentBanner() {
     <div className="fixed inset-x-3 bottom-3 z-[10000] mx-auto max-w-xl rounded-lg border border-border bg-background p-4 text-sm text-foreground shadow-2xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="leading-relaxed text-muted-foreground">
-          Usamos cookies de analitica para entender visitas y mejorar el sitio.
+          Usamos cookies para mejorar el sitio.
         </p>
         <div className="flex shrink-0 gap-2">
           <button
