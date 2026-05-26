@@ -784,10 +784,11 @@ const Hero = () => {
               <div className="mt-[clamp(4px,0.8vw,8px)] flex w-full flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
                 <Button
                   asChild
-                  className="h-12 w-full rounded-xl px-5 shadow-[0_12px_30px_rgba(31,74,56,0.35)] sm:w-auto sm:min-w-[clamp(13rem,24vw,15rem)]"
+                  className="h-12 w-full rounded-xl bg-[#315640] px-5 font-bold text-white shadow-[0_12px_30px_rgba(31,74,56,0.35)] hover:bg-[#284835] sm:w-auto sm:min-w-[clamp(13rem,24vw,15rem)]"
                 >
                   <a
                     href="#rsvp"
+                    className="text-center no-underline hover:no-underline"
                     onClick={() =>
                       trackEvent("rsvp_click", {
                         location: "hero",
@@ -804,6 +805,7 @@ const Hero = () => {
                 >
                   <a
                     href="#regalo"
+                    className="text-center no-underline hover:no-underline"
                     onClick={() =>
                       trackEvent("gift_info_click", {
                         location: "hero",

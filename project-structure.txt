@@ -2,14 +2,14 @@
 │   └── flow.md (3.6 KB)
 ├── public/
 │   ├── gallery/
-│   │   ├── 1.jpg (103.0 KB)
-│   │   ├── 2.jpg (612.1 KB)
-│   │   ├── 3.jpg (130.2 KB)
-│   │   ├── 4.jpg (552.6 KB)
-│   │   ├── 5.jpg (421.0 KB)
-│   │   ├── 6.jpg (93.4 KB)
-│   │   ├── 7.jpg (112.1 KB)
-│   │   └── 8.jpg (756.4 KB)
+│   │   ├── 1.jpg (102.8 KB)
+│   │   ├── 2.jpg (618.2 KB)
+│   │   ├── 3.jpg (132.0 KB)
+│   │   ├── 4.jpg (555.7 KB)
+│   │   ├── 5.jpg (420.9 KB)
+│   │   ├── 6.jpg (95.5 KB)
+│   │   ├── 7.jpg (113.9 KB)
+│   │   └── 8.jpg (778.0 KB)
 │   ├── hero/
 │   │   ├── 1.jpg (1329.0 KB)
 │   │   ├── centrodeeventos.jpg (55.7 KB)
@@ -28,6 +28,7 @@
 │   │       └── pexels-marina-abrosimova-3319804-5222109.jpg (83.3 KB)
 │   ├── music/
 │   │   └── Sonreir.mp3 (1633.9 KB)
+│   ├── 1.Webpay_FB_800px.png (33.2 KB)
 │   ├── file.svg (0.4 KB)
 │   ├── globe.svg (1.0 KB)
 │   ├── next.svg (1.3 KB)
@@ -39,8 +40,12 @@
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── email/
-│   │   │   │   └── thanks/
-│   │   │   │       └── route.ts (3.0 KB)
+│   │   │   │   ├── send-pending/
+│   │   │   │   │   └── route.ts (4.1 KB)
+│   │   │   │   ├── test/
+│   │   │   │   │   └── route.ts (3.2 KB)
+│   │   │   │   ├── thanks/
+│   │   │   │   │   └── route.ts (3.0 KB)
 │   │   │   ├── env-check/
 │   │   │   │   └── route.ts (0.7 KB)
 │   │   │   ├── flow/
@@ -48,8 +53,8 @@
 │   │   │   │   │   └── route.ts (3.8 KB)
 │   │   │   │   ├── status/
 │   │   │   │   │   └── route.ts (3.6 KB)
-│   │   │   │   └── webhook/
-│   │   │   │       └── route.ts (4.8 KB)
+│   │   │   │   ├── webhook/
+│   │   │   │   │   └── route.ts (5.5 KB)
 │   │   │   └── mercadopago/
 │   │   │       ├── create-preference/
 │   │   │       │   └── route.ts (4.8 KB)
@@ -63,7 +68,7 @@
 │   │   │   ├── resultado/
 │   │   │   │   ├── view/
 │   │   │   │   │   └── page.tsx (0.5 KB)
-│   │   │   │   ├── client.tsx (7.7 KB)
+│   │   │   │   ├── client.tsx (8.0 KB)
 │   │   │   │   └── route.ts (0.9 KB)
 │   │   │   └── page.tsx (2.9 KB)
 │   │   ├── planes-matrimonio/
@@ -72,21 +77,21 @@
 │   │   ├── favicon.ico (21.5 KB)
 │   │   ├── fonts.ts (0.7 KB)
 │   │   ├── globals.css (4.6 KB)
-│   │   ├── layout.tsx (3.5 KB)
-│   │   ├── page.tsx (36.8 KB)
+│   │   ├── layout.tsx (2.3 KB)
+│   │   ├── page.tsx (36.9 KB)
 │   │   ├── robots.ts (0.3 KB)
 │   │   └── sitemap.ts (0.5 KB)
 │   ├── components/
 │   │   ├── sections/
 │   │   │   ├── Gallery.tsx (9.0 KB)
-│   │   │   ├── GiftSection.tsx (18.8 KB)
+│   │   │   ├── GiftSection.tsx (23.6 KB)
 │   │   │   ├── RSVPSection.tsx (10.6 KB)
 │   │   │   ├── Story.tsx (5.1 KB)
 │   │   │   └── Timeline.tsx (7.0 KB)
 │   │   ├── seo/
 │   │   │   ├── SeoFaq.tsx (0.6 KB)
 │   │   │   ├── SeoWebsite.tsx (0.4 KB)
-│   │   │   └── SeoWeddingEvent.tsx (3.8 KB)
+│   │   │   └── SeoWeddingEvent.tsx (4.2 KB)
 │   │   ├── ui/
 │   │   │   ├── accordion.tsx (2.1 KB)
 │   │   │   ├── badge.tsx (1.1 KB)
@@ -110,7 +115,7 @@
 │   │   └── useInViewOnce.ts (0.9 KB)
 │   ├── lib/
 │   │   ├── email/
-│   │   │   └── flowReceipt.ts (8.1 KB)
+│   │   │   └── flowReceipt.ts (9.3 KB)
 │   │   ├── utils/
 │   │   ├── flow.ts (6.4 KB)
 │   │   ├── rsvpSchema.ts (0.5 KB)
@@ -125,9 +130,10 @@
 ├── pnpm-lock.yaml (178.2 KB)
 ├── postcss.config.js (0.1 KB)
 ├── postcss.config.mjs (0.1 KB)
-├── project-structure.txt (4.8 KB)
+├── project-structure.txt (5.4 KB)
 ├── README.md (1.4 KB)
 ├── robots.txt (0.1 KB)
 ├── tailwind.config.js (2.7 KB)
 ├── tsconfig.json (0.8 KB)
+├── tsconfig.tsbuildinfo (175.9 KB)
 └── wrangler.toml (0.1 KB)

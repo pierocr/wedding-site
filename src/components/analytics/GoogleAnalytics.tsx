@@ -41,22 +41,22 @@ function ConsentBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-[10000] mx-auto max-w-xl rounded-lg border border-border bg-background p-4 text-sm text-foreground shadow-2xl">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="leading-relaxed text-muted-foreground">
+    <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[10000] mx-auto max-w-xl rounded-lg border border-neutral-950/20 bg-white p-4 text-sm text-neutral-950 shadow-2xl dark:border-white/20 dark:bg-neutral-950 dark:text-white">
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+        <p className="leading-relaxed text-neutral-800 dark:text-neutral-200">
           Usamos cookies para mejorar el sitio.
         </p>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-md border border-border px-3 py-2 font-medium hover:bg-muted"
+            className="min-h-11 rounded-md border border-neutral-950/30 bg-white px-4 py-2 font-medium text-neutral-950 hover:bg-neutral-100 dark:border-white/30 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-900"
             onClick={() => setConsent("denied")}
           >
             Rechazar
           </button>
           <button
             type="button"
-            className="rounded-md bg-primary px-3 py-2 font-medium text-primary-foreground hover:bg-primary/90"
+            className="min-h-11 rounded-md bg-[#315640] px-4 py-2 font-medium text-white hover:bg-[#284835]"
             onClick={() => setConsent("granted")}
           >
             Aceptar
