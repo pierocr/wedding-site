@@ -108,7 +108,7 @@ export default function Story() {
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          Sugerencia: usa un video horizontal (16:9) para que luzca perfecto.
+          Un recuerdo especial de nuestra historia, para verlo con calma antes del gran día.
         </p>
       </motion.div>
     </motion.div>

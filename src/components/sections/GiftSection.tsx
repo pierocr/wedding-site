@@ -730,8 +730,8 @@ export default function GiftSection() {
                 src="/1.Webpay_FB_800px.png"
                 alt="WebPay"
                 width={110}
-                height={28}
-                className="h-7 w-auto object-contain"
+                height={37}
+                className="h-auto w-[110px] object-contain"
                 priority
               />
             </div>

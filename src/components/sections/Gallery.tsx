@@ -2,7 +2,12 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 // Usas estos nombres en tu código, así que alias con lucide:
 import {
@@ -189,6 +194,7 @@ const Gallery = () => {
               fill
               sizes="(min-width: 1024px) 16vw, (min-width: 768px) 20vw, (min-width: 640px) 25vw, 33vw"
               loading={i < 6 ? "eager" : "lazy"}
+              priority={i === 0}
               quality={72}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -206,6 +212,9 @@ const Gallery = () => {
           {/* Requisito de accesibilidad de Radix: título (oculto visualmente) */}
           <VisuallyHidden>
             <DialogTitle>Visor de fotos</DialogTitle>
+            <DialogDescription>
+              Galería ampliada con controles para avanzar, retroceder, acercar y alejar la fotografía.
+            </DialogDescription>
           </VisuallyHidden>
 
           <div className="relative flex h-full w-full flex-col">

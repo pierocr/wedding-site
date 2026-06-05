@@ -358,11 +358,11 @@ const Nav = () => {
     Icon: React.ComponentType<any>;
   }> = [
     { href: "#agenda", label: "Agenda", Icon: Calendar },
-    { href: "#programacion", label: "Programación", Icon: Clock },
     { href: "#historia", label: "Historia", Icon: Heart },
     { href: "#galeria", label: "Galería", Icon: ImageIcon },
     { href: "#regalo", label: "Regalo", Icon: Gift },
     { href: "#rsvp", label: "Confirmar asistencia", Icon: CalendarCheck },
+    { href: "#programacion", label: "Programación", Icon: Clock },
     { href: "#faq", label: "Preguntas frecuentes", Icon: HelpCircle },
   ];
 
@@ -476,14 +476,18 @@ const Nav = () => {
   return (
     <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <a href="#inicio" className="text-lg font-semibold">
+        <a
+          href="#inicio"
+          className="shrink-0 text-lg font-semibold"
+          onClick={(event) => handleAnchorClick(event, "#inicio")}
+        >
           {GROOM} & {BRIDE}
         </a>
 
         {/* Desktop */}
         <nav
           aria-label="Secciones principales"
-          className="hidden items-center gap-6 text-sm md:flex"
+          className="hidden items-center gap-4 text-[13px] lg:gap-6 lg:text-sm md:flex"
         >
           {links.map((l) => (
             <a
@@ -649,7 +653,7 @@ const MiniCountdownBar = () => {
   );
 };
 
-const HERO_IMAGES = ["/hero/1.jpg"];
+const HERO_IMAGES = ["/hero/1.webp"];
 // Estas fotos deben exportarse manualmente como WebP/AVIF (<200KB) antes de cada despliegue para sostener un LCP rápido.
 
 // === HERO (versión centrada, sin solaparse y sin altura excesiva en desktop) ===
@@ -668,15 +672,13 @@ const Hero = () => {
   // Evita hydration mismatch del contador
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);
-  const safe = (n: number) => (hydrated ? n : 0);
-
   const TimerChip = ({ v, l }: { v: number; l: string }) => (
     <div className="flex items-baseline gap-1 rounded-2xl border border-white/20 bg-white/70 px-[clamp(8px,0.9vw,12px)] py-[clamp(5px,0.7vw,7px)] shadow-sm">
       <div
         className="tabular-nums font-extrabold leading-none tracking-tight text-[clamp(16px,2.1vw,20px)] text-black"
         suppressHydrationWarning
       >
-        {safe(v)}
+        {hydrated ? v : "--"}
       </div>
       <div className="text-[clamp(9px,1.3vw,10px)] font-semibold text-black/85">
         {l}
@@ -721,8 +723,7 @@ const Hero = () => {
           className="text-center text-[12px] uppercase tracking-[0.18em] text-white/80"
           variants={REVEAL_UP}
         >
-          Nuestra boda{" "}
-          <span className="ornament text-base text-white/70">❦</span>
+          Nuestra boda
         </motion.div>
 
         <motion.h1
@@ -848,7 +849,7 @@ const Schedule = () => {
             place: CEREMONY.venue,
             address: CEREMONY.venueAddress,
             link: CEREMONY.mapsUrl,
-            image: "/hero/iglesia.png",
+            image: "/hero/iglesia.webp",
             icon: <Stars className="h-5 w-5" />,
           },
           {
@@ -857,7 +858,7 @@ const Schedule = () => {
             place: RECEPTION.venue,
             address: RECEPTION.venueAddress,
             link: RECEPTION.mapsUrl,
-            image: "/hero/centrodeeventos.png",
+            image: "/hero/centrodeeventos.webp",
             icon: <PartyPopper className="h-5 w-5" />,
           },
           {
@@ -867,7 +868,7 @@ const Schedule = () => {
             address:
               "Ellas NO deben usar blanco ni tonos muy claros, eso déjenlo para la novia 😉",
             link: "#",
-            image: "/dress_code.png",
+            image: "/dress_code.webp",
             icon: <Users className="h-5 w-5" />,
           },
         ].map((i, idx) => {
