@@ -7,7 +7,7 @@ import { sendFlowReceiptEmail } from "@/lib/email/flowReceipt";
 type TestBody = {
   to?: string;
   name?: string;
-  amount?: number;
+  amount?: number | string;
   currency?: string;
   message?: string;
   cart?: unknown;
@@ -16,6 +16,29 @@ type TestBody = {
 
 const unauthorized = () =>
   NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+const parseAmount = (value: unknown) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return 0;
+
+  const normalized = value
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\.(?=\d{3}(?:\D|$))/g, "")
+    .replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const lineAmount = (line: unknown) => {
+  if (!line || typeof line !== "object") return 0;
+  const item = line as Record<string, unknown>;
+  const qtyRaw = item.qty ?? item.quantity ?? item.cantidad;
+  const qty = Math.max(1, Math.round(parseAmount(qtyRaw) || 1));
+  const unitPrice = parseAmount(
+    item.unitPrice ?? item.unit_price ?? item.price ?? item.precio ?? item.amount ?? item.monto
+  );
+  return unitPrice * qty;
+};
 
 export async function POST(req: Request) {
   const expectedToken = process.env.EMAIL_TEST_TOKEN;
@@ -65,14 +88,14 @@ export async function POST(req: Request) {
 
   const donorName =
     typeof body.name === "string" && body.name.trim().length ? body.name.trim() : "Test";
-  const amount =
-    typeof body.amount === "number" && !Number.isNaN(body.amount) ? body.amount : 1000;
+  const cart = Array.isArray(body.cart) ? body.cart : null;
+  const cartTotal = cart ? cart.reduce((sum, line) => sum + lineAmount(line), 0) : 0;
+  const amount = parseAmount(body.amount) || cartTotal || 1000;
   const currency =
     typeof body.currency === "string" && body.currency.trim().length
       ? body.currency.trim().toUpperCase()
       : "CLP";
   const message = typeof body.message === "string" ? body.message : null;
-  const cart = Array.isArray(body.cart) ? body.cart : null;
   const paymentId =
     typeof body.payment_id === "string" && body.payment_id.trim().length
       ? body.payment_id.trim()
@@ -89,6 +112,10 @@ export async function POST(req: Request) {
       flow_token: null,
       cart,
       message,
+      email_log: {
+        source: "email_test",
+        payment_id: null,
+      },
     });
 
     return NextResponse.json({

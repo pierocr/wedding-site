@@ -3,9 +3,10 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { fetchFlowStatus, randomRaffleNumber } from "@/lib/flow";
+import { fetchFlowStatus } from "@/lib/flow";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendFlowReceiptEmail } from "@/lib/email/flowReceipt";
+import { generateUniqueRaffleNumber, readRaffleNumber } from "@/lib/raffle";
 
 async function parseForm(req: Request) {
   try {
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
   });
 
   const existingMeta = (payment?.meta as Record<string, any> | null) || {};
-  const raffle_number = existingMeta.raffle_number || null;
+  const raffle_number = readRaffleNumber(payment, existingMeta);
 
   const nextMeta: Record<string, any> = {
     ...existingMeta,
@@ -94,7 +95,7 @@ export async function POST(req: Request) {
 
   let finalRaffle = raffle_number;
   if (statusData.status === "paid" && !raffle_number) {
-    finalRaffle = randomRaffleNumber();
+    finalRaffle = await generateUniqueRaffleNumber(supabase);
     nextMeta.raffle_number = finalRaffle;
   }
 
@@ -106,24 +107,36 @@ export async function POST(req: Request) {
     external_reference: payment?.external_reference ?? statusData.commerceOrder ?? token,
     meta: nextMeta,
   };
+  if (finalRaffle) update.raffle_number = finalRaffle;
 
   let updatedPayment = payment;
+  let paymentPersisted = false;
 
   try {
     if (payment?.id) {
       const res = await supabase.from("payments").update(update).eq("id", payment.id).select().single();
-      if (res.data) updatedPayment = res.data as any;
+      if (res.error) throw res.error;
+      if (res.data) {
+        updatedPayment = res.data as any;
+        paymentPersisted = true;
+      }
     } else {
       const res = await supabase.from("payments").insert(update).select().single();
-      if (res.data) updatedPayment = res.data as any;
+      if (res.error) throw res.error;
+      if (res.data) {
+        updatedPayment = res.data as any;
+        paymentPersisted = true;
+      }
     }
   } catch (err) {
     console.error("[flow/webhook] update error", err);
+    return NextResponse.json({ ok: true, error: "payment persistence error" });
   }
 
   // Marcar email como pendiente si el pago fue exitoso y no se ha enviado
   const shouldMarkPending =
     statusData.status === "paid" &&
+    paymentPersisted &&
     !nextMeta.email_sent_at &&
     !nextMeta.email_pending &&
     (updatedPayment?.donor_email || update.donor_email) &&
@@ -147,6 +160,10 @@ export async function POST(req: Request) {
         flow_token: nextMeta.flow_token || token || null,
         cart: (updatedPayment as any)?.cart || nextMeta.cart_snapshot || null,
         message: nextMeta.message || null,
+        email_log: {
+          source: "flow_webhook",
+          payment_id: updatedPayment?.id || null,
+        },
       });
       nextMeta.email_sent_at = new Date().toISOString();
       nextMeta.email_pending = false;

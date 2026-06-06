@@ -2,9 +2,9 @@
 export const runtime = "edge";
 
 import { NextResponse } from "next/server";
-import { randomRaffleNumber } from "@/lib/flow";
 import { sendFlowReceiptEmail } from "@/lib/email/flowReceipt";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { generateUniqueRaffleNumber, readRaffleNumber } from "@/lib/raffle";
 
 type Body = {
   external_reference?: string;
@@ -71,10 +71,22 @@ export async function POST(req: Request) {
     }
 
     const meta = (payment.meta as Record<string, any> | null) || {};
-    const raffle_number = meta.raffle_number || randomRaffleNumber();
+    const raffle_number = readRaffleNumber(payment, meta) || (await generateUniqueRaffleNumber(supabase));
 
     if (!payment.donor_email) {
       return NextResponse.json({ error: "Falta email del pagador" }, { status: 400 });
+    }
+
+    meta.raffle_number = raffle_number;
+    const raffleUpdate = await supabase
+      .from("payments")
+      .update({ meta, raffle_number })
+      .eq("id", payment.id)
+      .select("id")
+      .single();
+
+    if (raffleUpdate.error) {
+      throw raffleUpdate.error;
     }
 
     await sendFlowReceiptEmail({
@@ -87,11 +99,14 @@ export async function POST(req: Request) {
       flow_token: meta.flow_token || body.token || null,
       cart: payment.cart || meta.cart_snapshot || null,
       message: meta.message || null,
+      email_log: {
+        source: "email_thanks",
+        payment_id: payment.id,
+      },
     });
 
-    meta.raffle_number = raffle_number;
     meta.email_sent_at = new Date().toISOString();
-    await supabase.from("payments").update({ meta }).eq("id", payment.id);
+    await supabase.from("payments").update({ meta, raffle_number }).eq("id", payment.id);
 
     return NextResponse.json({ ok: true, raffle_number });
   } catch (err: any) {

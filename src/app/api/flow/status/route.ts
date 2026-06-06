@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { fetchFlowStatus } from "@/lib/flow";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { generateUniqueRaffleNumber, readRaffleNumber } from "@/lib/raffle";
 
 const isFinal = (s: string | null | undefined) =>
   s === "paid" || s === "rejected" || s === "cancelled";
@@ -71,10 +72,17 @@ export async function GET(req: Request) {
         flow_token: meta.flow_token || token,
       };
 
+      let raffleNumber = readRaffleNumber(payment, meta);
+      if (status === "paid" && !raffleNumber) {
+        raffleNumber = await generateUniqueRaffleNumber(supabase);
+        meta.raffle_number = raffleNumber;
+      }
+
       const updatePayload: Record<string, any> = {
         status,
         meta,
       };
+      if (raffleNumber) updatePayload.raffle_number = raffleNumber;
 
       if (flowData.commerceOrder) updatePayload.external_reference = flowData.commerceOrder;
       if (flowData.amount && !payment?.amount) updatePayload.amount = flowData.amount;
@@ -95,7 +103,7 @@ export async function GET(req: Request) {
 
   const cart = payment?.cart || meta.cart_snapshot || null;
   const message = meta.message || null;
-  const raffle_number = meta.raffle_number || null;
+  const raffle_number = readRaffleNumber(payment, meta);
 
   return NextResponse.json({
     status,

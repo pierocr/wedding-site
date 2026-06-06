@@ -5,6 +5,7 @@ export const maxDuration = 60; // 60 segundos máximo
 import { NextResponse } from "next/server";
 import { sendFlowReceiptEmail } from "@/lib/email/flowReceipt";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { generateUniqueRaffleNumber, readRaffleNumber } from "@/lib/raffle";
 
 const unauthorized = () =>
   NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
@@ -63,32 +64,49 @@ export async function POST(req: Request) {
     const cart = Array.isArray(rawCart) ? rawCart : null;
 
     try {
+      const raffleNumber = readRaffleNumber(payment, meta) || (await generateUniqueRaffleNumber(supabase));
+      meta.raffle_number = raffleNumber;
+
+      const raffleUpdate = await supabase
+        .from("payments")
+        .update({ meta, raffle_number: raffleNumber })
+        .eq("id", payment.id)
+        .select("id")
+        .single();
+
+      if (raffleUpdate.error) throw raffleUpdate.error;
+
       await sendFlowReceiptEmail({
         donor_name: String(payment.donor_name || "amig@"),
         donor_email: String(payment.donor_email),
         amount: Number(payment.amount || 0),
-        raffle_number: Number(meta.raffle_number || 0),
+        raffle_number: raffleNumber,
         external_reference: payment.external_reference || null,
         flow_order: meta.flow_order || null,
         flow_token: meta.flow_token || null,
         cart,
         message: meta.message || null,
+        email_log: {
+          source: "email_send_pending",
+          payment_id: payment.id,
+        },
       });
 
       // Actualizar meta: marcar como enviado y remover pending
+      const {
+        email_pending: _emailPending,
+        email_pending_since: _emailPendingSince,
+        ...metaWithoutPending
+      } = meta;
       const updatedMeta = {
-        ...meta,
+        ...metaWithoutPending,
+        raffle_number: raffleNumber,
         email_sent_at: new Date().toISOString(),
-        email_pending: undefined,
-        email_pending_since: undefined,
       };
-      // Limpiar undefined
-      delete updatedMeta.email_pending;
-      delete updatedMeta.email_pending_since;
 
       await supabase
         .from("payments")
-        .update({ meta: updatedMeta })
+        .update({ meta: updatedMeta, raffle_number: raffleNumber })
         .eq("id", payment.id);
 
       results.push({ id: payment.id, success: true });
