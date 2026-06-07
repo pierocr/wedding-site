@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { rsvpSchema } from "@/lib/rsvpSchema";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { sendRsvpConfirmationEmails } from "@/lib/email/rsvpConfirmation";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,33 @@ function publicValidationErrors(error: z.ZodError) {
     path: issue.path.join("."),
     message: issue.message,
   }));
+}
+
+async function sendEmailsOrWarning(opts: {
+  id?: string | null;
+  mode: "created" | "updated";
+  input: z.infer<typeof rsvpSchema>;
+  submitted_at: string;
+}) {
+  try {
+    await sendRsvpConfirmationEmails({
+      id: opts.id || null,
+      mode: opts.mode,
+      name: opts.input.name,
+      email: opts.input.email,
+      phone: opts.input.phone || null,
+      attending_status: opts.input.attending_status,
+      vegetarian: opts.input.vegetarian,
+      diet: opts.input.diet || null,
+      message: opts.input.message || null,
+      submitted_at: opts.submitted_at,
+    });
+
+    return null;
+  } catch (error) {
+    console.error("RSVP email error:", error);
+    return "Guardamos tu confirmacion, pero no pudimos enviar el correo automatico. Ya quedo registrado para revision.";
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -139,14 +167,22 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      const emailWarning = await sendEmailsOrWarning({
+        id: existing.data.id,
+        mode: "updated",
+        input,
+        submitted_at: now,
+      });
+
       return json(200, {
         ok: true,
         mode: "updated",
-        message: "Actualizamos tu confirmación. Gracias por avisarnos.",
+        message: emailWarning || "Actualizamos tu confirmación. Te enviamos un correo de respaldo.",
+        email_warning: emailWarning,
       });
     }
 
-    const { error } = await supabase.from("rsvp").insert(record);
+    const { data: inserted, error } = await supabase.from("rsvp").insert(record).select("id").single();
 
     if (error) {
       if (error.code === "23505") {
@@ -156,13 +192,23 @@ export async function POST(req: NextRequest) {
             ...record,
             submission_count: 2,
           })
-          .eq("email", input.email);
+          .eq("email", input.email)
+          .select("id")
+          .maybeSingle();
 
         if (!retry.error) {
+          const emailWarning = await sendEmailsOrWarning({
+            id: retry.data?.id || null,
+            mode: "updated",
+            input,
+            submitted_at: now,
+          });
+
           return json(200, {
             ok: true,
             mode: "updated",
-            message: "Actualizamos tu confirmación. Gracias por avisarnos.",
+            message: emailWarning || "Actualizamos tu confirmación. Te enviamos un correo de respaldo.",
+            email_warning: emailWarning,
           });
         }
       }
@@ -174,10 +220,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const emailWarning = await sendEmailsOrWarning({
+      id: inserted?.id || null,
+      mode: "created",
+      input,
+      submitted_at: now,
+    });
+
     return json(201, {
       ok: true,
       mode: "created",
-      message: "Recibimos tu confirmación. Gracias.",
+      message: emailWarning || "Recibimos tu confirmación. Te enviamos un correo de respaldo.",
+      email_warning: emailWarning,
     });
   } catch (error) {
     console.error("RSVP unexpected error:", error);
