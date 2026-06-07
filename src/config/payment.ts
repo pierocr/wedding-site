@@ -5,5 +5,5 @@
 export type FlowPaymentEnvironment = "production" | "sandbox";
 
 export const PAYMENT_CONFIG = {
-  flowEnvironment: "sandbox" as FlowPaymentEnvironment,
+  flowEnvironment: "production" as FlowPaymentEnvironment,
 } as const;
