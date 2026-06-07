@@ -296,7 +296,7 @@ export async function sendRsvpConfirmationEmails(payload: RsvpEmailPayload) {
       : "Gracias por responder nuestra invitacion";
   const internalSubject = `[RSVP] ${attendingLabel(payload.attending_status)} - ${payload.name}`;
 
-  const [guest, internal] = await Promise.all([
+  const [guestResult, internalResult] = await Promise.allSettled([
     sendEmail({
       apiKey,
       source: "rsvp_guest_confirmation",
@@ -319,5 +319,21 @@ export async function sendRsvpConfirmationEmails(payload: RsvpEmailPayload) {
     }),
   ]);
 
-  return { guest, internal };
+  const failures = [
+    guestResult.status === "rejected"
+      ? `guest: ${(guestResult.reason as Error)?.message || String(guestResult.reason)}`
+      : null,
+    internalResult.status === "rejected"
+      ? `internal: ${(internalResult.reason as Error)?.message || String(internalResult.reason)}`
+      : null,
+  ].filter(Boolean);
+
+  if (failures.length > 0) {
+    throw new Error(`RSVP email delivery failed (${failures.join("; ")})`);
+  }
+
+  return {
+    guest: guestResult.status === "fulfilled" ? guestResult.value : null,
+    internal: internalResult.status === "fulfilled" ? internalResult.value : null,
+  };
 }

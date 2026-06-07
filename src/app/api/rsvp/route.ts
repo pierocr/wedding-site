@@ -50,6 +50,15 @@ function publicValidationErrors(error: z.ZodError) {
   }));
 }
 
+function shouldExposeEmailDebug() {
+  return process.env.RSVP_DEBUG_RESPONSE === "true";
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) return error.message;
+  return String(error);
+}
+
 async function sendEmailsOrWarning(opts: {
   id?: string | null;
   mode: "created" | "updated";
@@ -73,7 +82,8 @@ async function sendEmailsOrWarning(opts: {
     return null;
   } catch (error) {
     console.error("RSVP email error:", error);
-    return "Guardamos tu confirmacion, pero no pudimos enviar el correo automatico. Ya quedo registrado para revision.";
+    const detail = shouldExposeEmailDebug() ? ` Detalle: ${getErrorMessage(error)}.` : "";
+    return `Guardamos tu confirmacion, pero no pudimos enviar el correo automatico. Ya quedo registrado para revision.${detail}`;
   }
 }
 
