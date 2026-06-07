@@ -1,8 +1,11 @@
 import "server-only";
 
-export type FlowPaymentStatus = "pending" | "paid" | "rejected" | "cancelled" | "unknown";
+import { PAYMENT_CONFIG } from "@/config/payment";
 
-type EnvOpts = { optional?: boolean; fallback?: string };
+export type FlowPaymentStatus = "pending" | "paid" | "rejected" | "cancelled" | "unknown";
+export type FlowEnvironment = "production" | "sandbox";
+
+type EnvOpts = { optional?: boolean; fallback?: string | undefined };
 
 function env(k: string, opts?: EnvOpts) {
   const v = process.env[k] ?? opts?.fallback;
@@ -13,6 +16,7 @@ function env(k: string, opts?: EnvOpts) {
 }
 
 export type FlowConfig = {
+  environment: FlowEnvironment;
   apiKey: string;
   secretKey: string;
   apiUrl: string;
@@ -21,19 +25,47 @@ export type FlowConfig = {
   subject: string;
 };
 
+const FLOW_API_URLS: Record<FlowEnvironment, string> = {
+  production: "https://www.flow.cl/api",
+  sandbox: "https://sandbox.flow.cl/api",
+};
+
+function getFlowEnvironment(): FlowEnvironment {
+  const raw = (
+    env("FLOW_ENV", { optional: true }) ||
+    PAYMENT_CONFIG.flowEnvironment ||
+    "production"
+  ).toLowerCase();
+  if (raw === "production" || raw === "prod") return "production";
+  if (raw === "sandbox" || raw === "test" || raw === "testing") return "sandbox";
+  throw new Error(`Invalid FLOW_ENV ${raw}. Use "production" or "sandbox"`);
+}
+
 export function getFlowConfig(): FlowConfig {
+  const environment = getFlowEnvironment();
+  const isSandbox = environment === "sandbox";
   const baseUrl =
     env("BASE_URL", { optional: true }) ||
     env("NEXT_PUBLIC_SITE_URL", { optional: true }) ||
     "http://localhost:3000";
 
-  const apiUrl = (env("FLOW_API_URL", { optional: true, fallback: "https://www.flow.cl/api" }) ||
-    "https://www.flow.cl/api"
+  const apiUrl = (
+    env("FLOW_API_URL", { optional: true }) || FLOW_API_URLS[environment]
   ).replace(/\/+$/, "");
+  const apiKey = isSandbox
+    ? env("FLOW_SANDBOX_API_KEY", { optional: true, fallback: process.env.FLOW_API_KEY })
+    : env("FLOW_PRODUCTION_API_KEY", { optional: true, fallback: process.env.FLOW_API_KEY });
+  const secretKey = isSandbox
+    ? env("FLOW_SANDBOX_SECRET_KEY", { optional: true, fallback: process.env.FLOW_SECRET_KEY })
+    : env("FLOW_PRODUCTION_SECRET_KEY", { optional: true, fallback: process.env.FLOW_SECRET_KEY });
+
+  if (!apiKey) throw new Error(`Missing Flow API key for ${environment}`);
+  if (!secretKey) throw new Error(`Missing Flow secret key for ${environment}`);
 
   return {
-    apiKey: env("FLOW_API_KEY")!,
-    secretKey: env("FLOW_SECRET_KEY")!,
+    environment,
+    apiKey,
+    secretKey,
     apiUrl,
     urlConfirmation: `${baseUrl.replace(/\/+$/, "")}/api/flow/webhook`,
     urlReturn: `${baseUrl.replace(/\/+$/, "")}/pago/resultado`,

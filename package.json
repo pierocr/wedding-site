@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:e2e": "playwright test",
+    "test:flow": "playwright test tests/flow-sandbox.spec.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

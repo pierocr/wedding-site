@@ -3,7 +3,7 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { fetchFlowStatus } from "@/lib/flow";
+import { fetchFlowStatus, getFlowConfig } from "@/lib/flow";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { generateUniqueRaffleNumber, readRaffleNumber } from "@/lib/raffle";
 
@@ -45,6 +45,7 @@ export async function GET(req: Request) {
   }
 
   const supabase = getSupabaseAdmin();
+  const flowConfig = getFlowConfig();
 
   let payment = await findPayment(supabase, { external_reference, token });
   let meta = (payment?.meta as Record<string, any> | null) || {};
@@ -67,6 +68,8 @@ export async function GET(req: Request) {
       status = flowData.status;
       meta = {
         ...meta,
+        flow_environment: meta.flow_environment || flowConfig.environment,
+        flow_api_url: meta.flow_api_url || flowConfig.apiUrl,
         flow_status_response: flowData.raw,
         flow_order: flowData.flowOrder ?? meta.flow_order ?? null,
         flow_token: meta.flow_token || token,

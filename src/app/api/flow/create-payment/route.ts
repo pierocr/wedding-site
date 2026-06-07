@@ -82,6 +82,8 @@ export async function POST(req: Request) {
 
     const meta = {
       message: message || undefined,
+      flow_environment: config.environment,
+      flow_api_url: config.apiUrl,
       flow_token: flow.token,
       flow_order: flow.flowOrder,
       flow_create_response: flow.raw,

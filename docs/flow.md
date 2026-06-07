@@ -3,9 +3,12 @@
 ## Variables de entorno (Cloudflare Pages)
 Configura en Cloudflare Dashboard → **Workers & Pages** → tu **Pages Project** → **Settings** → **Environment variables** (Production y, opcional, Preview):
 
-- `FLOW_API_KEY` — API key de Flow (producción).
-- `FLOW_SECRET_KEY` — Secret para firmar `s`.
-- `FLOW_API_URL` — `https://www.flow.cl/api` (default).
+- Ambiente activo: se cambia en `src/config/payment.ts` (`flowEnvironment: "production" | "sandbox"`).
+- `FLOW_ENV` — override opcional de emergencia. Si existe, tiene prioridad sobre `src/config/payment.ts`.
+- `FLOW_API_KEY` / `FLOW_SECRET_KEY` — credenciales legacy/default. Se mantienen por compatibilidad.
+- `FLOW_PRODUCTION_API_KEY` / `FLOW_PRODUCTION_SECRET_KEY` — credenciales productivas de Flow.
+- `FLOW_SANDBOX_API_KEY` / `FLOW_SANDBOX_SECRET_KEY` — credenciales sandbox de Flow.
+- `FLOW_API_URL` — override opcional. Si no se define, usa `https://www.flow.cl/api` en producción y `https://sandbox.flow.cl/api` en sandbox.
 - `BASE_URL` — `https://www.pieroydebby.cl` (usa https y sin slash final).
 - `NEXT_PUBLIC_SUPABASE_URL` o `SUPABASE_URL`.
 - `SUPABASE_SERVICE_ROLE` o `SUPABASE_SERVICE_ROLE_KEY`.
@@ -18,6 +21,56 @@ Configura en Cloudflare Dashboard → **Workers & Pages** → tu **Pages Project
 - `urlReturn`: `https://www.pieroydebby.cl/pago/resultado` (Flow envía `POST token`).
 - El handler `src/app/pago/resultado/route.ts` captura el `POST` y redirige a `GET /pago/resultado?token=...`.
 - La UI consulta `GET /api/flow/status?token=...` para mostrar el estado y número de concurso.
+
+## Ambientes Flow
+Según la documentación oficial de Flow, las credenciales productivas se obtienen en `flow.cl` y las credenciales sandbox en `sandbox.flow.cl`. Las URLs de API son:
+
+- Producción: `https://www.flow.cl/api`
+- Sandbox: `https://sandbox.flow.cl/api`
+
+Para probar en sandbox:
+
+```ts
+// src/config/payment.ts
+export const PAYMENT_CONFIG = {
+  flowEnvironment: "sandbox",
+} as const;
+```
+
+Para volver a producción:
+
+```ts
+// src/config/payment.ts
+export const PAYMENT_CONFIG = {
+  flowEnvironment: "production",
+} as const;
+```
+
+Las credenciales se mantienen en variables de entorno:
+
+```bash
+FLOW_PRODUCTION_API_KEY=...
+FLOW_PRODUCTION_SECRET_KEY=...
+FLOW_SANDBOX_API_KEY=...
+FLOW_SANDBOX_SECRET_KEY=...
+BASE_URL=https://www.pieroydebby.cl
+```
+
+Cada pago guarda `flow_environment` y `flow_api_url` dentro de `payments.meta` para poder distinguir pruebas sandbox de pagos reales.
+
+Antes de pagar en sandbox, valida que Flow pueda entrar a la URL pública:
+
+```bash
+pnpm test:flow
+```
+
+La prueba `public tunnel is reachable without tunnel authentication` debe recibir JSON desde `/api/env-check`. Si responde `401`, `www-authenticate: tunnel` o HTML, el tunnel está privado/autenticado y Flow no podrá confirmar el pago aunque la transacción sandbox quede pagada.
+
+Para crear una orden sandbox de prueba sin pasar por la UI:
+
+```bash
+RUN_FLOW_SANDBOX_E2E=1 pnpm exec playwright test tests/flow-sandbox.spec.ts -g "local app creates"
+```
 
 ## Tablas y metadatos
 - Tabla `public.payments`:
