@@ -3,7 +3,7 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pieroydebby
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "Piero & Debby";
 export const SITE_TITLE = `${SITE_NAME} — ¡Nos casamos!`;
 export const SITE_DESCRIPTION =
-  "Acompáñanos en nuestro gran día. Revisa fecha, ubicación, dress code y confirma tu asistencia (RSVP).";
+  "Acompáñanos en nuestro gran día. Revisa fecha, ubicación, dress code y confirma tu asistencia.";
 
 export const BRIDE = "Debby";
 export const GROOM = "Piero";

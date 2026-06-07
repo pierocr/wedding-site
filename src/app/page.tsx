@@ -277,7 +277,7 @@ const LazyRSVPSection = dynamic(
   () => import("@/components/sections/RSVPSection"),
   {
     loading: () => (
-      <SectionSkeleton label="Preparando formulario RSVP…" rows={5} />
+      <SectionSkeleton label="Preparando formulario de confirmación de asistencia…" rows={5} />
     ),
   },
 );
@@ -1016,7 +1016,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "🎁 ¿Cómo puedo hacer el regalo?",
-    a: "En la sección “Regalo” podrás elegir un mensaje y pagar con Flow (Webpay) o usar los datos de transferencia. ¡El mejor regalo es que estés con nosotros!",
+    a: "En la sección “Regalo” encontrarás dos formas de hacerlo: puedes pagar online de manera segura a través de Flow con tarjeta de débito o crédito, o si prefieres, también puedes hacer una transferencia. En ambos casos, una vez realizado el pago, recibirás un comprobante. Si sigues los pasos que se muestran en pantalla, el proceso es simple y queda todo registrado correctamente.",
   },
   {
     q: "💳 ¿Puedo pagar en cuotas con tarjeta?",
@@ -1024,7 +1024,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "🥗 Tengo restricciones alimentarias",
-    a: "¡Perfecto! Indícalas en el formulario RSVP (vegetariano, vegano, sin gluten o alergias) y lo coordinamos con el banquete.",
+    a: "¡Perfecto! Indícalas en el formulario de confirmación de asistencia (vegetariano, vegano, sin gluten o alergias) y lo coordinamos con el banquete.",
   },
   {
     q: "📸 ¿Habrá fotógrafo? ¿Puedo llevar cámara?",
@@ -1032,7 +1032,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "📤 ¿Cómo comparto mis fotos con ustedes?",
-    a: "Usa el hashtag #BodaPieroDebby. Usaremos un código QR para que puedas compartir todas tus imágenes. ¡Nos encantará verlas!",
+    a: "Habilitaremos un código QR para que puedas compartir tus fotos de forma muy simple y rápida. Solo tendrás que escanearlo y subir tus imágenes para que podamos ver y guardar esos recuerdos contigo.",
   },
 ];
 
@@ -1278,7 +1278,7 @@ export default function WeddingSite() {
         <LazySectionBoundary
           fallback={
             <SectionSkeleton
-              label="Formulario RSVP disponible al desplazarte"
+              label="Formulario de confirmación de asistencia disponible al desplazarte"
               rows={5}
             />
           }
