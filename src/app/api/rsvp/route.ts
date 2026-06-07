@@ -3,7 +3,8 @@ import { z } from "zod";
 import { rsvpSchema } from "@/lib/rsvpSchema";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 5;
