@@ -8,7 +8,8 @@ Configura en Cloudflare Dashboard → **Workers & Pages** → tu **Pages Project
 - `FLOW_API_KEY` / `FLOW_SECRET_KEY` — credenciales legacy/default. Se mantienen por compatibilidad.
 - `FLOW_PRODUCTION_API_KEY` / `FLOW_PRODUCTION_SECRET_KEY` — credenciales productivas de Flow.
 - `FLOW_SANDBOX_API_KEY` / `FLOW_SANDBOX_SECRET_KEY` — credenciales sandbox de Flow.
-- `FLOW_API_URL` — override opcional. Si no se define, usa `https://www.flow.cl/api` en producción y `https://sandbox.flow.cl/api` en sandbox.
+- `FLOW_PRODUCTION_API_URL` / `FLOW_SANDBOX_API_URL` — overrides opcionales por ambiente. Normalmente no se definen.
+- `FLOW_API_URL` — legacy; no se usa para elegir ambiente para evitar mezclar sandbox/producción.
 - `BASE_URL` — `https://www.pieroydebby.cl` (usa https y sin slash final).
 - `NEXT_PUBLIC_SUPABASE_URL` o `SUPABASE_URL`.
 - `SUPABASE_SERVICE_ROLE` o `SUPABASE_SERVICE_ROLE_KEY`.

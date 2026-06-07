@@ -50,13 +50,15 @@ export function getFlowConfig(): FlowConfig {
     "http://localhost:3000";
 
   const apiUrl = (
-    env("FLOW_API_URL", { optional: true }) || FLOW_API_URLS[environment]
-  ).replace(/\/+$/, "");
+    isSandbox
+      ? env("FLOW_SANDBOX_API_URL", { optional: true })
+      : env("FLOW_PRODUCTION_API_URL", { optional: true })
+  ) || FLOW_API_URLS[environment];
   const apiKey = isSandbox
-    ? env("FLOW_SANDBOX_API_KEY", { optional: true, fallback: process.env.FLOW_API_KEY })
+    ? env("FLOW_SANDBOX_API_KEY")
     : env("FLOW_PRODUCTION_API_KEY", { optional: true, fallback: process.env.FLOW_API_KEY });
   const secretKey = isSandbox
-    ? env("FLOW_SANDBOX_SECRET_KEY", { optional: true, fallback: process.env.FLOW_SECRET_KEY })
+    ? env("FLOW_SANDBOX_SECRET_KEY")
     : env("FLOW_PRODUCTION_SECRET_KEY", { optional: true, fallback: process.env.FLOW_SECRET_KEY });
 
   if (!apiKey) throw new Error(`Missing Flow API key for ${environment}`);
@@ -66,7 +68,7 @@ export function getFlowConfig(): FlowConfig {
     environment,
     apiKey,
     secretKey,
-    apiUrl,
+    apiUrl: apiUrl.replace(/\/+$/, ""),
     urlConfirmation: `${baseUrl.replace(/\/+$/, "")}/api/flow/webhook`,
     urlReturn: `${baseUrl.replace(/\/+$/, "")}/pago/resultado`,
     subject: "Regalo matrimonio Piero & Debby",
