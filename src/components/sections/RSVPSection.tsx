@@ -3,9 +3,9 @@ import * as React from "react";
 import { Heart, Send, Salad, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { getSupabaseClient } from "@/lib/supabaseClient";
 import { FEATURE_FLAGS } from "@/data/site";
 import { trackEvent } from "@/lib/analytics";
+import type { AttendingStatus } from "@/lib/rsvpSchema";
 
 // 🔒 Fuente única de verdad para los estados (evita strings sueltos)
 const STATUS = {
@@ -21,15 +21,15 @@ const ATTENDING_LABELS = {
   no: "No podré asistir",
   later: "Lo confirmaré más adelante",
 } as const;
-type AttendingKey = keyof typeof ATTENDING_LABELS;
 
 const RSVPSectionForm = () => {
   const [form, setForm] = React.useState({
     name: "",
     email: "",
     phone: "",
-    attending: ATTENDING_LABELS.yes,
+    attending_status: "yes" as AttendingStatus,
     vegetarian: false,
+    diet: "",
     message: "",
   });
 
@@ -47,6 +47,7 @@ const RSVPSectionForm = () => {
     phone: "rsvp-phone",
     attending: "rsvp-attending",
     vegetarian: "rsvp-vegetarian",
+    diet: "rsvp-diet",
     message: "rsvp-message",
   } as const;
 
@@ -63,12 +64,6 @@ const RSVPSectionForm = () => {
   const canSubmit =
     !!form.name.trim() && !!form.email.trim() && EMAIL_RE.test(form.email) && !isSending;
 
-  const toStatusCode = (label: string): AttendingKey => {
-    if (label === ATTENDING_LABELS.yes) return "yes";
-    if (label === ATTENDING_LABELS.no) return "no";
-    return "later";
-  };
-
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSubmit || isSending) return;
@@ -76,52 +71,53 @@ const RSVPSectionForm = () => {
     setStatus(STATUS.Sending);
     setServerMsg(null);
 
-    // 'yes' | 'no' | 'later'
-    const statusKey = toStatusCode(form.attending);
     trackEvent("rsvp_click", {
       location: "rsvp_form",
-      attending_status: statusKey,
+      attending_status: form.attending_status,
       vegetarian: form.vegetarian,
     });
-    // boolean para tu columna antigua NOT NULL
-    const attendingBool = statusKey === "yes";
 
     const payload = {
       name: form.name.trim(),
       email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() || null,
-
-      // 👉 enviamos ambos para evitar el 23502
-      attending_status: statusKey, // texto controlado
-      attending: attendingBool, // boolean (NOT NULL en tu tabla)
-
+      phone: form.phone.trim(),
+      attending_status: form.attending_status,
       vegetarian: !!form.vegetarian,
-      message: form.message.trim() || null,
+      diet: form.diet.trim(),
+      message: form.message.trim(),
       source: "pieroydebby.cl/rsvp",
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     } as const;
 
-    const { error } = await getSupabaseClient().from("rsvp").insert([payload]);
+    try {
+      const response = await fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (error) {
-      // 23505 => unique_violation (email duplicado)
-      if ((error as any).code === "23505") {
+      const result = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+        mode?: "created" | "updated";
+      } | null;
+
+      if (!response.ok || !result?.ok) {
         setStatus(STATUS.Error);
         setServerMsg(
-          "Este correo ya tiene una confirmación registrada. Si necesitas actualizarla, escríbenos y lo ajustamos 🙏"
+          result?.message ||
+            "Ups, no pudimos guardar tu confirmación. Intenta nuevamente en unos minutos."
         );
         return;
       }
 
-      console.error("RSVP insert error:", error);
+      setStatus(STATUS.Ok);
+      setServerMsg(result.message || "Recibimos tu confirmación. Gracias.");
+      setForm((f) => ({ ...f, phone: "", diet: "", message: "" }));
+    } catch (error) {
+      console.error("RSVP submit error:", error);
       setStatus(STATUS.Error);
       setServerMsg("Ups, no pudimos guardar tu confirmación. Intenta nuevamente en unos minutos.");
-      return;
     }
-
-    setStatus(STATUS.Ok);
-    // Si quieres limpiar parte del formulario:
-    setForm((f) => ({ ...f, phone: "", message: "" }));
   };
 
   const inputBase =
@@ -201,13 +197,13 @@ const RSVPSectionForm = () => {
               </label>
               <select
                 id={FIELD_IDS.attending}
-                value={form.attending}
-                onChange={onChange("attending")}
+                value={form.attending_status}
+                onChange={onChange("attending_status")}
                 className={inputBase}
               >
-                <option>{ATTENDING_LABELS.yes}</option>
-                <option>{ATTENDING_LABELS.no}</option>
-                <option>{ATTENDING_LABELS.later}</option>
+                <option value="yes">{ATTENDING_LABELS.yes}</option>
+                <option value="no">{ATTENDING_LABELS.no}</option>
+                <option value="later">{ATTENDING_LABELS.later}</option>
               </select>
             </div>
 
@@ -230,6 +226,21 @@ const RSVPSectionForm = () => {
             </div>
           </div>
 
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.diet}>
+              Restricciones alimentarias (opcional)
+            </label>
+            <input
+              type="text"
+              id={FIELD_IDS.diet}
+              value={form.diet}
+              onChange={onChange("diet")}
+              placeholder="Ej: alergia a frutos secos, vegano, sin gluten"
+              className={inputBase}
+              maxLength={500}
+            />
+          </div>
+
           {/* Mensaje */}
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.message}>
@@ -242,13 +253,14 @@ const RSVPSectionForm = () => {
               placeholder="Escribe aquí tu mensaje…"
               rows={4}
               className="min-h-[120px] w-full rounded-md border bg-background p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              maxLength={1000}
             />
           </div>
 
           {/* Estado */}
           {status === STATUS.Ok && (
             <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-              ¡Gracias! Recibimos tu confirmación 💌
+              {serverMsg || "¡Gracias! Recibimos tu confirmación."}
             </div>
           )}
           {status === STATUS.Error && (
