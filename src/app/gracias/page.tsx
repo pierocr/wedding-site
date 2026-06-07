@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 import GraciasClient from "./GraciasClient";
 
-export const runtime = "edge";            // ✅ requerido por Cloudflare Pages para rutas dinámicas
-export const dynamic = "force-dynamic";   // evita SSG
 export const viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
