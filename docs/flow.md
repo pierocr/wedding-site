@@ -73,6 +73,14 @@ Para crear una orden sandbox de prueba sin pasar por la UI:
 RUN_FLOW_SANDBOX_E2E=1 pnpm exec playwright test tests/flow-sandbox.spec.ts -g "local app creates"
 ```
 
+Para ejecutar el flujo visual completo con Chrome abierto:
+
+```bash
+pnpm test:flow:headed
+```
+
+El test abre el sitio, agrega un regalo, completa datos y llega a Flow sandbox. Completa el pago manualmente, vuelve al resultado y presiona `Resume` en Playwright Inspector; el test valida `Pago recibido`, número de concurso, monto y referencia.
+
 ## Tablas y metadatos
 - Tabla `public.payments`:
   - `status`: `pending | paid | rejected | cancelled`.
