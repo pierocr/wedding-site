@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -33,8 +33,8 @@ const Gallery = () => {
   const alt = current?.alt ?? "Recuerdo de Piero y Debby";
 
   // Navegación
-  const prev = () => setIndex((i) => (i - 1 + total) % total);
-  const next = () => setIndex((i) => (i + 1) % total);
+  const prev = useCallback(() => setIndex((i) => (i - 1 + total) % total), [total]);
+  const next = useCallback(() => setIndex((i) => (i + 1) % total), [total]);
 
   // ====== ZOOM & PAN ======
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -71,7 +71,7 @@ const Gallery = () => {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [next, open, prev]);
 
   // Util: limita el arrastre para que no se salga “demasiado”
   const clampOffset = (nx: number, ny: number, s: number) => {

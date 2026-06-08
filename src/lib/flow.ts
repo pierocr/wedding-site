@@ -33,6 +33,7 @@ const FLOW_API_URLS: Record<FlowEnvironment, string> = {
 function getFlowEnvironment(): FlowEnvironment {
   const raw = (
     env("FLOW_ENV", { optional: true }) ||
+    (process.env.NODE_ENV === "production" ? undefined : "sandbox") ||
     PAYMENT_CONFIG.flowEnvironment ||
     "production"
   ).toLowerCase();

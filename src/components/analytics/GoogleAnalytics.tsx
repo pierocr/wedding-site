@@ -112,7 +112,7 @@ export default function GoogleAnalytics() {
     <>
       <Script
         id="ga-consent-default"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
 window.dataLayer = window.dataLayer || [];

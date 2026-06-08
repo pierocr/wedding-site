@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle, Home, RefreshCw, AlertCircle } from "lucide-react";
 
@@ -221,13 +222,13 @@ export default function ResultadoClient() {
               {loading ? "Actualizando..." : "Reintentar"}
             </button>
           )}
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-rose-600"
           >
             <Home className="h-4 w-4" />
             Volver al inicio
-          </a>
+          </Link>
         </div>
       </div>
     </main>
