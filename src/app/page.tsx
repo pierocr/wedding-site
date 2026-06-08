@@ -438,7 +438,7 @@ const Nav = () => {
     return (
       <a
         href="#regalo"
-        aria-label={hasItems ? `Regalo (${cartQty} ítems)` : "Hacer regalo"}
+        aria-label={hasItems ? `Regalo (${cartQty} ítems)` : "Haz tu regalo"}
         onClick={(event) => {
           trackEvent("gift_info_click", {
             location: fullWidth ? "mobile_nav" : "desktop_nav",
@@ -457,7 +457,7 @@ const Nav = () => {
           ].join(" ")}
         >
           <Gift className="mr-2 h-4 w-4" />
-          {hasItems ? "Regalo" : "Hacer regalo"}
+          {hasItems ? "Regalo" : "Haz tu regalo"}
           {hasItems && (
             <>
               <span className="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-white/90 text-emerald-700">
@@ -815,7 +815,7 @@ const Hero = () => {
                     }
                   >
                     <Gift className="h-4 w-4" />
-                    Hacer regalo
+                    Haz tu regalo
                   </a>
                 </Button>
               </div>

@@ -317,7 +317,7 @@ export async function sendFlowReceiptEmail(payload: ReceiptPayload) {
     env("NEXT_PUBLIC_SITE_URL", { optional: true }) ||
     env("SITE_URL", { optional: true }) ||
     "https://pieroydebby.cl";
-  const imageUrl = `${siteUrl.replace(/\/$/, "")}/gallery/1.jpg`;
+  const imageUrl = `${siteUrl.replace(/\/$/, "")}/gallery/1.jpeg`;
   const bccRaw = env("EMAIL_BCC", { optional: true }) || env("THANKS_BCC", { optional: true }) || "";
   const bcc = bccRaw
     .split(",")

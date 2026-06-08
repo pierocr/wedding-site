@@ -43,29 +43,48 @@ export default function Story() {
       {/* Texto */}
       <motion.div className="space-y-4 leading-relaxed text-foreground/90" variants={REVEAL_LEFT}>
         <motion.p variants={REVEAL_UP}>
-          Queremos compartir la historia de cómo comenzó todo con Piero.
+          Queremos compartir con ustedes un poco de nuestra historia.
         </motion.p>
 
         <motion.p variants={REVEAL_UP}>
-          Nos conocimos trabajando, algo que ninguno de los dos esperaba. Cada cruce en los pasillos bastaba
-          para sonrojarnos con solo mirarnos… hasta que un día dijimos “sí” a salir juntos, y desde entonces
-          nuestras vidas cambiaron para siempre.
+          Todo comenzó en un lugar inesperado: el trabajo. Cada encuentro en los pasillos bastaba para
+          sonrojarnos con solo mirarnos. Entre sonrisas que aparecían sin querer y una conexión que crecía
+          día a día, fuimos descubriendo que había algo especial entre nosotros. Lo que al principio eran
+          nervios y emoción se transformó en una primera cita que cambiaría nuestras vidas para siempre.
+        </motion.p>
+
+        <motion.p variants={REVEAL_UP}>
+          Desde entonces, hemos recorrido un hermoso camino juntos. Hemos vivido aventuras inolvidables,
+          viajando, aprendiendo el uno del otro, construyendo nuestro hogar y creando recuerdos que
+          llevaremos siempre en el corazón.
         </motion.p>
 
         <motion.p variants={REVEAL_UP}>
           El <span className="font-medium">16 de agosto de 2025</span>, en medio de la magia de{" "}
-          <span className="font-medium">Bariloche</span>, Piero me pidió matrimonio. Un “sí” lleno de amor y
-          emoción que hoy nos lleva a dar el paso más importante de nuestras vidas.
+          <span className="font-medium">Bariloche</span>, en el <span className="font-medium">Cerro Catedral</span>,
+          nuestra historia escribió uno de sus capítulos más importantes. Allí nos comprometimos y dijimos
+          “sí” a seguir construyendo nuestro futuro juntos.
         </motion.p>
 
         <motion.p variants={REVEAL_UP}>
-          Han sido años maravillosos: viajes, aventuras, experiencias inolvidables, la creación de un hogar y
-          momentos que atesoramos con el corazón.
+          Hoy, después de tantos momentos compartidos y con una enorme ilusión por todo lo que está por
+          venir, queremos celebrar el comienzo de una nueva etapa rodeados de las personas que más queremos.
         </motion.p>
 
         <motion.p variants={REVEAL_UP}>
-          Ahora queremos invitarte a compartir esta felicidad con nosotros y a acompañarnos en este gran día.{" "}
-          <span className="font-medium">¡Nos vemos el 21 de noviembre de 2026!</span>
+          Será una inmensa alegría compartir este día tan especial con ustedes.
+        </motion.p>
+
+        <motion.p variants={REVEAL_UP}>
+          <span className="font-medium">¡Los esperamos el 21 de noviembre de 2026!</span>
+        </motion.p>
+
+        <motion.p variants={REVEAL_UP}>
+          Con cariño,
+        </motion.p>
+
+        <motion.p variants={REVEAL_UP}>
+          Piero &amp; Debby ❤️
         </motion.p>
       </motion.div>
 

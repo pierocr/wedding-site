@@ -9,8 +9,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
-  // No cortes el build por ESLint ni por errores de types
-  eslint: { ignoreDuringBuilds: true },
+  // No cortes el build por errores de types
   typescript: { ignoreBuildErrors: true },
   images: {
     qualities: [72, 82, 92],
