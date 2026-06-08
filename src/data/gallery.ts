@@ -15,4 +15,6 @@ export const GALLERY: GalleryItem[] = [
   { src: "/gallery/8.jpeg", alt: "Recuerdo de Piero y Debby durante sus aventuras" },
   { src: "/gallery/9.jpg", alt: "Piero y Debby en Punta Cana" },
   { src: "/gallery/10.jpeg", alt: "Nuevo recuerdo de Piero y Debby en la galería" },
+  { src: "/gallery/11.jpeg", alt: "Otro recuerdo especial de Piero y Debby" },
+  { src: "/gallery/12.jpeg", alt: "Piero y Debby compartiendo un momento inolvidable" },
 ];

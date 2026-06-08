@@ -1016,7 +1016,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "🎁 ¿Cómo puedo hacer el regalo?",
-    a: "En la sección “Regalo” encontrarás dos formas de hacerlo: puedes pagar online de manera segura a través de Flow con tarjeta de débito o crédito, o si prefieres, también puedes hacer una transferencia. En ambos casos, una vez realizado el pago, recibirás un comprobante. Si sigues los pasos que se muestran en pantalla, el proceso es simple y queda todo registrado correctamente.",
+    a: "En la sección “Regalo” podrás realizar tu aporte a través de Webpay (plataforma Flow) , eligiendo la modalidad de pago que prefieras: tarjeta de débito, tarjeta de crédito o transferencia bancaria. Una vez confirmado el pago, recibirás un comprobante. Solo debes seguir las instrucciones que aparecen en pantalla para completar el proceso de forma simple, segura y con el registro correcto de tu regalo con sentido.",
   },
   {
     q: "💳 ¿Puedo pagar en cuotas con tarjeta?",

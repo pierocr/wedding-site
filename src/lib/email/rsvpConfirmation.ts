@@ -144,7 +144,7 @@ function guestHtml(payload: RsvpEmailPayload, siteUrl: string) {
   const title = isAttending ? "Gracias por confirmar tu asistencia" : "Gracias por avisarnos";
   const copy = isAttending
     ? "Recibimos tu confirmacion y estamos muy felices de contar contigo en nuestro matrimonio."
-    : "Recibimos tu respuesta. Gracias por avisarnos con tiempo para poder organizar todo con carino.";
+    : "Recibimos tu respuesta. Gracias por avisarnos con tiempo para poder organizar todo con cariño.";
 
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -171,7 +171,7 @@ function guestHtml(payload: RsvpEmailPayload, siteUrl: string) {
             : ""
         }
         <tr><td style="padding:24px 28px 30px 28px;background:#f9f5ee;border-top:1px solid #dfd1bd;text-align:center;">
-          <p style="margin:0 0 14px 0;font-size:14px;color:#536358;line-height:1.65;">Si necesitas corregir tu respuesta, puedes volver a enviar el formulario usando el mismo correo.</p>
+          <p style="margin:0 0 14px 0;font-size:14px;color:#536358;line-height:1.65;">Si necesitas corregir tu respuesta, puedes volver a enviar el formulario usando el mismo correo que ingresaste.</p>
           <a href="${escapeHtml(siteUrl)}#rsvp" style="display:inline-block;background:#3f5c4a;color:#ffffff;text-decoration:none;border-radius:999px;padding:12px 20px;font-size:13px;font-weight:800;">Ver sitio del matrimonio</a>
           <div style="font-size:14px;color:#5f6b5f;font-style:italic;margin-top:18px;">Con amor,</div>
           <div style="font-weight:800;font-size:18px;color:#3f5c4a;margin-top:4px;">Piero &amp; Debby</div>
