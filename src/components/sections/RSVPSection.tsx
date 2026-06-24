@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { Heart, Send, Salad, Lock } from "lucide-react";
+import { Heart, Lock, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FEATURE_FLAGS } from "@/data/site";
@@ -22,13 +22,15 @@ const ATTENDING_LABELS = {
   later: "Lo confirmaré más adelante",
 } as const;
 
+type DietaryPreference = "" | "vegetarian" | "pescatarian" | "vegan";
+
 const RSVPSectionForm = () => {
   const [form, setForm] = React.useState({
     name: "",
     email: "",
     phone: "",
     attending_status: "yes" as AttendingStatus,
-    vegetarian: false,
+    dietary_preference: "" as DietaryPreference,
     diet: "",
     message: "",
   });
@@ -46,7 +48,7 @@ const RSVPSectionForm = () => {
     email: "rsvp-email",
     phone: "rsvp-phone",
     attending: "rsvp-attending",
-    vegetarian: "rsvp-vegetarian",
+    dietaryPreference: "rsvp-dietary-preference",
     diet: "rsvp-diet",
     message: "rsvp-message",
   } as const;
@@ -74,7 +76,7 @@ const RSVPSectionForm = () => {
     trackEvent("rsvp_click", {
       location: "rsvp_form",
       attending_status: form.attending_status,
-      vegetarian: form.vegetarian,
+      dietary_preference: form.dietary_preference || "none",
     });
 
     const payload = {
@@ -82,7 +84,9 @@ const RSVPSectionForm = () => {
       email: form.email.trim().toLowerCase(),
       phone: form.phone.trim(),
       attending_status: form.attending_status,
-      vegetarian: !!form.vegetarian,
+      vegetarian: form.dietary_preference === "vegetarian",
+      pescatarian: form.dietary_preference === "pescatarian",
+      vegan: form.dietary_preference === "vegan",
       diet: form.diet.trim(),
       message: form.message.trim(),
       source: "pieroydebby.cl/rsvp",
@@ -208,21 +212,23 @@ const RSVPSectionForm = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium" htmlFor={FIELD_IDS.vegetarian}>
+              <label
+                className="mb-1 block text-sm font-medium"
+                htmlFor={FIELD_IDS.dietaryPreference}
+              >
                 Preferencias
               </label>
-              <label className="flex items-center gap-2 rounded-md border bg-background p-3">
-                <input
-                  type="checkbox"
-                  id={FIELD_IDS.vegetarian}
-                  checked={form.vegetarian}
-                  onChange={onChange("vegetarian")}
-                />
-                <span className="inline-flex items-center gap-2">
-                  <Salad className="h-4 w-4" />
-                  Opción vegetariana
-                </span>
-              </label>
+              <select
+                id={FIELD_IDS.dietaryPreference}
+                value={form.dietary_preference}
+                onChange={onChange("dietary_preference")}
+                className={inputBase}
+              >
+                <option value="">Sin preferencia alimentaria</option>
+                <option value="vegetarian">Opción vegetariana</option>
+                <option value="pescatarian">Opción pescetariana</option>
+                <option value="vegan">Opción vegana</option>
+              </select>
             </div>
           </div>
 
@@ -235,7 +241,7 @@ const RSVPSectionForm = () => {
               id={FIELD_IDS.diet}
               value={form.diet}
               onChange={onChange("diet")}
-              placeholder="Ej: alergia a frutos secos, vegano, sin gluten"
+              placeholder="Ej: alergia a frutos secos, sin gluten"
               className={inputBase}
               maxLength={500}
             />

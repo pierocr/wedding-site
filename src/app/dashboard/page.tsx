@@ -52,6 +52,8 @@ type RsvpRecord = {
   attending: boolean | null;
   attending_status: string | null;
   vegetarian: boolean | null;
+  pescatarian: boolean | null;
+  vegan: boolean | null;
   diet: string | null;
   message: string | null;
   submission_count: number | null;
@@ -181,7 +183,7 @@ async function getDashboardData() {
     supabase
       .from("rsvp")
       .select(
-        "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, diet, message, submission_count"
+        "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, pescatarian, vegan, diet, message, submission_count"
       )
       .order("last_submitted_at", { ascending: false }),
   ]);
@@ -424,7 +426,7 @@ export default async function DashboardPage({
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[1050px] text-left text-sm">
+            <table className="w-full min-w-[1160px] text-left text-sm">
               <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Ultima respuesta</th>
@@ -432,7 +434,7 @@ export default async function DashboardPage({
                   <th className="px-4 py-3 font-medium">Correo</th>
                   <th className="px-4 py-3 font-medium">Telefono</th>
                   <th className="px-4 py-3 font-medium">Asistencia</th>
-                  <th className="px-4 py-3 font-medium">Vegetariano</th>
+                  <th className="px-4 py-3 font-medium">Preferencias</th>
                   <th className="px-4 py-3 font-medium">Restricciones</th>
                   <th className="px-4 py-3 font-medium">Intentos</th>
                 </tr>
@@ -459,7 +461,15 @@ export default async function DashboardPage({
                           {rsvp.attending ? "Asiste" : "No asiste"}
                         </span>
                       </td>
-                      <td className="px-4 py-3">{rsvp.vegetarian ? "Si" : "No"}</td>
+                      <td className="px-4 py-3">
+                        {[
+                          rsvp.vegetarian ? "Vegetariano" : null,
+                          rsvp.pescatarian ? "Pescetariano" : null,
+                          rsvp.vegan ? "Vegano" : null,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "-"}
+                      </td>
                       <td className="max-w-[280px] px-4 py-3 text-muted-foreground">
                         {rsvp.diet || "-"}
                       </td>

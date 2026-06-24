@@ -9,6 +9,8 @@ type RsvpEmailPayload = {
   phone?: string | null;
   attending_status: AttendingStatus;
   vegetarian: boolean;
+  pescatarian: boolean;
+  vegan: boolean;
   diet?: string | null;
   message?: string | null;
   submitted_at: string;
@@ -43,6 +45,13 @@ const formatSubmittedAt = (iso: string) =>
     timeZone: "America/Santiago",
   }).format(new Date(iso));
 
+const dietaryPreferenceLabel = (payload: Pick<RsvpEmailPayload, "vegetarian" | "pescatarian" | "vegan">) => {
+  if (payload.vegetarian) return "Vegetariana";
+  if (payload.pescatarian) return "Pescetariana";
+  if (payload.vegan) return "Vegana";
+  return "-";
+};
+
 async function createEmailLog(opts: {
   source: string;
   target: EmailTarget;
@@ -71,6 +80,8 @@ async function createEmailLog(opts: {
           mode: opts.payload.mode,
           attending_status: opts.payload.attending_status,
           vegetarian: opts.payload.vegetarian,
+          pescatarian: opts.payload.pescatarian,
+          vegan: opts.payload.vegan,
           diet: opts.payload.diet || null,
           message: opts.payload.message || null,
           phone: opts.payload.phone || null,
@@ -127,7 +138,7 @@ const detailRows = (payload: RsvpEmailPayload) =>
     ["Email", payload.email],
     ["Telefono", payload.phone || "-"],
     ["Asistencia", attendingLabel(payload.attending_status)],
-    ["Opcion vegetariana", payload.vegetarian ? "Si" : "No"],
+    ["Preferencia alimentaria", dietaryPreferenceLabel(payload)],
     ["Restricciones alimentarias", payload.diet || "-"],
     ["Fecha de confirmacion", formatSubmittedAt(payload.submitted_at)],
   ]
