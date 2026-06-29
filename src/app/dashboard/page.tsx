@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { cn } from "@/lib/utils";
+import { RsvpTable, type DashboardRsvpRecord } from "./RsvpTable";
 
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
@@ -41,7 +42,9 @@ type PaymentRecord = {
   raffle_number: number | null;
 };
 
-type RsvpRecord = {
+type RsvpRecord = DashboardRsvpRecord;
+
+type LegacyRsvpRecord = {
   id: string;
   created_at: string | null;
   updated_at: string | null;
@@ -60,10 +63,10 @@ type RsvpRecord = {
 };
 
 const RSVP_SELECT =
-  "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, pescatarian, vegan, diet, message, submission_count";
+  "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, guests, vegetarian, pescatarian, vegan, diet, message, source, user_agent, ip_address, metadata, submission_count, companion_status, is_companion, companion_of_rsvp_id";
 
 const RSVP_LEGACY_SELECT =
-  "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, diet, message, submission_count";
+  "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, diet, message, source, user_agent, ip_address, metadata, submission_count";
 
 type SupabaseQueryError = {
   code?: string;
@@ -71,7 +74,9 @@ type SupabaseQueryError = {
 };
 
 function getAccessCode() {
-  return process.env.DASHBOARD_ACCESS_CODE || process.env.ADMIN_ACCESS_CODE || "";
+  return (
+    process.env.DASHBOARD_ACCESS_CODE || process.env.ADMIN_ACCESS_CODE || ""
+  );
 }
 
 function getSessionSecret() {
@@ -84,7 +89,9 @@ function getSessionSecret() {
 }
 
 function toHex(buffer: ArrayBuffer) {
-  return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return [...new Uint8Array(buffer)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function hashCode(code: string) {
@@ -94,7 +101,7 @@ async function hashCode(code: string) {
     encoder.encode(getSessionSecret()),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
   const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(code));
   return toHex(signature);
@@ -125,7 +132,11 @@ export async function loginDashboard(formData: FormData) {
   const configuredCode = getAccessCode();
   const submittedCode = String(formData.get("code") || "").trim();
 
-  if (!configuredCode || !submittedCode || !safeEqual(submittedCode, configuredCode)) {
+  if (
+    !configuredCode ||
+    !submittedCode ||
+    !safeEqual(submittedCode, configuredCode)
+  ) {
     redirect("/dashboard?error=1");
   }
 
@@ -175,8 +186,10 @@ function statusLabel(status: string | null | undefined) {
 }
 
 function statusClass(status: string | null | undefined) {
-  if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (status === "pending") return "border-amber-200 bg-amber-50 text-amber-800";
+  if (status === "paid")
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (status === "pending")
+    return "border-amber-200 bg-amber-50 text-amber-800";
   if (status === "rejected" || status === "cancelled") {
     return "border-red-200 bg-red-50 text-red-800";
   }
@@ -201,11 +214,17 @@ async function getRsvpsWithDietPreferences() {
 
   return {
     ...legacyResult,
-    data: legacyResult.data?.map((rsvp) => ({
-      ...rsvp,
-      pescatarian: false,
-      vegan: false,
-    })),
+    data: (legacyResult.data as LegacyRsvpRecord[] | null | undefined)?.map(
+      (rsvp) => ({
+        ...rsvp,
+        guests: 0,
+        pescatarian: false,
+        vegan: false,
+        companion_status: "no",
+        is_companion: false,
+        companion_of_rsvp_id: null,
+      }),
+    ),
   };
 }
 
@@ -219,7 +238,9 @@ async function getDashboardData() {
   const [paymentsResult, rsvpResult] = await Promise.all([
     supabase
       .from("payments")
-      .select("id, created_at, status, donor_name, donor_email, amount, currency, external_reference, raffle_number")
+      .select(
+        "id, created_at, status, donor_name, donor_email, amount, currency, external_reference, raffle_number",
+      )
       .order("created_at", { ascending: false }),
     getRsvpsWithDietPreferences(),
   ]);
@@ -272,19 +293,27 @@ function LoginView({ hasError }: { hasError: boolean }) {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-normal">Dashboard privado</h1>
-              <p className="text-sm text-muted-foreground">Ingresa el codigo de acceso.</p>
+              <h1 className="text-xl font-semibold tracking-normal">
+                Dashboard privado
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Ingresa el codigo de acceso.
+              </p>
             </div>
           </div>
 
           {!hasCode ? (
             <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Falta configurar <code>DASHBOARD_ACCESS_CODE</code> en las variables de entorno.
+              Falta configurar <code>DASHBOARD_ACCESS_CODE</code> en las
+              variables de entorno.
             </div>
           ) : (
             <form action={loginDashboard} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium" htmlFor="code">
+                <label
+                  className="mb-1 block text-sm font-medium"
+                  htmlFor="code"
+                >
                   Codigo
                 </label>
                 <Input
@@ -329,9 +358,13 @@ export default async function DashboardPage({
   const { payments, rsvps } = await getDashboardData();
 
   const paidPayments = payments.filter((payment) => payment.status === "paid");
-  const totalPaid = paidPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const totalPaid = paidPayments.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0,
+  );
   const attending = rsvps.filter((rsvp) => rsvp.attending === true);
   const notAttending = rsvps.filter((rsvp) => rsvp.attending === false);
+  const principalRsvps = rsvps.filter((rsvp) => !rsvp.is_companion);
 
   return (
     <main className="min-h-screen bg-background px-4 py-6 text-foreground md:py-8">
@@ -378,7 +411,9 @@ export default async function DashboardPage({
           <Stat
             icon={Mail}
             label="Pagos pendientes"
-            value={String(payments.filter((payment) => payment.status === "pending").length)}
+            value={String(
+              payments.filter((payment) => payment.status === "pending").length,
+            )}
             detail="Iniciados, aun sin confirmacion de Flow"
           />
         </section>
@@ -413,7 +448,9 @@ export default async function DashboardPage({
                       <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                         {formatDate(payment.created_at)}
                       </td>
-                      <td className="px-4 py-3 font-medium">{payment.donor_name || "-"}</td>
+                      <td className="px-4 py-3 font-medium">
+                        {payment.donor_name || "-"}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
@@ -427,20 +464,25 @@ export default async function DashboardPage({
                         <span
                           className={cn(
                             "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-                            statusClass(payment.status)
+                            statusClass(payment.status),
                           )}
                         >
                           {statusLabel(payment.status)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {payment.external_reference || payment.raffle_number || "-"}
+                        {payment.external_reference ||
+                          payment.raffle_number ||
+                          "-"}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                    <td
+                      className="px-4 py-8 text-center text-muted-foreground"
+                      colSpan={6}
+                    >
                       Aun no hay pagos registrados.
                     </td>
                   </tr>
@@ -453,75 +495,19 @@ export default async function DashboardPage({
         <section className="space-y-3">
           <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-xl font-semibold tracking-normal">Confirmaciones RSVP</h2>
+              <h2 className="text-xl font-semibold tracking-normal">
+                Confirmaciones RSVP
+              </h2>
               <p className="text-sm text-muted-foreground">
                 Conteo y detalle de invitados que confirmaron asistencia.
               </p>
             </div>
-            <Badge variant="outline">{attending.length} confirmados</Badge>
+            <Badge variant="outline">
+              {attending.length} personas confirmadas
+            </Badge>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[1160px] text-left text-sm">
-              <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Ultima respuesta</th>
-                  <th className="px-4 py-3 font-medium">Nombre</th>
-                  <th className="px-4 py-3 font-medium">Correo</th>
-                  <th className="px-4 py-3 font-medium">Telefono</th>
-                  <th className="px-4 py-3 font-medium">Asistencia</th>
-                  <th className="px-4 py-3 font-medium">Preferencias</th>
-                  <th className="px-4 py-3 font-medium">Restricciones</th>
-                  <th className="px-4 py-3 font-medium">Intentos</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rsvps.length ? (
-                  rsvps.map((rsvp) => (
-                    <tr key={rsvp.id} className="align-top">
-                      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                        {formatDate(rsvp.last_submitted_at || rsvp.updated_at || rsvp.created_at)}
-                      </td>
-                      <td className="px-4 py-3 font-medium">{rsvp.name}</td>
-                      <td className="px-4 py-3">{rsvp.email}</td>
-                      <td className="px-4 py-3">{rsvp.phone || "-"}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-                            rsvp.attending
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                              : "border-slate-200 bg-slate-50 text-slate-700"
-                          )}
-                        >
-                          {rsvp.attending ? "Asiste" : "No asiste"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {[
-                          rsvp.vegetarian ? "Vegetariano" : null,
-                          rsvp.pescatarian ? "Pescetariano" : null,
-                          rsvp.vegan ? "Vegano" : null,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "-"}
-                      </td>
-                      <td className="max-w-[280px] px-4 py-3 text-muted-foreground">
-                        {rsvp.diet || "-"}
-                      </td>
-                      <td className="px-4 py-3">{rsvp.submission_count || 1}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td className="px-4 py-8 text-center text-muted-foreground" colSpan={8}>
-                      Aun no hay confirmaciones registradas.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <RsvpTable rsvps={principalRsvps} allRsvps={rsvps} />
         </section>
       </div>
     </main>

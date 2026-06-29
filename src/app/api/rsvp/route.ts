@@ -77,6 +77,8 @@ async function sendEmailsOrWarning(opts: {
       pescatarian: opts.input.pescatarian,
       vegan: opts.input.vegan,
       diet: opts.input.diet || null,
+      companion_status: opts.input.companion_status,
+      companion: opts.input.companion || null,
       message: opts.input.message || null,
       submitted_at: opts.submitted_at,
     });
@@ -84,7 +86,9 @@ async function sendEmailsOrWarning(opts: {
     return null;
   } catch (error) {
     console.error("RSVP email error:", error);
-    const detail = shouldExposeEmailDebug() ? ` Detalle: ${getErrorMessage(error)}.` : "";
+    const detail = shouldExposeEmailDebug()
+      ? ` Detalle: ${getErrorMessage(error)}.`
+      : "";
     return `Guardamos tu confirmacion, pero no pudimos enviar el correo automatico. Ya quedo registrado para revision.${detail}`;
   }
 }
@@ -93,7 +97,8 @@ export async function POST(req: NextRequest) {
   if (isRateLimited(req)) {
     return json(429, {
       ok: false,
-      message: "Recibimos varios intentos seguidos. Espera un minuto y vuelve a intentar.",
+      message:
+        "Recibimos varios intentos seguidos. Espera un minuto y vuelve a intentar.",
     });
   }
 
@@ -103,7 +108,8 @@ export async function POST(req: NextRequest) {
   } catch {
     return json(400, {
       ok: false,
-      message: "No pudimos leer la confirmación. Revisa el formulario e intenta nuevamente.",
+      message:
+        "No pudimos leer la confirmación. Revisa el formulario e intenta nuevamente.",
     });
   }
 
@@ -135,6 +141,9 @@ export async function POST(req: NextRequest) {
     pescatarian: input.pescatarian,
     vegan: input.vegan,
     diet: input.diet || null,
+    companion_status: input.companion_status,
+    is_companion: false,
+    companion_of_rsvp_id: null,
     message: input.message || null,
     source: input.source,
     user_agent: userAgent,
@@ -149,18 +158,88 @@ export async function POST(req: NextRequest) {
     },
   };
 
+  const saveCompanion = async (parentId: string) => {
+    if (input.companion_status !== "yes" || !input.companion) {
+      const { error } = await supabase
+        .from("rsvp")
+        .delete()
+        .eq("companion_of_rsvp_id", parentId)
+        .eq("is_companion", true);
+      return error;
+    }
+
+    const companionRecord = {
+      name: input.companion.name,
+      email: input.companion.email,
+      phone: input.companion.phone || null,
+      attending: true,
+      attending_status: "yes",
+      guests: 0,
+      vegetarian: input.companion.vegetarian,
+      pescatarian: input.companion.pescatarian,
+      vegan: input.companion.vegan,
+      diet: input.companion.diet || null,
+      companion_status: "no",
+      is_companion: true,
+      companion_of_rsvp_id: parentId,
+      message: null,
+      source: input.source,
+      user_agent: userAgent,
+      last_submitted_at: now,
+      ip_address: ip,
+      metadata: {
+        referer,
+        locale: req.headers.get("accept-language")?.slice(0, 120) || null,
+        timezone: "America/Santiago",
+        event_country: "CL",
+        event_year: 2026,
+        registered_by_rsvp_id: parentId,
+        registered_by_email: input.email,
+      },
+    };
+
+    const existingCompanion = await supabase
+      .from("rsvp")
+      .select("id, submission_count")
+      .eq("companion_of_rsvp_id", parentId)
+      .eq("is_companion", true)
+      .maybeSingle();
+
+    if (existingCompanion.error) return existingCompanion.error;
+
+    if (existingCompanion.data) {
+      const { error } = await supabase
+        .from("rsvp")
+        .update({
+          ...companionRecord,
+          submission_count: Math.min(
+            (existingCompanion.data.submission_count || 1) + 1,
+            100,
+          ),
+        })
+        .eq("id", existingCompanion.data.id);
+
+      return error;
+    }
+
+    const { error } = await supabase.from("rsvp").insert(companionRecord);
+    return error;
+  };
+
   try {
     const existing = await supabase
       .from("rsvp")
-      .select("id, submission_count")
+      .select("id, submission_count, message")
       .eq("email", input.email)
+      .eq("is_companion", false)
       .maybeSingle();
 
     if (existing.error) {
       console.error("RSVP lookup error:", existing.error);
       return json(500, {
         ok: false,
-        message: "No pudimos revisar tu confirmación. Intenta nuevamente en unos minutos.",
+        message:
+          "No pudimos revisar tu confirmación. Intenta nuevamente en unos minutos.",
       });
     }
 
@@ -169,7 +248,11 @@ export async function POST(req: NextRequest) {
         .from("rsvp")
         .update({
           ...record,
-          submission_count: Math.min((existing.data.submission_count || 1) + 1, 100),
+          message: input.message || existing.data.message || null,
+          submission_count: Math.min(
+            (existing.data.submission_count || 1) + 1,
+            100,
+          ),
         })
         .eq("id", existing.data.id);
 
@@ -177,7 +260,18 @@ export async function POST(req: NextRequest) {
         console.error("RSVP update error:", error);
         return json(500, {
           ok: false,
-          message: "No pudimos actualizar tu confirmación. Intenta nuevamente en unos minutos.",
+          message:
+            "No pudimos actualizar tu confirmación. Intenta nuevamente en unos minutos.",
+        });
+      }
+
+      const companionError = await saveCompanion(existing.data.id);
+      if (companionError) {
+        console.error("RSVP companion save error:", companionError);
+        return json(500, {
+          ok: false,
+          message:
+            "Guardamos tus datos, pero no pudimos guardar la información del acompañante. Intenta nuevamente.",
         });
       }
 
@@ -191,12 +285,18 @@ export async function POST(req: NextRequest) {
       return json(200, {
         ok: true,
         mode: "updated",
-        message: emailWarning || "Actualizamos tu confirmación. Te enviamos un correo de respaldo.",
+        message:
+          emailWarning ||
+          "Actualizamos tu confirmación. Te enviamos un correo de respaldo.",
         email_warning: emailWarning,
       });
     }
 
-    const { data: inserted, error } = await supabase.from("rsvp").insert(record).select("id").single();
+    const { data: inserted, error } = await supabase
+      .from("rsvp")
+      .insert(record)
+      .select("id")
+      .single();
 
     if (error) {
       if (error.code === "23505") {
@@ -211,6 +311,18 @@ export async function POST(req: NextRequest) {
           .maybeSingle();
 
         if (!retry.error) {
+          if (retry.data?.id) {
+            const companionError = await saveCompanion(retry.data.id);
+            if (companionError) {
+              console.error("RSVP companion retry save error:", companionError);
+              return json(500, {
+                ok: false,
+                message:
+                  "Actualizamos tus datos, pero no pudimos guardar la información del acompañante. Intenta nuevamente.",
+              });
+            }
+          }
+
           const emailWarning = await sendEmailsOrWarning({
             id: retry.data?.id || null,
             mode: "updated",
@@ -221,7 +333,9 @@ export async function POST(req: NextRequest) {
           return json(200, {
             ok: true,
             mode: "updated",
-            message: emailWarning || "Actualizamos tu confirmación. Te enviamos un correo de respaldo.",
+            message:
+              emailWarning ||
+              "Actualizamos tu confirmación. Te enviamos un correo de respaldo.",
             email_warning: emailWarning,
           });
         }
@@ -230,7 +344,18 @@ export async function POST(req: NextRequest) {
       console.error("RSVP insert error:", error);
       return json(500, {
         ok: false,
-        message: "No pudimos guardar tu confirmación. Intenta nuevamente en unos minutos.",
+        message:
+          "No pudimos guardar tu confirmación. Intenta nuevamente en unos minutos.",
+      });
+    }
+
+    const companionError = await saveCompanion(inserted.id);
+    if (companionError) {
+      console.error("RSVP companion insert save error:", companionError);
+      return json(500, {
+        ok: false,
+        message:
+          "Guardamos tus datos, pero no pudimos guardar la información del acompañante. Intenta nuevamente.",
       });
     }
 
@@ -244,14 +369,17 @@ export async function POST(req: NextRequest) {
     return json(201, {
       ok: true,
       mode: "created",
-      message: emailWarning || "Recibimos tu confirmación. Te enviamos un correo de respaldo.",
+      message:
+        emailWarning ||
+        "Recibimos tu confirmación. Te enviamos un correo de respaldo.",
       email_warning: emailWarning,
     });
   } catch (error) {
     console.error("RSVP unexpected error:", error);
     return json(500, {
       ok: false,
-      message: "No pudimos guardar tu confirmación. Intenta nuevamente en unos minutos.",
+      message:
+        "No pudimos guardar tu confirmación. Intenta nuevamente en unos minutos.",
     });
   }
 }

@@ -1,5 +1,15 @@
-import type { AttendingStatus } from "@/lib/rsvpSchema";
+import type { AttendingStatus, CompanionStatus } from "@/lib/rsvpSchema";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+type RsvpEmailCompanion = {
+  name: string;
+  email: string;
+  phone?: string | null;
+  vegetarian: boolean;
+  pescatarian: boolean;
+  vegan: boolean;
+  diet?: string | null;
+};
 
 type RsvpEmailPayload = {
   id?: string | null;
@@ -12,6 +22,8 @@ type RsvpEmailPayload = {
   pescatarian: boolean;
   vegan: boolean;
   diet?: string | null;
+  companion_status: CompanionStatus;
+  companion?: RsvpEmailCompanion | null;
   message?: string | null;
   submitted_at: string;
 };
@@ -30,7 +42,8 @@ const escapeHtml = (s: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-const env = (key: string, fallback?: string) => process.env[key] || fallback || "";
+const env = (key: string, fallback?: string) =>
+  process.env[key] || fallback || "";
 
 const attendingLabel = (status: AttendingStatus) => {
   if (status === "yes") return "Sí, confirma asistencia";
@@ -45,11 +58,23 @@ const formatSubmittedAt = (iso: string) =>
     timeZone: "America/Santiago",
   }).format(new Date(iso));
 
-const dietaryPreferenceLabel = (payload: Pick<RsvpEmailPayload, "vegetarian" | "pescatarian" | "vegan">) => {
+const dietaryPreferenceLabel = (
+  payload: Pick<RsvpEmailPayload, "vegetarian" | "pescatarian" | "vegan">,
+) => {
   if (payload.vegetarian) return "Vegetariana";
   if (payload.pescatarian) return "Pescetariana";
   if (payload.vegan) return "Vegana";
   return "-";
+};
+
+const companionLabel = (
+  payload: Pick<RsvpEmailPayload, "companion_status" | "companion">,
+) => {
+  if (payload.companion_status === "later") return "Pendiente por completar";
+  if (payload.companion_status === "yes" && payload.companion) {
+    return `${payload.companion.name} (${payload.companion.email})`;
+  }
+  return "Sin acompañante";
 };
 
 async function createEmailLog(opts: {
@@ -83,6 +108,8 @@ async function createEmailLog(opts: {
           pescatarian: opts.payload.pescatarian,
           vegan: opts.payload.vegan,
           diet: opts.payload.diet || null,
+          companion_status: opts.payload.companion_status,
+          companion: opts.payload.companion || null,
           message: opts.payload.message || null,
           phone: opts.payload.phone || null,
           submitted_at: opts.payload.submitted_at,
@@ -98,7 +125,10 @@ async function createEmailLog(opts: {
 
     return data?.id ? String(data.id) : null;
   } catch (error) {
-    console.error("[rsvp/email_logs] insert failed", (error as Error)?.message || error);
+    console.error(
+      "[rsvp/email_logs] insert failed",
+      (error as Error)?.message || error,
+    );
     return null;
   }
 }
@@ -111,7 +141,7 @@ async function updateEmailLog(
     provider_response?: Record<string, unknown> | null;
     error_message?: string | null;
     error_details?: string | null;
-  }
+  },
 ) {
   if (!id) return;
 
@@ -128,7 +158,10 @@ async function updateEmailLog(
 
     if (error) console.error("[rsvp/email_logs] update error", error.message);
   } catch (error) {
-    console.error("[rsvp/email_logs] update failed", (error as Error)?.message || error);
+    console.error(
+      "[rsvp/email_logs] update failed",
+      (error as Error)?.message || error,
+    );
   }
 }
 
@@ -140,19 +173,22 @@ const detailRows = (payload: RsvpEmailPayload) =>
     ["Asistencia", attendingLabel(payload.attending_status)],
     ["Preferencia alimentaria", dietaryPreferenceLabel(payload)],
     ["Restricciones alimentarias", payload.diet || "-"],
+    ["Acompañante", companionLabel(payload)],
     ["Fecha de confirmacion", formatSubmittedAt(payload.submitted_at)],
   ]
     .map(
       ([label, value]) => `<tr>
         <td style="padding:9px 0;color:#7b6d5e;font-size:13px;border-bottom:1px solid #eadfce;">${escapeHtml(label)}</td>
         <td style="padding:9px 0;color:#26382f;font-size:13px;font-weight:700;text-align:right;border-bottom:1px solid #eadfce;">${escapeHtml(value)}</td>
-      </tr>`
+      </tr>`,
     )
     .join("");
 
 function guestHtml(payload: RsvpEmailPayload, siteUrl: string) {
   const isAttending = payload.attending_status === "yes";
-  const title = isAttending ? "Gracias por confirmar tu asistencia" : "Gracias por avisarnos";
+  const title = isAttending
+    ? "Gracias por confirmar tu asistencia"
+    : "Gracias por avisarnos";
   const copy = isAttending
     ? "Recibimos tu confirmacion y estamos muy felices de contar contigo en nuestro matrimonio."
     : "Recibimos tu respuesta. Gracias por avisarnos con tiempo para poder organizar todo con cariño.";
@@ -194,7 +230,10 @@ function guestHtml(payload: RsvpEmailPayload, siteUrl: string) {
 }
 
 function internalHtml(payload: RsvpEmailPayload) {
-  const modeLabel = payload.mode === "created" ? "Nueva confirmacion" : "Confirmacion actualizada";
+  const modeLabel =
+    payload.mode === "created"
+      ? "Nueva confirmacion"
+      : "Confirmacion actualizada";
 
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -261,8 +300,10 @@ async function sendEmail(opts: {
     });
 
     const error = new Error(`Resend error: ${text || res.statusText}`);
-    (error as Error & { status?: number; details?: string }).status = res.status;
-    (error as Error & { status?: number; details?: string }).details = text || res.statusText;
+    (error as Error & { status?: number; details?: string }).status =
+      res.status;
+    (error as Error & { status?: number; details?: string }).details =
+      text || res.statusText;
     throw error;
   }
 
@@ -279,7 +320,9 @@ async function sendEmail(opts: {
     provider_response: data || null,
   });
 
-  return (data?.id ? { target: opts.target, id: data.id } : { target: opts.target }) satisfies EmailResult;
+  return (
+    data?.id ? { target: opts.target, id: data.id } : { target: opts.target }
+  ) satisfies EmailResult;
 }
 
 export async function sendRsvpConfirmationEmails(payload: RsvpEmailPayload) {
@@ -345,6 +388,7 @@ export async function sendRsvpConfirmationEmails(payload: RsvpEmailPayload) {
 
   return {
     guest: guestResult.status === "fulfilled" ? guestResult.value : null,
-    internal: internalResult.status === "fulfilled" ? internalResult.value : null,
+    internal:
+      internalResult.status === "fulfilled" ? internalResult.value : null,
   };
 }
