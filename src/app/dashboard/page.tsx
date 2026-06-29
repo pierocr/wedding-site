@@ -59,6 +59,17 @@ type RsvpRecord = {
   submission_count: number | null;
 };
 
+const RSVP_SELECT =
+  "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, pescatarian, vegan, diet, message, submission_count";
+
+const RSVP_LEGACY_SELECT =
+  "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, diet, message, submission_count";
+
+type SupabaseQueryError = {
+  code?: string;
+  message?: string;
+};
+
 function getAccessCode() {
   return process.env.DASHBOARD_ACCESS_CODE || process.env.ADMIN_ACCESS_CODE || "";
 }
@@ -172,6 +183,36 @@ function statusClass(status: string | null | undefined) {
   return "border-border bg-muted text-muted-foreground";
 }
 
+async function getRsvpsWithDietPreferences() {
+  const supabase = getSupabaseAdmin();
+  const result = await supabase
+    .from("rsvp")
+    .select(RSVP_SELECT)
+    .order("last_submitted_at", { ascending: false });
+
+  if (!isMissingColumnError(result.error)) {
+    return result;
+  }
+
+  const legacyResult = await supabase
+    .from("rsvp")
+    .select(RSVP_LEGACY_SELECT)
+    .order("last_submitted_at", { ascending: false });
+
+  return {
+    ...legacyResult,
+    data: legacyResult.data?.map((rsvp) => ({
+      ...rsvp,
+      pescatarian: false,
+      vegan: false,
+    })),
+  };
+}
+
+function isMissingColumnError(error: SupabaseQueryError | null) {
+  return error?.code === "42703";
+}
+
 async function getDashboardData() {
   const supabase = getSupabaseAdmin();
 
@@ -180,12 +221,7 @@ async function getDashboardData() {
       .from("payments")
       .select("id, created_at, status, donor_name, donor_email, amount, currency, external_reference, raffle_number")
       .order("created_at", { ascending: false }),
-    supabase
-      .from("rsvp")
-      .select(
-        "id, created_at, updated_at, last_submitted_at, name, email, phone, attending, attending_status, vegetarian, pescatarian, vegan, diet, message, submission_count"
-      )
-      .order("last_submitted_at", { ascending: false }),
+    getRsvpsWithDietPreferences(),
   ]);
 
   if (paymentsResult.error) throw paymentsResult.error;
