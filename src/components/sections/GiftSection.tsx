@@ -386,8 +386,8 @@ export default function GiftSection() {
           Regalos con Mensaje
         </CardTitle>
         <CardDescription className="max-w-xl mx-auto mt-3 text-base leading-relaxed">
-          Tu presencia es nuestro mejor regalo. Si quieres dejarnos un detalle,
-          aquí puedes elegir un gesto con mucho cariño.{" "}
+          Si quieres dejarnos un detalle, aquí puedes elegir un gesto con mucho
+          cariño.{" "}
           <Heart className="inline-block h-4 w-4 text-accent" />
         </CardDescription>
       </CardHeader>
