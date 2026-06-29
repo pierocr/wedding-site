@@ -16,10 +16,10 @@ type EventItem = {
 
 const EVENTS: EventItem[] = [
   { id: 'citacion',  time: '16:30', title: 'Iglesia',   iconSrc: '/imgs/timeline/arch_gold.svg' },
-  { id: 'ceremonia', time: '17:30', title: 'Sí, acepto', iconSrc: '/imgs/timeline/couple_gold.svg' },
   { id: 'coctel',    time: '18:30', title: 'Cóctel',     iconSrc: '/imgs/timeline/champagne_gold.svg' },
-  { id: 'cena',      time: '20:30', title: 'Cena',       iconSrc: '/imgs/timeline/dinner_gold.svg' },
+  { id: 'cena',      time: '20:00', title: 'Cena',       iconSrc: '/imgs/timeline/dinner_gold.svg' },
   { id: 'fiesta',    time: '22:00', title: 'Fiesta',     iconSrc: '/imgs/timeline/party_gold.svg' },
+  { id: 'sorpresa',  time: '00:00', title: 'Sorpresa',   iconSrc: '/imgs/timeline/gift_gold.svg' },
 ];
 
 const Item = ({ idx, title, time, iconSrc, emoji }: { idx: number } & EventItem) => {
