@@ -17,6 +17,10 @@ function getCurrentPath() {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
+function hasGrantedConsent() {
+  return localStorage.getItem(ANALYTICS_CONSENT_KEY) === "granted";
+}
+
 function ConsentBanner() {
   const [visible, setVisible] = React.useState(false);
 
@@ -35,6 +39,9 @@ function ConsentBanner() {
   const setConsent = (consent: AnalyticsConsent) => {
     localStorage.setItem(ANALYTICS_CONSENT_KEY, consent);
     updateAnalyticsConsent(consent);
+    if (consent === "granted") {
+      window.dispatchEvent(new Event("analytics-consent-granted"));
+    }
     setVisible(false);
   };
 
@@ -72,35 +79,34 @@ function PageViewTracker() {
   const searchParams = useSearchParams();
   const lastPathRef = React.useRef<string | null>(null);
 
-  React.useEffect(() => {
-    if (!isAnalyticsEnabled) return;
+  const trackCurrentPage = React.useCallback(() => {
+    if (!isAnalyticsEnabled || !hasGrantedConsent()) return;
 
+    updateAnalyticsConsent("granted");
     const path = getCurrentPath();
     if (lastPathRef.current === path) return;
 
     lastPathRef.current = path;
     trackPageView(path);
-  }, [pathname, searchParams]);
+  }, []);
+
+  React.useEffect(() => {
+    trackCurrentPage();
+  }, [pathname, searchParams, trackCurrentPage]);
 
   React.useEffect(() => {
     if (!isAnalyticsEnabled) return;
 
-    const onLocationChange = () => {
-      const path = getCurrentPath();
-      if (lastPathRef.current === path) return;
-
-      lastPathRef.current = path;
-      trackPageView(path);
-    };
-
-    window.addEventListener("hashchange", onLocationChange);
-    window.addEventListener("popstate", onLocationChange);
+    window.addEventListener("analytics-consent-granted", trackCurrentPage);
+    window.addEventListener("hashchange", trackCurrentPage);
+    window.addEventListener("popstate", trackCurrentPage);
 
     return () => {
-      window.removeEventListener("hashchange", onLocationChange);
-      window.removeEventListener("popstate", onLocationChange);
+      window.removeEventListener("analytics-consent-granted", trackCurrentPage);
+      window.removeEventListener("hashchange", trackCurrentPage);
+      window.removeEventListener("popstate", trackCurrentPage);
     };
-  }, []);
+  }, [trackCurrentPage]);
 
   return null;
 }

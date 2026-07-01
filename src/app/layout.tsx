@@ -1,5 +1,6 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "@/app/globals.css";
 import { fontSans, fontSerif, fontScript } from "./fonts";
 import SeoWebsite from "@/components/seo/SeoWebsite";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SeoWebsite name={SITE_NAME} url={SITE_URL} />
         <SeoWeddingEvent />
         <GoogleAnalytics />
+        <Analytics />
         <div className="flex min-h-screen flex-col">
           <main className="flex-1">{children}</main>
         </div>
