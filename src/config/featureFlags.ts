@@ -11,4 +11,7 @@ export const FEATURE_FLAGS = {
 
   // Event Details - cambiar a true para revelar fecha, lugares y horarios
   eventDetailsVisible: true,
+
+  // Gift payments - cambiar a true para volver a activar el flujo Flow/WebPay
+  flowGiftPaymentsEnabled: false,
 } as const;
