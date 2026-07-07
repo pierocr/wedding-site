@@ -13,5 +13,5 @@ export const FEATURE_FLAGS = {
   eventDetailsVisible: true,
 
   // Gift payments - cambiar a true para volver a activar el flujo Flow/WebPay
-  flowGiftPaymentsEnabled: false,
+  flowGiftPaymentsEnabled: true,
 } as const;
