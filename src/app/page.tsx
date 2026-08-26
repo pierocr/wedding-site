@@ -5,7 +5,9 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import {
   Calendar,
+  CalendarPlus,
   Clock,
+  Download,
   Gift,
   Mail,
   Heart,
@@ -27,6 +29,14 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -158,6 +168,20 @@ function currencyCLP(n: number) {
     maximumFractionDigits: 0,
   });
 }
+
+const ceremonyGoogleCalendarUrl = () => {
+  const date = WEDDING_DATE_ISO.replaceAll("-", "");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: "Ceremonia — Piero & Debby",
+    dates: `${date}T${CEREMONY.timeIso.replaceAll(":", "")}/${date}T${CEREMONY.endTimeIso.replaceAll(":", "")}`,
+    ctz: "America/Santiago",
+    location: `${CEREMONY.venue}, ${CEREMONY.venueAddress}`,
+    details: "Acompáñanos a celebrar la boda de Piero & Debby.",
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
 
 const Section = ({
   id,
@@ -660,6 +684,7 @@ const HERO_IMAGES = ["/hero/1.webp"];
 const Hero = () => {
   const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE_ISO);
   const [idx, setIdx] = React.useState(0);
+  const [calendarOpen, setCalendarOpen] = React.useState(false);
 
   React.useEffect(() => {
     const t = setInterval(
@@ -776,10 +801,73 @@ const Hero = () => {
               <div className="hidden md:block md:h-6 md:w-px bg-white/20 mx-1 md:mx-2" />
 
               {/* Fecha */}
-              <div className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/70 px-3 py-2 text-[clamp(11px,1.5vw,13px)] text-black">
-                <Calendar className="h-4 w-4" />
-                {CEREMONY.datePretty}
-              </div>
+              <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/70 px-3 py-2 text-[clamp(11px,1.5vw,13px)] text-black transition hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent"
+                    aria-label={`Agregar la ceremonia del ${CEREMONY.datePretty} al calendario`}
+                    title="Agregar al calendario"
+                    onClick={() =>
+                      trackEvent("calendar_click", {
+                        calendar: "modal",
+                        event: "ceremony",
+                        location: "hero",
+                      })
+                    }
+                  >
+                    <Calendar className="h-4 w-4" />
+                    {CEREMONY.datePretty}
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl border-border/70 p-5 sm:p-6">
+                  <DialogHeader className="text-left">
+                    <DialogTitle>Agregar al calendario</DialogTitle>
+                    <DialogDescription>
+                      Ceremonia · {CEREMONY.datePretty} · {CEREMONY.timePretty}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <p className="text-sm leading-relaxed text-foreground/80">
+                    {CEREMONY.venue}, {CEREMONY.venueAddress}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Button asChild className="h-11 rounded-xl">
+                      <a
+                        href={ceremonyGoogleCalendarUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() =>
+                          trackEvent("calendar_click", {
+                            calendar: "google",
+                            event: "ceremony",
+                            location: "hero_modal",
+                          })
+                        }
+                      >
+                        <CalendarPlus className="h-4 w-4" />
+                        Google Calendar
+                      </a>
+                    </Button>
+                    <Button asChild variant="outline" className="h-11 rounded-xl">
+                      {/* Descarga un archivo .ics; no debe ser navegación del cliente. */}
+                      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                      <a
+                        href="/api/calendar/ceremony"
+                        onClick={() =>
+                          trackEvent("calendar_click", {
+                            calendar: "apple",
+                            event: "ceremony",
+                            location: "hero_modal",
+                          })
+                        }
+                      >
+                        <Download className="h-4 w-4" />
+                        Apple / Outlook
+                      </a>
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {/* Botones */}
               <div className="mt-[clamp(4px,0.8vw,8px)] flex w-full flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">

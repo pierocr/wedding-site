@@ -16,6 +16,7 @@ export const CEREMONY = {
   datePretty: "Sábado 21 de noviembre de 2026",
   timePretty: "16:30 hrs",
   timeIso: "16:30:00",
+  endTimeIso: "18:00:00",
   venue: "Iglesia Santa Úrsula de Vitacura",
   venueAddress: "Vitacura, Chile",
   locality: "Vitacura",
@@ -27,6 +28,7 @@ export const CEREMONY = {
 export const RECEPTION = {
   startTime: "18:30 hrs",
   startTimeIso: "18:30:00",
+  endTimeIso: "23:59:00",
   venue: "Casona Santa Luz de Chicureo",
   venueAddress: "Chicureo, Santiago",
   locality: "Chicureo",

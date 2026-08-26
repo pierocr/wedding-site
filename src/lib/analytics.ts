@@ -10,6 +10,7 @@ export type AnalyticsConsent = "granted" | "denied";
 export type AnalyticsEventName =
   | "rsvp_click"
   | "map_click"
+  | "calendar_click"
   | "gift_info_click"
   | "gallery_view"
   | "music_request_click";
