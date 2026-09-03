@@ -102,6 +102,39 @@ El test abre el sitio, agrega un regalo, completa datos y llega a Flow sandbox. 
 - El número de sorteo se guarda en `payments.raffle_number` y también en `payments.meta.raffle_number` por compatibilidad. Hay índice único parcial para evitar duplicados.
 - PDF deshabilitado en Cloudflare Edge para reducir tamaño del worker.
 
+## Recuperación de pagos pendientes
+
+El proyecto se ejecuta en Vercel. `vercel.json` agenda `GET /api/cron/payment-recovery` cada hora.
+La ruta exige `Authorization: Bearer <CRON_SECRET>` y Vercel agrega este header cuando
+`CRON_SECRET` está definido en las variables de entorno del proyecto.
+
+Configura estas variables en **Production** antes de desplegar:
+
+- `CRON_SECRET`: secreto largo y aleatorio exclusivo para Vercel Cron.
+- `ABANDONED_CART_RECOVERY_START_AT`: fecha ISO 8601 del despliegue, por ejemplo
+  `2026-09-03T14:00:00.000Z`. Los pagos anteriores quedan explícitamente excluidos.
+- `EMAIL_TEST_TOKEN`: secreto largo y distinto, usado únicamente para el envío de prueba.
+
+Una orden es candidata después de una hora solo si, al consultar Flow, continúa `pending`,
+`rejected` o `cancelled` y no existe un pago `paid` posterior del mismo correo. Cada aviso
+crea una fila en `payment_recoveries` y dos entradas auditables en `email_logs`: una para el
+invitado y otra para `contacto@teilen.cl`.
+
+### Prueba visual del correo
+
+El endpoint de prueba nunca acepta un destinatario arbitrario: siempre envía solamente a
+`pierocr@gmail.com` y no activa el correo interno. Tras desplegar, prueba el diseño con:
+
+```bash
+curl -X POST 'https://www.pieroydebby.cl/api/email/abandoned-cart/test' \
+  -H "Authorization: Bearer $EMAIL_TEST_TOKEN" \
+  -H 'Content-Type: application/json' \
+  --data '{"status":"pending"}'
+```
+
+Para revisar la variante de pago rechazado, reemplaza `pending` por `rejected` o `cancelled`.
+El resultado queda registrado en `email_logs` con `source='abandoned_cart_customer'`.
+
 ## Pruebas E2E sugeridas
 1) En local, setear envs de Flow y Supabase (usar `BASE_URL=http://localhost:3000` si corresponde).  
 2) Abrir la sección Regalo, armar carrito, completar nombre/email/mensaje.  
