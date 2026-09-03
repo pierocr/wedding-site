@@ -104,7 +104,8 @@ El test abre el sitio, agrega un regalo, completa datos y llega a Flow sandbox. 
 
 ## Recuperación de pagos pendientes
 
-El proyecto se ejecuta en Vercel. `vercel.json` agenda `GET /api/cron/payment-recovery` cada hora.
+El proyecto se ejecuta en Vercel. `vercel.json` agenda `GET /api/cron/payment-recovery` todos los días
+a las 12:00 UTC (08:00 o 09:00 en Chile continental, según el horario de verano).
 La ruta exige `Authorization: Bearer <CRON_SECRET>` y Vercel agrega este header cuando
 `CRON_SECRET` está definido en las variables de entorno del proyecto.
 
