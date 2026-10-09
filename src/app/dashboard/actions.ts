@@ -9,6 +9,26 @@ export type GuestSyncState = {
   message: string;
 };
 
+function syncErrorMessage(error: unknown) {
+  const detail = error instanceof Error ? error.message : "";
+
+  if (
+    detail.includes("Google Drive API has not been used") ||
+    detail.includes("disabled")
+  ) {
+    return "Falta activar Google Drive API en el proyecto de Google Cloud. Actívala, espera unos minutos e inténtalo nuevamente.";
+  }
+
+  if (
+    detail.includes("insufficient permissions") ||
+    detail.includes("not have permission")
+  ) {
+    return "La cuenta de servicio no tiene acceso al Excel. Revisa que esté compartido como Lector e inténtalo nuevamente.";
+  }
+
+  return "No se pudo actualizar la lista. Verifica el acceso de la cuenta de servicio al Excel e inténtalo otra vez.";
+}
+
 export async function syncGuestDirectoryAction(
   _previousState: GuestSyncState,
   _formData: FormData,
@@ -31,8 +51,7 @@ export async function syncGuestDirectoryAction(
     console.error("Guest directory sync failed", error);
     return {
       status: "error",
-      message:
-        "No se pudo actualizar la lista. Verifica el acceso de la cuenta de servicio al Excel e inténtalo otra vez.",
+      message: syncErrorMessage(error),
     };
   }
 }
