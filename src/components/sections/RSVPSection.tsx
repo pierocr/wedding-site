@@ -147,11 +147,20 @@ const RSVPSectionForm = () => {
       });
       const result = (await response.json().catch(() => null)) as {
         ok?: boolean;
+        can_edit?: boolean;
         message?: string;
       } | null;
       if (!response.ok || !result?.ok) {
         setEditMessage(
           result?.message || "No pudimos enviar el código. Intenta nuevamente.",
+        );
+        return;
+      }
+
+      if (!result.can_edit) {
+        setEditMessage(
+          result.message ||
+            "No encontramos una confirmación con ese correo. Completa el formulario para confirmar tu asistencia.",
         );
         return;
       }
@@ -327,170 +336,6 @@ const RSVPSectionForm = () => {
 
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-5">
-          <section
-            className="rounded-lg border border-primary/20 bg-primary/5 p-4"
-            aria-label="Modificar confirmación de asistencia"
-          >
-            {editStep === "idle" && (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-medium">¿Ya confirmaste tu asistencia?</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Carga tus datos con un código enviado a tu correo para
-                    modificarlos.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditStep("request")}
-                >
-                  <PencilLine /> Modificar mi confirmación
-                </Button>
-              </div>
-            )}
-
-            {editStep === "request" && (
-              <div className="space-y-3">
-                <div>
-                  <p className="font-medium">Modificar mi confirmación</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Ingresa el correo con el que confirmaste y te enviaremos un
-                    código de 6 dígitos.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <label className="sr-only" htmlFor="rsvp-edit-email">
-                    Correo de la confirmación
-                  </label>
-                  <input
-                    id="rsvp-edit-email"
-                    type="email"
-                    value={editEmail}
-                    onChange={(event) => setEditEmail(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void requestEditCode();
-                      }
-                    }}
-                    placeholder="nombre@correo.cl"
-                    className={inputBase}
-                    autoComplete="email"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => void requestEditCode()}
-                    disabled={isEditingRequest}
-                    className="shrink-0"
-                  >
-                    {isEditingRequest ? (
-                      <Loader2 className="animate-spin" />
-                    ) : (
-                      <MailCheck />
-                    )}
-                    Enviar código
-                  </Button>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={cancelEdit}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            )}
-
-            {editStep === "verify" && (
-              <div className="space-y-3">
-                <div>
-                  <p className="font-medium">Revisa tu correo</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Ingresa el código de 6 dígitos que enviamos a {editEmail}.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <label className="sr-only" htmlFor="rsvp-edit-code">
-                    Código de verificación
-                  </label>
-                  <input
-                    id="rsvp-edit-code"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={editCode}
-                    onChange={(event) =>
-                      setEditCode(
-                        event.target.value.replace(/\D/g, "").slice(0, 6),
-                      )
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void verifyEditCode();
-                      }
-                    }}
-                    placeholder="123456"
-                    className={`${inputBase} tracking-[0.2em]`}
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => void verifyEditCode()}
-                    disabled={isEditingRequest}
-                    className="shrink-0"
-                  >
-                    {isEditingRequest ? (
-                      <Loader2 className="animate-spin" />
-                    ) : null}
-                    Cargar mis datos
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditStep("request")}
-                  >
-                    Usar otro correo
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={cancelEdit}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {editStep === "ready" && (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-primary" role="status">
-                  Datos cargados. Haz los cambios que necesites y luego pulsa
-                  “Actualizar confirmación”.
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={cancelEdit}
-                >
-                  Cancelar edición
-                </Button>
-              </div>
-            )}
-
-            {editMessage && editStep !== "ready" && (
-              <p className="mt-3 text-sm text-muted-foreground" role="status">
-                {editMessage}
-              </p>
-            )}
-          </section>
-
           {/* Nombre + Email */}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -797,6 +642,170 @@ const RSVPSectionForm = () => {
               {serverMsg || "Ocurrió un error al enviar. Intenta nuevamente."}
             </div>
           )}
+
+          <section
+            className="rounded-lg border border-primary/20 bg-primary/5 p-4"
+            aria-label="Modificar confirmación de asistencia"
+          >
+            {editStep === "idle" && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium">¿Ya confirmaste tu asistencia?</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Carga tus datos con un código enviado a tu correo para
+                    modificarlos.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditStep("request")}
+                >
+                  <PencilLine /> Modificar mi confirmación
+                </Button>
+              </div>
+            )}
+
+            {editStep === "request" && (
+              <div className="space-y-3">
+                <div>
+                  <p className="font-medium">Modificar mi confirmación</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Ingresa el correo con el que confirmaste y te enviaremos un
+                    código de 6 dígitos.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <label className="sr-only" htmlFor="rsvp-edit-email">
+                    Correo de la confirmación
+                  </label>
+                  <input
+                    id="rsvp-edit-email"
+                    type="email"
+                    value={editEmail}
+                    onChange={(event) => setEditEmail(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void requestEditCode();
+                      }
+                    }}
+                    placeholder="nombre@correo.cl"
+                    className={inputBase}
+                    autoComplete="email"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => void requestEditCode()}
+                    disabled={isEditingRequest}
+                    className="shrink-0"
+                  >
+                    {isEditingRequest ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <MailCheck />
+                    )}
+                    Enviar código
+                  </Button>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelEdit}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
+
+            {editStep === "verify" && (
+              <div className="space-y-3">
+                <div>
+                  <p className="font-medium">Revisa tu correo</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Ingresa el código de 6 dígitos que enviamos a {editEmail}.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <label className="sr-only" htmlFor="rsvp-edit-code">
+                    Código de verificación
+                  </label>
+                  <input
+                    id="rsvp-edit-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={editCode}
+                    onChange={(event) =>
+                      setEditCode(
+                        event.target.value.replace(/\D/g, "").slice(0, 6),
+                      )
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void verifyEditCode();
+                      }
+                    }}
+                    placeholder="123456"
+                    className={`${inputBase} tracking-[0.2em]`}
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => void verifyEditCode()}
+                    disabled={isEditingRequest}
+                    className="shrink-0"
+                  >
+                    {isEditingRequest ? (
+                      <Loader2 className="animate-spin" />
+                    ) : null}
+                    Cargar mis datos
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditStep("request")}
+                  >
+                    Usar otro correo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={cancelEdit}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {editStep === "ready" && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-primary" role="status">
+                  Datos cargados. Haz los cambios que necesites y luego pulsa
+                  “Actualizar confirmación”.
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelEdit}
+                >
+                  Cancelar edición
+                </Button>
+              </div>
+            )}
+
+            {editMessage && editStep !== "ready" && (
+              <p className="mt-3 text-sm text-muted-foreground" role="status">
+                {editMessage}
+              </p>
+            )}
+          </section>
 
           {/* Botón */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

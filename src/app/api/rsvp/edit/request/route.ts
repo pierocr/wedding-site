@@ -10,8 +10,6 @@ export const dynamic = "force-dynamic";
 const emailSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
 });
-const GENERIC_MESSAGE =
-  "Si encontramos una confirmación asociada a ese correo, te enviaremos un código para modificarla.";
 const requests = new Map<string, { count: number; resetAt: number }>();
 
 function clientKey(req: NextRequest) {
@@ -74,7 +72,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (!rsvp) {
-    return NextResponse.json({ ok: true, message: GENERIC_MESSAGE });
+    return NextResponse.json({
+      ok: true,
+      can_edit: false,
+      message:
+        "No encontramos una confirmación con ese correo. Completa el formulario para confirmar tu asistencia.",
+    });
   }
 
   const code = createRsvpEditCode();
@@ -114,5 +117,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true, message: GENERIC_MESSAGE });
+  return NextResponse.json({
+    ok: true,
+    can_edit: true,
+    message: "Te enviamos un código de 6 dígitos. Revisa tu correo.",
+  });
 }
