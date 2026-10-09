@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { rsvpSchema } from "@/lib/rsvpSchema";
+import { hashRsvpEditSecret } from "@/lib/rsvpEditAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendRsvpConfirmationEmails } from "@/lib/email/rsvpConfirmation";
 
@@ -123,6 +124,12 @@ export async function POST(req: NextRequest) {
   }
 
   const input = parsed.data;
+  const editToken =
+    typeof rawBody === "object" &&
+    rawBody !== null &&
+    typeof (rawBody as { edit_token?: unknown }).edit_token === "string"
+      ? (rawBody as { edit_token: string }).edit_token.trim()
+      : null;
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
   const ip = clientIp(req);
@@ -227,12 +234,44 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const existing = await supabase
-      .from("rsvp")
-      .select("id, submission_count, message")
-      .eq("email", input.email)
-      .eq("is_companion", false)
-      .maybeSingle();
+    let verificationId: string | null = null;
+    let existing;
+
+    if (editToken) {
+      const { data: verification, error: verificationError } = await supabase
+        .from("rsvp_edit_verifications")
+        .select("id, rsvp_id")
+        .eq("access_token_hash", await hashRsvpEditSecret(editToken))
+        .is("used_at", null)
+        .gt("access_expires_at", now)
+        .maybeSingle();
+
+      if (verificationError || !verification) {
+        if (verificationError) {
+          console.error("RSVP edit token lookup error:", verificationError);
+        }
+        return json(403, {
+          ok: false,
+          message:
+            "Tu sesión para modificar la confirmación venció. Solicita un nuevo código.",
+        });
+      }
+
+      verificationId = verification.id;
+      existing = await supabase
+        .from("rsvp")
+        .select("id, submission_count, message")
+        .eq("id", verification.rsvp_id)
+        .eq("is_companion", false)
+        .maybeSingle();
+    } else {
+      existing = await supabase
+        .from("rsvp")
+        .select("id, submission_count, message")
+        .eq("email", input.email)
+        .eq("is_companion", false)
+        .maybeSingle();
+    }
 
     if (existing.error) {
       console.error("RSVP lookup error:", existing.error);
@@ -244,6 +283,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (existing.data) {
+      if (!verificationId) {
+        return json(409, {
+          ok: false,
+          message:
+            "Ya existe una confirmación con este correo. Usa “Modificar mi confirmación” para actualizarla.",
+        });
+      }
+
       const { error } = await supabase
         .from("rsvp")
         .update({
@@ -273,6 +320,14 @@ export async function POST(req: NextRequest) {
           message:
             "Guardamos tus datos, pero no pudimos guardar la información del acompañante. Intenta nuevamente.",
         });
+      }
+
+      const { error: consumeTokenError } = await supabase
+        .from("rsvp_edit_verifications")
+        .update({ used_at: now })
+        .eq("id", verificationId);
+      if (consumeTokenError) {
+        console.error("RSVP edit token consume error:", consumeTokenError);
       }
 
       const emailWarning = await sendEmailsOrWarning({

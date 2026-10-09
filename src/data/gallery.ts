@@ -17,4 +17,8 @@ export const GALLERY: GalleryItem[] = [
   { src: "/gallery/10.jpeg", alt: "Nuevo recuerdo de Piero y Debby en la galería" },
   { src: "/gallery/11.jpeg", alt: "Otro recuerdo especial de Piero y Debby" },
   { src: "/gallery/12.jpeg", alt: "Piero y Debby compartiendo un momento inolvidable" },
+  {
+    src: "/gallery/CivilDP-327.webp",
+    alt: "Piero y Debby besándose junto a un árbol florecido durante su matrimonio civil",
+  },
 ];
