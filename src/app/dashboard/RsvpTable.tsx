@@ -243,16 +243,13 @@ export function RsvpTable({
   return (
     <>
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-[1280px] text-left text-sm">
+        <table className="w-full min-w-[780px] text-left text-sm">
           <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
             <tr>
               <th className="px-4 py-3 font-medium">Última respuesta</th>
               <th className="px-4 py-3 font-medium">Invitado</th>
-              <th className="px-4 py-3 font-medium">Contacto</th>
               <th className="px-4 py-3 font-medium">Asistencia</th>
               <th className="px-4 py-3 font-medium">Acompañante</th>
-              <th className="px-4 py-3 font-medium">Preferencias</th>
-              <th className="px-4 py-3 font-medium">Mensaje</th>
               <th className="px-4 py-3 font-medium">Intentos</th>
             </tr>
           </thead>
@@ -261,7 +258,7 @@ export function RsvpTable({
               groups.map((group) => (
                 <tr
                   key={group.guest.id}
-                  className="cursor-pointer align-top transition hover:bg-muted/45 focus:bg-muted/45 focus:outline-none"
+                  className="cursor-pointer transition hover:bg-muted/45 focus:bg-muted/45 focus:outline-none"
                   role="button"
                   tabIndex={0}
                   onClick={() => openGroup(group)}
@@ -280,17 +277,8 @@ export function RsvpTable({
                         group.guest.created_at,
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{group.guest.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {group.guest.email}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    <div>{group.guest.phone || "-"}</div>
-                    <div className="mt-1 text-xs">
-                      {group.guest.source || "-"}
-                    </div>
+                  <td className="whitespace-nowrap px-4 py-3 font-medium">
+                    {group.guest.name}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -302,55 +290,18 @@ export function RsvpTable({
                       {attendingLabel(group.guest.attending_status)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     {group.companion ? (
-                      <div>
-                        <div className="font-medium">
-                          {group.companion.name}
-                        </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {group.companion.email}
-                        </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {group.companion.phone || "-"}
-                        </div>
-                      </div>
+                      <span className="font-medium">
+                        {group.companion.name}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">
                         {companionStatusLabel(group.guest.companion_status)}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    <div>Invitado: {dietaryPreference(group.guest)}</div>
-                    {group.guest.diet ? (
-                      <div className="mt-1 max-w-[240px] text-xs">
-                        {group.guest.diet}
-                      </div>
-                    ) : null}
-                    {group.companion ? (
-                      <div className="mt-2 border-t border-border pt-2">
-                        <div>
-                          Acompañante: {dietaryPreference(group.companion)}
-                        </div>
-                        {group.companion.diet ? (
-                          <div className="mt-1 max-w-[240px] text-xs">
-                            {group.companion.diet}
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </td>
-                  <td className="max-w-[260px] px-4 py-3 text-muted-foreground">
-                    {group.guest.message ? (
-                      <span className="line-clamp-2">
-                        {group.guest.message}
-                      </span>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     {group.guest.submission_count || 1}
                   </td>
                 </tr>
@@ -359,7 +310,7 @@ export function RsvpTable({
               <tr>
                 <td
                   className="px-4 py-8 text-center text-muted-foreground"
-                  colSpan={8}
+                  colSpan={5}
                 >
                   Aún no hay confirmaciones registradas.
                 </td>
