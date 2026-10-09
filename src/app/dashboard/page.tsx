@@ -4,20 +4,31 @@ import { redirect } from "next/navigation";
 import {
   CalendarCheck,
   CircleDollarSign,
+  Clock3,
   LogOut,
   Mail,
   ShieldCheck,
-  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DASHBOARD_TARGETS } from "@/config/dashboard";
+import {
+  DASHBOARD_COOKIE_MAX_AGE,
+  DASHBOARD_COOKIE_NAME,
+  getDashboardAccessCode,
+  hashDashboardCode,
+  hasDashboardAccess,
+  safeEqual,
+} from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { cn } from "@/lib/utils";
+import { syncGuestDirectoryAction } from "./actions";
+import { GuestSyncForm } from "./GuestSyncForm";
 import { RsvpTable, type DashboardRsvpRecord } from "./RsvpTable";
 
 export const dynamic = "force-dynamic";
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   title: "Dashboard privado",
@@ -26,9 +37,6 @@ export const metadata: Metadata = {
     follow: false,
   },
 };
-
-const COOKIE_NAME = "wedding_dashboard_access";
-const COOKIE_MAX_AGE = 60 * 60 * 12;
 
 type PaymentRecord = {
   id: string;
@@ -43,6 +51,15 @@ type PaymentRecord = {
 };
 
 type RsvpRecord = DashboardRsvpRecord;
+
+type GuestDirectoryRecord = {
+  party_size: number | null;
+};
+
+type GuestSyncRunRecord = {
+  guest_count: number;
+  completed_at: string | null;
+};
 
 type LegacyRsvpRecord = {
   id: string;
@@ -73,63 +90,10 @@ type SupabaseQueryError = {
   message?: string;
 };
 
-function getAccessCode() {
-  return (
-    process.env.DASHBOARD_ACCESS_CODE || process.env.ADMIN_ACCESS_CODE || ""
-  );
-}
-
-function getSessionSecret() {
-  return (
-    process.env.DASHBOARD_SESSION_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE ||
-    "dashboard-session"
-  );
-}
-
-function toHex(buffer: ArrayBuffer) {
-  return [...new Uint8Array(buffer)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function hashCode(code: string) {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(getSessionSecret()),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(code));
-  return toHex(signature);
-}
-
-function safeEqual(a: string, b: string) {
-  if (a.length !== b.length) return false;
-
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i += 1) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-
-  return mismatch === 0;
-}
-
-async function hasDashboardAccess() {
-  const code = getAccessCode();
-  if (!code) return false;
-  const cookieStore = await cookies();
-  const session = cookieStore.get(COOKIE_NAME)?.value || "";
-  return safeEqual(session, await hashCode(code));
-}
-
 export async function loginDashboard(formData: FormData) {
   "use server";
 
-  const configuredCode = getAccessCode();
+  const configuredCode = getDashboardAccessCode();
   const submittedCode = String(formData.get("code") || "").trim();
 
   if (
@@ -141,11 +105,11 @@ export async function loginDashboard(formData: FormData) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, await hashCode(configuredCode), {
+  cookieStore.set(DASHBOARD_COOKIE_NAME, await hashDashboardCode(configuredCode), {
     httpOnly: true,
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: DASHBOARD_COOKIE_MAX_AGE,
     path: "/dashboard",
   });
 
@@ -156,7 +120,7 @@ export async function logoutDashboard() {
   "use server";
 
   const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete(DASHBOARD_COOKIE_NAME);
   redirect("/dashboard");
 }
 
@@ -194,6 +158,49 @@ function statusClass(status: string | null | undefined) {
     return "border-red-200 bg-red-50 text-red-800";
   }
   return "border-border bg-muted text-muted-foreground";
+}
+
+function normalizeEmail(email: string | null | undefined) {
+  return email?.trim().toLowerCase() || null;
+}
+
+function paymentStatus(payment: PaymentRecord, paidEmails: Set<string>) {
+  const donorEmail = normalizeEmail(payment.donor_email);
+
+  if (
+    payment.status === "pending" &&
+    donorEmail &&
+    paidEmails.has(donorEmail)
+  ) {
+    return {
+      label: "Pagado en otro intento",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    };
+  }
+
+  return {
+    label: statusLabel(payment.status),
+    className: statusClass(payment.status),
+  };
+}
+
+function rsvpStatus(rsvp: RsvpRecord) {
+  if (
+    rsvp.attending_status === "yes" ||
+    rsvp.attending_status === "no" ||
+    rsvp.attending_status === "later"
+  ) {
+    return rsvp.attending_status;
+  }
+
+  return rsvp.attending ? "yes" : "no";
+}
+
+function formatPercentage(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(value / 100);
 }
 
 async function getRsvpsWithDietPreferences() {
@@ -235,7 +242,7 @@ function isMissingColumnError(error: SupabaseQueryError | null) {
 async function getDashboardData() {
   const supabase = getSupabaseAdmin();
 
-  const [paymentsResult, rsvpResult] = await Promise.all([
+  const [paymentsResult, rsvpResult, guestsResult, lastSyncResult] = await Promise.all([
     supabase
       .from("payments")
       .select(
@@ -243,14 +250,33 @@ async function getDashboardData() {
       )
       .order("created_at", { ascending: false }),
     getRsvpsWithDietPreferences(),
+    supabase
+      .from("guest_directory")
+      .select("party_size")
+      .eq("is_active", true),
+    supabase
+      .from("guest_sync_runs")
+      .select("guest_count, completed_at")
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(1),
   ]);
 
   if (paymentsResult.error) throw paymentsResult.error;
   if (rsvpResult.error) throw rsvpResult.error;
 
+  if (guestsResult.error && guestsResult.error.code !== "42P01") {
+    throw guestsResult.error;
+  }
+  if (lastSyncResult.error && lastSyncResult.error.code !== "42P01") {
+    throw lastSyncResult.error;
+  }
+
   return {
     payments: (paymentsResult.data || []) as PaymentRecord[],
     rsvps: (rsvpResult.data || []) as RsvpRecord[],
+    guests: (guestsResult.data || []) as GuestDirectoryRecord[],
+    lastSync: (lastSyncResult.data || [])[0] as GuestSyncRunRecord | undefined,
   };
 }
 
@@ -277,6 +303,86 @@ function Stat({
         </div>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function ProgressStat({
+  label,
+  value,
+  detail,
+  percentage,
+  progressLabel,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  percentage: number;
+  progressLabel: string;
+}) {
+  const safePercentage = Math.min(Math.max(percentage, 0), 100);
+  const radius = 25;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (safePercentage / 100) * circumference;
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-normal tnum">
+            {value}
+          </p>
+        </div>
+        <div
+          aria-label={`${progressLabel}: ${formatPercentage(safePercentage)}`}
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={Math.round(safePercentage)}
+          className="relative grid h-14 w-14 shrink-0 place-items-center text-primary"
+          role="progressbar"
+        >
+          <svg
+            aria-hidden="true"
+            className="h-14 w-14 -rotate-90"
+            viewBox="0 0 64 64"
+          >
+            <circle
+              className="text-muted"
+              cx="32"
+              cy="32"
+              fill="none"
+              r={radius}
+              stroke="currentColor"
+              strokeWidth="5"
+            />
+            <circle
+              cx="32"
+              cy="32"
+              fill="none"
+              r={radius}
+              stroke="currentColor"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
+              strokeWidth="5"
+            />
+          </svg>
+          <span className="absolute text-xs font-semibold text-foreground tnum">
+            {formatPercentage(safePercentage)}
+          </span>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{detail}</p>
+      <div
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+        aria-hidden="true"
+      >
+        <div
+          className="h-full rounded-full bg-primary"
+          style={{ width: `${safePercentage}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -355,15 +461,63 @@ export default async function DashboardPage({
     return <LoginView hasError={params?.error === "1"} />;
   }
 
-  const { payments, rsvps } = await getDashboardData();
+  const { payments, rsvps, guests, lastSync } = await getDashboardData();
 
   const paidPayments = payments.filter((payment) => payment.status === "paid");
   const totalPaid = paidPayments.reduce(
     (sum, payment) => sum + Number(payment.amount || 0),
     0,
   );
-  const attending = rsvps.filter((rsvp) => rsvp.attending === true);
-  const notAttending = rsvps.filter((rsvp) => rsvp.attending === false);
+  const paidDonorEmails = new Set(
+    paidPayments
+      .map((payment) => normalizeEmail(payment.donor_email))
+      .filter((email): email is string => Boolean(email)),
+  );
+  const pendingPayers = new Map<string, PaymentRecord>();
+
+  for (const payment of payments) {
+    if (payment.status !== "pending") continue;
+
+    const donorEmail = normalizeEmail(payment.donor_email);
+    if (donorEmail && paidDonorEmails.has(donorEmail)) continue;
+
+    pendingPayers.set(donorEmail || payment.id, payment);
+  }
+
+  const pendingPayments = [...pendingPayers.values()];
+  const displayPayments = payments.map((payment) => ({
+    payment,
+    statusInfo: paymentStatus(payment, paidDonorEmails),
+  }));
+  const guestCountFromDirectory = guests.reduce(
+    (sum, guest) => sum + Number(guest.party_size || 0),
+    0,
+  );
+  const expectedGuestCount =
+    guestCountFromDirectory || DASHBOARD_TARGETS.expectedGuestCount;
+  const expectedPaymentCount = Math.ceil(
+    expectedGuestCount / DASHBOARD_TARGETS.guestsPerPayment,
+  );
+  const paymentProgress =
+    expectedPaymentCount > 0
+      ? (paidPayments.length / expectedPaymentCount) * 100
+      : 0;
+  const averageTicket = paidPayments.length
+    ? totalPaid / paidPayments.length
+    : 0;
+  const attending = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "yes");
+  const notAttending = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "no");
+  const decidingLater = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "later");
+  const attendanceProgress =
+    expectedGuestCount > 0
+      ? (attending.length / expectedGuestCount) * 100
+      : 0;
+  const estimatedPendingAttendance = Math.max(
+    expectedGuestCount -
+      attending.length -
+      notAttending.length,
+    0,
+  );
   const principalRsvps = rsvps.filter((rsvp) => !rsvp.is_companion);
 
   return (
@@ -381,15 +535,49 @@ export default async function DashboardPage({
               Pagos, datos de contacto y confirmaciones de asistencia.
             </p>
           </div>
-          <form action={logoutDashboard}>
-            <Button variant="outline" type="submit">
-              <LogOut className="h-4 w-4" />
-              Salir
-            </Button>
-          </form>
+          <div className="flex flex-col gap-3 md:items-end">
+            <GuestSyncForm action={syncGuestDirectoryAction} />
+            <form action={logoutDashboard}>
+              <Button variant="outline" type="submit">
+                <LogOut className="h-4 w-4" />
+                Salir
+              </Button>
+            </form>
+          </div>
         </header>
 
-        <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <section
+          aria-label="Estado de la lista de invitados"
+          className="rounded-lg border border-border bg-card px-4 py-3 text-sm"
+        >
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-medium">Lista de invitados</p>
+              <p className="text-muted-foreground">
+                {guestCountFromDirectory
+                  ? `${guestCountFromDirectory} invitados en la planilla INVITADOS.`
+                  : `Aún no se ha sincronizado el Excel; se usa la estimación de ${DASHBOARD_TARGETS.expectedGuestCount} invitados.`}
+              </p>
+            </div>
+            {lastSync?.completed_at ? (
+              <p className="text-xs text-muted-foreground">
+                Última actualización: {formatDate(lastSync.completed_at)}
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        <section
+          aria-label="Resumen de pagos"
+          className="grid gap-3 md:grid-cols-2 lg:grid-cols-4"
+        >
+          <ProgressStat
+            label="Avance de pagos"
+            value={`${paidPayments.length} de ${expectedPaymentCount}`}
+            detail={`${Math.max(expectedPaymentCount - paidPayments.length, 0)} pagos estimados por recibir`}
+            percentage={paymentProgress}
+            progressLabel="Avance de pagos"
+          />
           <Stat
             icon={CircleDollarSign}
             label="Total pagado"
@@ -397,24 +585,51 @@ export default async function DashboardPage({
             detail={`${paidPayments.length} pagos aprobados`}
           />
           <Stat
-            icon={Users}
-            label="Confirmados"
-            value={String(attending.length)}
-            detail={`${rsvps.length} respuestas recibidas`}
+            icon={CircleDollarSign}
+            label="Ticket promedio"
+            value={formatCLP(averageTicket)}
+            detail="Promedio por pago aprobado"
+          />
+          <Stat
+            icon={Clock3}
+            label="Pagos pendientes reales"
+            value={String(pendingPayments.length)}
+            detail="Personas sin un pago aprobado"
+          />
+        </section>
+
+        <section
+          aria-label="Resumen de asistencia"
+          className="grid gap-3 md:grid-cols-2 lg:grid-cols-4"
+        >
+          <ProgressStat
+            label="Asistencia confirmada"
+            value={`${attending.length} de ${expectedGuestCount}`}
+            detail={`${estimatedPendingAttendance} personas aún sin decisión final`}
+            percentage={attendanceProgress}
+            progressLabel="Asistencia confirmada"
+          />
+          <Stat
+            icon={Clock3}
+            label="Por confirmar"
+            value={`~${estimatedPendingAttendance}`}
+            detail={
+              guestCountFromDirectory
+                ? "Estimación basada en la planilla INVITADOS"
+                : `Estimación según ${DASHBOARD_TARGETS.expectedGuestCount} invitados`
+            }
           />
           <Stat
             icon={CalendarCheck}
             label="No asisten"
             value={String(notAttending.length)}
-            detail="Personas que avisaron que no podran asistir"
+            detail="Personas que avisaron que no asistirán"
           />
           <Stat
-            icon={Mail}
-            label="Pagos pendientes"
-            value={String(
-              payments.filter((payment) => payment.status === "pending").length,
-            )}
-            detail="Iniciados, aun sin confirmacion de Flow"
+            icon={Clock3}
+            label="Confirmarán más adelante"
+            value={String(decidingLater.length)}
+            detail={`${rsvps.length} personas registradas en RSVP`}
           />
         </section>
 
@@ -443,7 +658,7 @@ export default async function DashboardPage({
               </thead>
               <tbody className="divide-y divide-border">
                 {payments.length ? (
-                  payments.map((payment) => (
+                  displayPayments.map(({ payment, statusInfo }) => (
                     <tr key={payment.id} className="align-top">
                       <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                         {formatDate(payment.created_at)}
@@ -464,10 +679,10 @@ export default async function DashboardPage({
                         <span
                           className={cn(
                             "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-                            statusClass(payment.status),
+                            statusInfo.className,
                           )}
                         >
-                          {statusLabel(payment.status)}
+                          {statusInfo.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
