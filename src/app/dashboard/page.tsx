@@ -388,7 +388,7 @@ function ProgressStat({
 }
 
 function LoginView({ hasError }: { hasError: boolean }) {
-  const hasCode = Boolean(getAccessCode());
+  const hasCode = Boolean(getDashboardAccessCode());
 
   return (
     <main className="min-h-screen bg-background px-4 py-10 text-foreground">
