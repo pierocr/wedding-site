@@ -428,7 +428,7 @@ export default function GiftSection() {
 
         <CardContent className="space-y-6 pt-6">
           {/* Gift Catalog Grid */}
-          <div className="grid gap-2 lg:grid-cols-2">
+          <div className="grid gap-2 lg:grid-cols-3">
             {GIFT_CATALOG.map((gift) => {
               const qty = qtyFor(gift.id);
               const isSelected = mounted && qty > 0;
