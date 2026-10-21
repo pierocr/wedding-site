@@ -20,6 +20,7 @@ const EVENTS: EventItem[] = [
   { id: 'cena',      time: '20:00', title: 'Cena',       iconSrc: '/imgs/timeline/dinner_gold.svg' },
   { id: 'fiesta',    time: '22:00', title: 'Fiesta',     iconSrc: '/imgs/timeline/party_gold.svg' },
   { id: 'sorpresa',  time: '00:00', title: 'Sorpresa',   iconSrc: '/imgs/timeline/gift_gold.svg' },
+  { id: 'termino',   time: '03:30', title: 'Término',    iconSrc: '/imgs/timeline/heart_gold.svg' },
 ];
 
 const Item = ({ idx, title, time, iconSrc, emoji }: { idx: number } & EventItem) => {
@@ -121,7 +122,7 @@ export default function Timeline() {
           aria-hidden="true"
         >
           <motion.path
-            d="M60,300 C220,120 340,120 460,260 S760,340 920,180 S1060,100 1140,220"
+            d="M40,300 C180,120 300,120 420,260 S650,340 800,180 S940,100 1040,220 S1120,280 1180,180"
             fill="none"
             strokeWidth="6"
             className="stroke-teal-400/80"
@@ -133,7 +134,7 @@ export default function Timeline() {
           />
         </svg>
 
-        <div className="relative grid grid-cols-5 place-items-center gap-6">
+        <div className="relative grid grid-cols-6 place-items-center gap-4">
           {EVENTS.map((e, i) => (
             <Item key={e.id} idx={i} {...e} />
           ))}
