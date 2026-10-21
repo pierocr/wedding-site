@@ -55,20 +55,13 @@ type CartLine = {
 
 // ============ GIFT CATALOG ============
 const GIFT_CATALOG: GiftItem[] = [
-  // Momentos Íntimos ($30,000 - $50,000)
+  // Detalles ($40,000 - $70,000)
   {
     id: "primer-cafe",
     icon: "☕",
     title: "El Primer Café Juntos",
     description: "Cada mañana con aroma a café y miradas que lo dicen todo.",
     price: 40000,
-  },
-  {
-    id: "abrazo-infinito",
-    icon: "💫",
-    title: "Un Abrazo Infinito",
-    description: "Refugio seguro donde el mundo se detiene en dos latidos.",
-    price: 45000,
   },
   {
     id: "brindis-estrellas",
