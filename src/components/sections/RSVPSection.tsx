@@ -64,6 +64,41 @@ const emptyForm: RSVPFormData = {
   message: "",
 };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+
+const getSubmitHint = (form: RSVPFormData) => {
+  const missingFields: string[] = [];
+
+  if (!form.name.trim()) missingFields.push("tu nombre completo");
+
+  if (!form.email.trim()) {
+    missingFields.push("tu email");
+  } else if (!EMAIL_RE.test(form.email.trim())) {
+    return "Ingresa un email válido para continuar.";
+  }
+
+  if (form.attending_status === "yes" && form.companion_status === "yes") {
+    if (!form.companion_name.trim()) {
+      missingFields.push("el nombre de tu acompañante");
+    }
+
+    if (!form.companion_email.trim()) {
+      missingFields.push("el email de tu acompañante");
+    } else if (!EMAIL_RE.test(form.companion_email.trim())) {
+      return "Ingresa un email válido para tu acompañante.";
+    } else if (
+      form.companion_email.trim().toLowerCase() ===
+      form.email.trim().toLowerCase()
+    ) {
+      return "El email de tu acompañante debe ser distinto al tuyo.";
+    }
+  }
+
+  if (missingFields.length === 0) return null;
+
+  return `Falta completar: ${missingFields.join(", ")}.`;
+};
+
 const RSVPSectionForm = () => {
   const [form, setForm] = React.useState<RSVPFormData>(emptyForm);
 
@@ -114,7 +149,7 @@ const RSVPSectionForm = () => {
       setForm((f) => ({ ...f, [key]: value }));
     };
 
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+  const submitHint = getSubmitHint(form);
   const isSending = status === STATUS.Sending;
   const canSubmitCompanion =
     form.attending_status !== "yes" ||
@@ -823,9 +858,20 @@ const RSVPSectionForm = () => {
                   : "Enviar confirmación"}
             </Button>
 
-            <p className="text-xs text-muted-foreground">
-              * Solo usaremos tus datos para la coordinación del evento.
-            </p>
+            <div className="space-y-1">
+              {submitHint && !isSending && (
+                <p
+                  className="text-sm text-destructive"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {submitHint}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                * Solo usaremos tus datos para la coordinación del evento.
+              </p>
+            </div>
           </div>
         </form>
       </CardContent>
