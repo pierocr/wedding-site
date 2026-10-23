@@ -553,7 +553,7 @@ const Nav = () => {
               onClick={() => setOpen(false)}
               aria-hidden
             />
-            <aside
+            <div
               role="dialog"
               aria-modal="true"
               aria-label="Menú de navegación"
@@ -614,7 +614,7 @@ const Nav = () => {
               <div className="sticky bottom-0 z-10 border-t bg-gradient-to-t from-background via-background to-background/80 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
                 <GiftButton fullWidth />
               </div>
-            </aside>
+            </div>
           </div>,
           document.body,
         )}
@@ -1011,6 +1011,7 @@ const Schedule = () => {
                         sizes="(min-width: 1024px) 33vw, (min-width: 768px) 45vw, 50vw"
                         className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
                         loading="lazy"
+                        quality={50}
                         draggable={false}
                       />
                     </div>

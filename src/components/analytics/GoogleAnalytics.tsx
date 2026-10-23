@@ -9,7 +9,6 @@ import {
   type AnalyticsConsent,
   isAnalyticsEnabled,
   trackPageView,
-  updateAnalyticsConsent,
 } from "@/lib/analytics";
 
 function getCurrentPath() {
@@ -28,17 +27,13 @@ function ConsentBanner() {
     if (!isAnalyticsEnabled) return;
 
     const stored = localStorage.getItem(ANALYTICS_CONSENT_KEY);
-    if (stored === "granted" || stored === "denied") {
-      updateAnalyticsConsent(stored as AnalyticsConsent);
-      return;
-    }
+    if (stored === "granted" || stored === "denied") return;
 
     setVisible(true);
   }, []);
 
   const setConsent = (consent: AnalyticsConsent) => {
     localStorage.setItem(ANALYTICS_CONSENT_KEY, consent);
-    updateAnalyticsConsent(consent);
     if (consent === "granted") {
       window.dispatchEvent(new Event("analytics-consent-granted"));
     }
@@ -74,83 +69,90 @@ function ConsentBanner() {
   );
 }
 
-function PageViewTracker() {
+function PageViewTracker({ enabled }: { enabled: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const lastPathRef = React.useRef<string | null>(null);
 
   const trackCurrentPage = React.useCallback(() => {
-    if (!isAnalyticsEnabled || !hasGrantedConsent()) return;
-
-    updateAnalyticsConsent("granted");
+    if (!enabled || !isAnalyticsEnabled || !hasGrantedConsent()) return;
     const path = getCurrentPath();
     if (lastPathRef.current === path) return;
 
     lastPathRef.current = path;
     trackPageView(path);
-  }, []);
+  }, [enabled]);
 
   React.useEffect(() => {
     trackCurrentPage();
   }, [pathname, searchParams, trackCurrentPage]);
 
   React.useEffect(() => {
-    if (!isAnalyticsEnabled) return;
+    if (!enabled || !isAnalyticsEnabled) return;
 
-    window.addEventListener("analytics-consent-granted", trackCurrentPage);
     window.addEventListener("hashchange", trackCurrentPage);
     window.addEventListener("popstate", trackCurrentPage);
 
     return () => {
-      window.removeEventListener("analytics-consent-granted", trackCurrentPage);
       window.removeEventListener("hashchange", trackCurrentPage);
       window.removeEventListener("popstate", trackCurrentPage);
     };
-  }, [trackCurrentPage]);
+  }, [enabled, trackCurrentPage]);
 
   return null;
 }
 
 export default function GoogleAnalytics() {
+  const [consent, setConsent] = React.useState<AnalyticsConsent | null>(null);
+
+  React.useEffect(() => {
+    if (!isAnalyticsEnabled) return;
+
+    const stored = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+    if (stored === "granted" || stored === "denied") {
+      setConsent(stored as AnalyticsConsent);
+    }
+
+    const onConsentGranted = () => setConsent("granted");
+    window.addEventListener("analytics-consent-granted", onConsentGranted);
+    return () =>
+      window.removeEventListener("analytics-consent-granted", onConsentGranted);
+  }, []);
+
   if (!isAnalyticsEnabled || !GA_MEASUREMENT_ID) return null;
+
+  const analyticsAllowed = consent === "granted";
 
   return (
     <>
-      <Script
-        id="ga-consent-default"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
+      {analyticsAllowed && (
+        <>
+          <Script
+            id="ga-init"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('consent', 'default', {
-  analytics_storage: 'denied',
+  analytics_storage: 'granted',
   ad_storage: 'denied',
   ad_user_data: 'denied',
-  ad_personalization: 'denied',
-  wait_for_update: 500
+  ad_personalization: 'denied'
 });
-`,
-        }}
-      />
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script
-        id="ga-init"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
 `,
-        }}
-      />
+            }}
+          />
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            strategy="afterInteractive"
+          />
+        </>
+      )}
       <React.Suspense fallback={null}>
-        <PageViewTracker />
+        <PageViewTracker enabled={analyticsAllowed} />
       </React.Suspense>
       <ConsentBanner />
     </>

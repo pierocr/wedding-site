@@ -48,7 +48,9 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
 
     audio.volume = 0.7;
     audio.muted = false;
-    audio.preload = "auto";
+    // En móvil no descargamos un MP3 completo antes de que la persona decida
+    // reproducirlo; `play()` iniciará la descarga al primer gesto permitido.
+    audio.preload = "metadata";
     audio.setAttribute("playsinline", "true");
 
     if (!userPausedRef.current) void playAudio();
@@ -270,7 +272,7 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
         ref={audioRef}
         src={currentTrack.src}
         autoPlay
-        preload="auto"
+        preload="metadata"
         playsInline
         className="hidden"
         onCanPlay={() => {
