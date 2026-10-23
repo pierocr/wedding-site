@@ -18,10 +18,20 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
   const playingRef = React.useRef(false);
   const userPausedRef = React.useRef(false);
   const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [initialTrackReady, setInitialTrackReady] = React.useState(false);
   const [playing, setPlaying] = React.useState(false);
   const [open, setOpen] = React.useState(false);
 
   const currentTrack = tracks[currentIndex];
+
+  // Elegimos la canción de partida sólo en el navegador, para evitar que el
+  // HTML inicial del servidor y el cliente queden desincronizados.
+  React.useEffect(() => {
+    if (tracks.length > 0) {
+      setCurrentIndex(Math.floor(Math.random() * tracks.length));
+    }
+    setInitialTrackReady(true);
+  }, [tracks.length]);
 
   const playAudio = React.useCallback(async () => {
     const audio = audioRef.current;
@@ -44,7 +54,7 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
 
   React.useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !currentTrack) return;
+    if (!initialTrackReady || !audio || !currentTrack) return;
 
     audio.volume = 0.7;
     audio.muted = false;
@@ -76,7 +86,7 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
       removeUnlockListeners();
       audio.pause();
     };
-  }, [currentTrack, playAudio]);
+  }, [currentTrack, initialTrackReady, playAudio]);
 
   React.useEffect(() => {
     if (!didMountRef.current) {
@@ -271,12 +281,11 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
       <audio
         ref={audioRef}
         src={currentTrack.src}
-        autoPlay
         preload="metadata"
         playsInline
         className="hidden"
         onCanPlay={() => {
-          if (!playingRef.current && !userPausedRef.current) {
+          if (initialTrackReady && !playingRef.current && !userPausedRef.current) {
             void playAudio();
           }
         }}
