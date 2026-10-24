@@ -6,7 +6,6 @@ import {
   CircleDollarSign,
   Clock3,
   LogOut,
-  Mail,
   ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +21,9 @@ import {
   safeEqual,
 } from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { cn } from "@/lib/utils";
 import { syncGuestDirectoryAction } from "./actions";
 import { GuestSyncForm } from "./GuestSyncForm";
+import { PaymentsTable } from "./PaymentsTable";
 import { RsvpTable, type DashboardRsvpRecord } from "./RsvpTable";
 
 export const dynamic = "force-dynamic";
@@ -105,13 +104,17 @@ export async function loginDashboard(formData: FormData) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(DASHBOARD_COOKIE_NAME, await hashDashboardCode(configuredCode), {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: DASHBOARD_COOKIE_MAX_AGE,
-    path: "/dashboard",
-  });
+  cookieStore.set(
+    DASHBOARD_COOKIE_NAME,
+    await hashDashboardCode(configuredCode),
+    {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: DASHBOARD_COOKIE_MAX_AGE,
+      path: "/dashboard",
+    },
+  );
 
   redirect("/dashboard");
 }
@@ -242,25 +245,26 @@ function isMissingColumnError(error: SupabaseQueryError | null) {
 async function getDashboardData() {
   const supabase = getSupabaseAdmin();
 
-  const [paymentsResult, rsvpResult, guestsResult, lastSyncResult] = await Promise.all([
-    supabase
-      .from("payments")
-      .select(
-        "id, created_at, status, donor_name, donor_email, amount, currency, external_reference, raffle_number",
-      )
-      .order("created_at", { ascending: false }),
-    getRsvpsWithDietPreferences(),
-    supabase
-      .from("guest_directory")
-      .select("party_size")
-      .eq("is_active", true),
-    supabase
-      .from("guest_sync_runs")
-      .select("guest_count, completed_at")
-      .eq("status", "completed")
-      .order("completed_at", { ascending: false })
-      .limit(1),
-  ]);
+  const [paymentsResult, rsvpResult, guestsResult, lastSyncResult] =
+    await Promise.all([
+      supabase
+        .from("payments")
+        .select(
+          "id, created_at, status, donor_name, donor_email, amount, currency, external_reference, raffle_number",
+        )
+        .order("created_at", { ascending: false }),
+      getRsvpsWithDietPreferences(),
+      supabase
+        .from("guest_directory")
+        .select("party_size")
+        .eq("is_active", true),
+      supabase
+        .from("guest_sync_runs")
+        .select("guest_count, completed_at")
+        .eq("status", "completed")
+        .order("completed_at", { ascending: false })
+        .limit(1),
+    ]);
 
   if (paymentsResult.error) throw paymentsResult.error;
   if (rsvpResult.error) throw rsvpResult.error;
@@ -509,13 +513,9 @@ export default async function DashboardPage({
   const notAttending = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "no");
   const decidingLater = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "later");
   const attendanceProgress =
-    expectedGuestCount > 0
-      ? (attending.length / expectedGuestCount) * 100
-      : 0;
+    expectedGuestCount > 0 ? (attending.length / expectedGuestCount) * 100 : 0;
   const estimatedPendingAttendance = Math.max(
-    expectedGuestCount -
-      attending.length -
-      notAttending.length,
+    expectedGuestCount - attending.length - notAttending.length,
     0,
   );
   const principalRsvps = rsvps.filter((rsvp) => !rsvp.is_companion);
@@ -644,67 +644,12 @@ export default async function DashboardPage({
             <Badge variant="outline">{payments.length} registros</Badge>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[860px] text-left text-sm">
-              <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Fecha</th>
-                  <th className="px-4 py-3 font-medium">Quien pago</th>
-                  <th className="px-4 py-3 font-medium">Correo</th>
-                  <th className="px-4 py-3 font-medium">Monto</th>
-                  <th className="px-4 py-3 font-medium">Estado</th>
-                  <th className="px-4 py-3 font-medium">Referencia</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {payments.length ? (
-                  displayPayments.map(({ payment, statusInfo }) => (
-                    <tr key={payment.id} className="align-top">
-                      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                        {formatDate(payment.created_at)}
-                      </td>
-                      <td className="px-4 py-3 font-medium">
-                        {payment.donor_name || "-"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          {payment.donor_email || "-"}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-semibold">
-                        {formatCLP(payment.amount)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-                            statusInfo.className,
-                          )}
-                        >
-                          {statusInfo.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {payment.external_reference ||
-                          payment.raffle_number ||
-                          "-"}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      className="px-4 py-8 text-center text-muted-foreground"
-                      colSpan={6}
-                    >
-                      Aun no hay pagos registrados.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <PaymentsTable
+            payments={displayPayments.map(({ payment, statusInfo }) => ({
+              ...payment,
+              statusInfo,
+            }))}
+          />
         </section>
 
         <section className="space-y-3">

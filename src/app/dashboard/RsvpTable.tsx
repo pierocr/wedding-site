@@ -8,7 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Search } from "lucide-react";
 
 export type DashboardRsvpRecord = {
   id: string;
@@ -91,6 +93,13 @@ function attendanceClass(record: DashboardRsvpRecord) {
 function valueOrDash(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") return "-";
   return String(value);
+}
+
+function normalizeSearchValue(value: string | null | undefined) {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-CL");
 }
 
 function DetailItem({
@@ -218,6 +227,7 @@ export function RsvpTable({
   allRsvps: DashboardRsvpRecord[];
 }) {
   const [selected, setSelected] = React.useState<RsvpGroup | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   const companionByGuestId = React.useMemo(() => {
     const map = new Map<string, DashboardRsvpRecord>();
@@ -238,86 +248,121 @@ export function RsvpTable({
     [companionByGuestId, rsvps],
   );
 
+  const filteredGroups = React.useMemo(() => {
+    const normalizedQuery = normalizeSearchValue(searchQuery.trim());
+
+    if (!normalizedQuery) return groups;
+
+    return groups.filter(({ guest, companion }) =>
+      [guest.name, guest.email, companion?.name, companion?.email].some(
+        (value) => normalizeSearchValue(value).includes(normalizedQuery),
+      ),
+    );
+  }, [groups, searchQuery]);
+
   const openGroup = (group: RsvpGroup) => setSelected(group);
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-[780px] text-left text-sm">
-          <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">Última respuesta</th>
-              <th className="px-4 py-3 font-medium">Invitado</th>
-              <th className="px-4 py-3 font-medium">Asistencia</th>
-              <th className="px-4 py-3 font-medium">Acompañante</th>
-              <th className="px-4 py-3 font-medium">Intentos</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {groups.length ? (
-              groups.map((group) => (
-                <tr
-                  key={group.guest.id}
-                  className="cursor-pointer transition hover:bg-muted/45 focus:bg-muted/45 focus:outline-none"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openGroup(group)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openGroup(group);
-                    }
-                  }}
-                  aria-label={`Ver detalle de ${group.guest.name}`}
-                >
-                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                    {formatDate(
-                      group.guest.last_submitted_at ||
-                        group.guest.updated_at ||
-                        group.guest.created_at,
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 font-medium">
-                    {group.guest.name}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
-                        attendanceClass(group.guest),
+      <div className="rounded-lg border border-border bg-card">
+        <div className="border-b border-border p-3 sm:p-4">
+          <label className="sr-only" htmlFor="rsvp-search">
+            Buscar confirmaciones
+          </label>
+          <div className="relative max-w-md">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              id="rsvp-search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar por invitado o acompañante"
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[780px] text-left text-sm">
+            <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 font-medium">Última respuesta</th>
+                <th className="px-4 py-3 font-medium">Invitado</th>
+                <th className="px-4 py-3 font-medium">Asistencia</th>
+                <th className="px-4 py-3 font-medium">Acompañante</th>
+                <th className="px-4 py-3 font-medium">Intentos</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredGroups.length ? (
+                filteredGroups.map((group) => (
+                  <tr
+                    key={group.guest.id}
+                    className="cursor-pointer transition hover:bg-muted/45 focus:bg-muted/45 focus:outline-none"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openGroup(group)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openGroup(group);
+                      }
+                    }}
+                    aria-label={`Ver detalle de ${group.guest.name}`}
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                      {formatDate(
+                        group.guest.last_submitted_at ||
+                          group.guest.updated_at ||
+                          group.guest.created_at,
                       )}
-                    >
-                      {attendingLabel(group.guest.attending_status)}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {group.companion ? (
-                      <span className="font-medium">
-                        {group.companion.name}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium">
+                      {group.guest.name}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
+                          attendanceClass(group.guest),
+                        )}
+                      >
+                        {attendingLabel(group.guest.attending_status)}
                       </span>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        {companionStatusLabel(group.guest.companion_status)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {group.guest.submission_count || 1}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {group.companion ? (
+                        <span className="font-medium">
+                          {group.companion.name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          {companionStatusLabel(group.guest.companion_status)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {group.guest.submission_count || 1}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    className="px-4 py-8 text-center text-muted-foreground"
+                    colSpan={5}
+                  >
+                    {searchQuery.trim()
+                      ? "No se encontraron confirmaciones para esta búsqueda."
+                      : "Aún no hay confirmaciones registradas."}
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  className="px-4 py-8 text-center text-muted-foreground"
-                  colSpan={5}
-                >
-                  Aún no hay confirmaciones registradas.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <RsvpDetailsDialog
