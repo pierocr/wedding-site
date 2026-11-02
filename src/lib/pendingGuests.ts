@@ -54,6 +54,39 @@ function matches(guest: DirectoryGuest, rsvp: Rsvp) {
     first.every((part) => name.includes(part)) && last.every((part) => name.includes(part));
 }
 
+// A manual record applies only while the directory row still identifies the
+// same person. Do not add it if an RSVP may already account for that person.
+export function countAdditionalManualConfirmations(
+  guests: DirectoryGuest[], rsvps: Rsvp[], confirmations: ManualEvent[],
+) {
+  let count = 0;
+  let review = 0;
+  for (const event of confirmations) {
+    const guest = guests.find((entry) => entry.id === event.guest_id);
+    const name = guest && [guest.first_name, guest.last_name].filter(Boolean).join(" ");
+    if (!guest || name !== event.guest_name) {
+      review++;
+      continue;
+    }
+    const candidates = rsvps.filter((rsvp) => matches(guest, rsvp));
+    if (candidates.length > 1 || (candidates.length === 1 && guests.filter((entry) => matches(entry, candidates[0])).length > 1)) {
+      review++;
+      continue;
+    }
+    const response = candidates[0];
+    const status = response && (response.attending_status || (response.attending ? "yes" : "no"));
+    if (event.scope === "guest") {
+      if (!response || status === "later") count++;
+      else if (status !== "yes") review++;
+    } else if (response && status === "yes" && response.companion_status === "later") {
+      count++;
+    } else if (!response || status !== "yes") {
+      review++;
+    }
+  }
+  return { count, review };
+}
+
 export function getPendingGuests(guests: DirectoryGuest[], rsvps: Rsvp[]): PendingGuest[] {
   const pending: PendingGuest[] = [];
   for (const guest of guests) {

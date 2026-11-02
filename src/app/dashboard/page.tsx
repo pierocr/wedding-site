@@ -21,7 +21,7 @@ import {
   safeEqual,
 } from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { activeManualConfirmations, getPendingGuests, type DirectoryGuest, type ManualEvent } from "@/lib/pendingGuests";
+import { activeManualConfirmations, countAdditionalManualConfirmations, getPendingGuests, type DirectoryGuest, type ManualEvent } from "@/lib/pendingGuests";
 import { syncGuestDirectoryAction } from "./actions";
 import { GuestSyncForm } from "./GuestSyncForm";
 import { PaymentsTable } from "./PaymentsTable";
@@ -521,12 +521,14 @@ export default async function DashboardPage({
     ? totalPaid / paidPayments.length
     : 0;
   const attending = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "yes");
+  const manualAttendance = countAdditionalManualConfirmations(guests, rsvps, manualConfirmations);
+  const confirmedAttendance = attending.length + manualAttendance.count;
   const notAttending = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "no");
   const decidingLater = rsvps.filter((rsvp) => rsvpStatus(rsvp) === "later");
   const attendanceProgress =
-    expectedGuestCount > 0 ? (attending.length / expectedGuestCount) * 100 : 0;
+    expectedGuestCount > 0 ? (confirmedAttendance / expectedGuestCount) * 100 : 0;
   const estimatedPendingAttendance = Math.max(
-    expectedGuestCount - attending.length - notAttending.length,
+    expectedGuestCount - confirmedAttendance - notAttending.length,
     0,
   );
   const principalRsvps = rsvps.filter((rsvp) => !rsvp.is_companion);
@@ -615,8 +617,8 @@ export default async function DashboardPage({
         >
           <ProgressStat
             label="Asistencia confirmada"
-            value={`${attending.length} de ${expectedGuestCount}`}
-            detail={`${estimatedPendingAttendance} personas aún sin decisión final`}
+            value={`${confirmedAttendance} de ${expectedGuestCount}`}
+            detail={`${attending.length} por formulario + ${manualAttendance.count} manuales${manualAttendance.review ? ` · ${manualAttendance.review} por revisar` : ""}`}
             percentage={attendanceProgress}
             progressLabel="Asistencia confirmada"
           />
@@ -643,6 +645,10 @@ export default async function DashboardPage({
             detail={`${rsvps.length} personas registradas en RSVP`}
           />
         </section>
+
+        <p className="text-xs text-muted-foreground">
+          El total suma las confirmaciones manuales y del formulario. Si una misma persona figura con nombres que no coinciden, podría contarse dos veces; revisa esos casos en las confirmaciones manuales.
+        </p>
 
         <section className="space-y-3">
           <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
