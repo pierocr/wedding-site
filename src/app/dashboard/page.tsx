@@ -21,6 +21,7 @@ import {
   safeEqual,
 } from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getPendingGuests, type DirectoryGuest } from "@/lib/pendingGuests";
 import { syncGuestDirectoryAction } from "./actions";
 import { GuestSyncForm } from "./GuestSyncForm";
 import { PaymentsTable } from "./PaymentsTable";
@@ -51,9 +52,7 @@ type PaymentRecord = {
 
 type RsvpRecord = DashboardRsvpRecord;
 
-type GuestDirectoryRecord = {
-  party_size: number | null;
-};
+type GuestDirectoryRecord = DirectoryGuest;
 
 type GuestSyncRunRecord = {
   guest_count: number;
@@ -256,7 +255,7 @@ async function getDashboardData() {
       getRsvpsWithDietPreferences(),
       supabase
         .from("guest_directory")
-        .select("party_size")
+        .select("id, first_name, last_name, companion_name, attendance_status, party_size")
         .eq("is_active", true),
       supabase
         .from("guest_sync_runs")
@@ -466,6 +465,7 @@ export default async function DashboardPage({
   }
 
   const { payments, rsvps, guests, lastSync } = await getDashboardData();
+  const pendingGuests = getPendingGuests(guests, rsvps);
 
   const paidPayments = payments.filter((payment) => payment.status === "paid");
   const totalPaid = paidPayments.reduce(
@@ -669,6 +669,32 @@ export default async function DashboardPage({
 
           <RsvpTable rsvps={principalRsvps} allRsvps={rsvps} />
         </section>
+        <section className="space-y-3">
+          <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold tracking-normal">Personas por confirmar</h2>
+              <p className="text-sm text-muted-foreground">
+                Cruce orientativo de la planilla y RSVP. Revisa los nombres sin coincidencia: pueden tener diferencias de escritura o apodos.
+              </p>
+            </div>
+            <Badge variant="outline">{pendingGuests.length} registros por revisar</Badge>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            {!guests.length ? (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">Sincroniza la lista de invitados para ver los pendientes.</p>
+            ) : pendingGuests.length ? (
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                  <tr><th scope="col" className="px-4 py-3 font-medium">Invitado</th><th scope="col" className="px-4 py-3 font-medium">Acompañante en planilla</th><th scope="col" className="px-4 py-3 font-medium">Estado</th></tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {pendingGuests.map((guest) => <tr key={guest.id}><td className="px-4 py-3 font-medium">{guest.name}</td><td className="px-4 py-3">{guest.companion || "—"}</td><td className="px-4 py-3 text-muted-foreground">{guest.reason}</td></tr>)}
+                </tbody>
+              </table>
+            ) : <p className="px-4 py-8 text-center text-sm text-muted-foreground">No hay registros pendientes de revisión.</p>}
+          </div>
+        </section>
+
       </div>
     </main>
   );
