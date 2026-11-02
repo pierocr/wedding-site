@@ -25,6 +25,7 @@ import { getPendingGuests, type DirectoryGuest } from "@/lib/pendingGuests";
 import { syncGuestDirectoryAction } from "./actions";
 import { GuestSyncForm } from "./GuestSyncForm";
 import { PaymentsTable } from "./PaymentsTable";
+import { PendingGuestsTable } from "./PendingGuestsTable";
 import { RsvpTable, type DashboardRsvpRecord } from "./RsvpTable";
 
 export const dynamic = "force-dynamic";
@@ -679,20 +680,7 @@ export default async function DashboardPage({
             </div>
             <Badge variant="outline">{pendingGuests.length} registros por revisar</Badge>
           </div>
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            {!guests.length ? (
-              <p className="px-4 py-8 text-center text-sm text-muted-foreground">Sincroniza la lista de invitados para ver los pendientes.</p>
-            ) : pendingGuests.length ? (
-              <table className="w-full min-w-[560px] text-left text-sm">
-                <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                  <tr><th scope="col" className="px-4 py-3 font-medium">Invitado</th><th scope="col" className="px-4 py-3 font-medium">Acompañante en planilla</th><th scope="col" className="px-4 py-3 font-medium">Estado</th></tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {pendingGuests.map((guest) => <tr key={guest.id}><td className="px-4 py-3 font-medium">{guest.name}</td><td className="px-4 py-3">{guest.companion || "—"}</td><td className="px-4 py-3 text-muted-foreground">{guest.reason}</td></tr>)}
-                </tbody>
-              </table>
-            ) : <p className="px-4 py-8 text-center text-sm text-muted-foreground">No hay registros pendientes de revisión.</p>}
-          </div>
+          <PendingGuestsTable guests={pendingGuests} hasDirectory={guests.length > 0} />
         </section>
 
       </div>
