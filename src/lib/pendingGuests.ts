@@ -21,6 +21,24 @@ export type PendingGuest = {
   reason: string;
 };
 
+export type ManualEvent = {
+  id: number;
+  guest_id: string;
+  guest_name: string;
+  scope: "guest" | "companion";
+  confirmed: boolean;
+  created_at: string;
+};
+
+export function activeManualConfirmations(events: ManualEvent[]) {
+  const latest = new Map<string, ManualEvent>();
+  for (const event of events) {
+    const key = JSON.stringify([event.guest_id, event.guest_name, event.scope]);
+    if (!latest.has(key)) latest.set(key, event);
+  }
+  return [...latest.values()].filter((event) => event.confirmed);
+}
+
 function words(value: string | null) {
   return (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);

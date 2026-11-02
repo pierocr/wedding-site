@@ -21,7 +21,7 @@ import {
   safeEqual,
 } from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getPendingGuests, type DirectoryGuest } from "@/lib/pendingGuests";
+import { activeManualConfirmations, getPendingGuests, type DirectoryGuest, type ManualEvent } from "@/lib/pendingGuests";
 import { syncGuestDirectoryAction } from "./actions";
 import { GuestSyncForm } from "./GuestSyncForm";
 import { PaymentsTable } from "./PaymentsTable";
@@ -245,7 +245,7 @@ function isMissingColumnError(error: SupabaseQueryError | null) {
 async function getDashboardData() {
   const supabase = getSupabaseAdmin();
 
-  const [paymentsResult, rsvpResult, guestsResult, lastSyncResult] =
+  const [paymentsResult, rsvpResult, guestsResult, lastSyncResult, manualResult] =
     await Promise.all([
       supabase
         .from("payments")
@@ -264,6 +264,9 @@ async function getDashboardData() {
         .eq("status", "completed")
         .order("completed_at", { ascending: false })
         .limit(1),
+      supabase.from("manual_guest_confirmation_events")
+        .select("id, guest_id, guest_name, scope, confirmed, created_at")
+        .order("id", { ascending: false }),
     ]);
 
   if (paymentsResult.error) throw paymentsResult.error;
@@ -275,12 +278,15 @@ async function getDashboardData() {
   if (lastSyncResult.error && lastSyncResult.error.code !== "42P01") {
     throw lastSyncResult.error;
   }
+  if (manualResult.error && !["42P01", "PGRST205"].includes(manualResult.error.code)) throw manualResult.error;
 
   return {
     payments: (paymentsResult.data || []) as PaymentRecord[],
     rsvps: (rsvpResult.data || []) as RsvpRecord[],
     guests: (guestsResult.data || []) as GuestDirectoryRecord[],
     lastSync: (lastSyncResult.data || [])[0] as GuestSyncRunRecord | undefined,
+    manualEvents: (manualResult.data || []) as ManualEvent[],
+    manualAvailable: !manualResult.error,
   };
 }
 
@@ -465,8 +471,12 @@ export default async function DashboardPage({
     return <LoginView hasError={params?.error === "1"} />;
   }
 
-  const { payments, rsvps, guests, lastSync } = await getDashboardData();
-  const pendingGuests = getPendingGuests(guests, rsvps);
+  const { payments, rsvps, guests, lastSync, manualEvents, manualAvailable } = await getDashboardData();
+  const manualConfirmations = activeManualConfirmations(manualEvents);
+  const pendingGuests = getPendingGuests(guests, rsvps).filter((guest) => !manualConfirmations.some((event) =>
+    event.guest_id === guest.id && event.guest_name === guest.name &&
+    event.scope === (guest.reason === "Acompañante por confirmar" ? "companion" : "guest"),
+  ));
 
   const paidPayments = payments.filter((payment) => payment.status === "paid");
   const totalPaid = paidPayments.reduce(
@@ -680,7 +690,7 @@ export default async function DashboardPage({
             </div>
             <Badge variant="outline">{pendingGuests.length} registros por revisar</Badge>
           </div>
-          <PendingGuestsTable guests={pendingGuests} hasDirectory={guests.length > 0} />
+          <PendingGuestsTable guests={pendingGuests} hasDirectory={guests.length > 0} manualAvailable={manualAvailable} manualConfirmations={manualConfirmations} />
         </section>
 
       </div>
