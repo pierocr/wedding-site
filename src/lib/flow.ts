@@ -1,6 +1,7 @@
 import "server-only";
 
 import { PAYMENT_CONFIG } from "@/config/payment";
+import { flowDateRanges } from "@/lib/flowDateRanges";
 
 export type FlowPaymentStatus = "pending" | "paid" | "rejected" | "cancelled" | "unknown";
 export type FlowEnvironment = "production" | "sandbox";
@@ -256,15 +257,34 @@ export async function fetchFlowStatus(token: string, timeout?: number) {
 
 export async function fetchFlowSettlements(startDate: string, endDate: string) {
   const config = getFlowConfig();
-  const settlements = await flowRequest("settlement/search", { startDate, endDate }, config, { method: "GET", timeout: 8000 });
-  if (!Array.isArray(settlements)) throw new Error("Respuesta inesperada de liquidaciones Flow");
-  const results = await Promise.allSettled(settlements.map((settlement) =>
-    flowRequest("settlement/getByIdv2", { id: settlement.id }, config, { method: "GET", timeout: 8000 }),
-  ));
-  return {
-    details: results.flatMap((result) => result.status === "fulfilled" && Array.isArray(result.value?.detail?.payment) ? result.value.detail.payment : []),
-    incomplete: results.some((result) => result.status === "rejected"),
-  };
+  const ranges = flowDateRanges(startDate, endDate);
+  if (!ranges.length) throw new Error("Rango de fechas inválido para liquidaciones Flow");
+  const settlements = new Map<string, string | number>();
+  let incomplete = false;
+  for (let i = 0; i < ranges.length; i += 5) {
+    const results = await Promise.allSettled(ranges.slice(i, i + 5).map((range) =>
+      flowRequest("settlement/search", range, config, { method: "GET", timeout: 8000 }),
+    ));
+    for (const result of results) {
+      if (result.status === "rejected" || !Array.isArray(result.value)) { incomplete = true; continue; }
+      for (const settlement of result.value) {
+        if (settlement?.id != null) settlements.set(String(settlement.id), settlement.id);
+        else incomplete = true;
+      }
+    }
+  }
+  const ids = [...settlements.values()];
+  const details: Record<string, any>[] = [];
+  for (let i = 0; i < ids.length; i += 5) {
+    const results = await Promise.allSettled(ids.slice(i, i + 5).map((id) =>
+      flowRequest("settlement/getByIdv2", { id }, config, { method: "GET", timeout: 8000 }),
+    ));
+    for (const result of results) {
+      if (result.status === "fulfilled" && Array.isArray(result.value?.detail?.payment)) details.push(...result.value.detail.payment);
+      else incomplete = true;
+    }
+  }
+  return { details, incomplete };
 }
 
 export function randomRaffleNumber() {

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { directTransferInsights, paymentInsights } from "../src/lib/paymentInsights";
 import { isTestPayment } from "../src/lib/testPayments";
+import { flowDateRanges } from "../src/lib/flowDateRanges";
 
 test("uses Flow payment and settlement details without estimating the rate", () => {
   expect(paymentInsights({ paymentData: { media: "Webpay", installments: 1, fee: 4127, balance: 115873 } }, {
@@ -27,4 +28,14 @@ test("counts the confirmed direct transfer in full without a Flow rate", () => {
   expect(directTransferInsights(transfer)).toMatchObject({ media: "Transferencia directa", fee: 0, taxes: 0, balance: 200000, rate: null });
   expect(directTransferInsights({ ...transfer, id: "another-payment" })).toBeNull();
   expect(directTransferInsights({ ...transfer, amount: 40000 })).toBeNull();
+});
+
+test("splits Flow settlement searches into non-overlapping ranges shorter than 30 days", () => {
+  expect(flowDateRanges("2026-01-01", "2026-03-03")).toEqual([
+    { startDate: "2026-01-01", endDate: "2026-01-29" },
+    { startDate: "2026-01-30", endDate: "2026-02-27" },
+    { startDate: "2026-02-28", endDate: "2026-03-03" },
+  ]);
+  expect(flowDateRanges("2026-03-03", "2026-03-03")).toEqual([{ startDate: "2026-03-03", endDate: "2026-03-03" }]);
+  expect(flowDateRanges("2026-03-04", "2026-03-03")).toEqual([]);
 });
