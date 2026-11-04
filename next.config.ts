@@ -6,7 +6,8 @@ import type { NextConfig } from 'next';
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['192.168.1.20'],
+  serverExternalPackages: ['heic-decode'],
+  allowedDevOrigins: ['192.168.1.20', '192.168.100.88'],
   turbopack: {
     root: projectRoot,
   },

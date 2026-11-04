@@ -1121,7 +1121,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "📤 ¿Cómo comparto mis fotos con ustedes?",
-    a: "Habilitaremos un código QR para que puedas compartir tus fotos de forma muy simple y rápida. Solo tendrás que escanearlo y subir tus imágenes para que podamos ver y guardar esos recuerdos contigo.",
+    a: "Escanea el código QR del matrimonio o entra a nuestra página de fotos para compartir tus recuerdos con nosotros.",
   },
 ];
 
@@ -1164,6 +1164,7 @@ const FAQ = () => {
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4 text-sm leading-relaxed text-muted-foreground md:text-[15px]">
                   {f.a}
+                  {f.q.startsWith("📤") && <a href="/fotos" className="mt-3 block font-semibold text-primary underline">Compartir mis fotos →</a>}
                 </AccordionContent>
               </AccordionItem>
             ))}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   CalendarCheck,
@@ -89,7 +90,7 @@ type SupabaseQueryError = {
   message?: string;
 };
 
-export async function loginDashboard(formData: FormData) {
+async function loginDashboard(formData: FormData) {
   "use server";
 
   const configuredCode = getDashboardAccessCode();
@@ -119,7 +120,7 @@ export async function loginDashboard(formData: FormData) {
   redirect("/dashboard");
 }
 
-export async function logoutDashboard() {
+async function logoutDashboard() {
   "use server";
 
   const cookieStore = await cookies();
@@ -548,7 +549,8 @@ export default async function DashboardPage({
               Pagos, datos de contacto y confirmaciones de asistencia.
             </p>
           </div>
-          <div className="flex flex-col gap-3 md:items-end">
+          <div className="flex flex-wrap items-start gap-3 md:justify-end">
+            <Button asChild variant="outline"><Link href="/dashboard/fotos">Fotos de invitados y QR</Link></Button>
             <GuestSyncForm action={syncGuestDirectoryAction} />
             <form action={logoutDashboard}>
               <Button variant="outline" type="submit">

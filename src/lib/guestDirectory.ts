@@ -183,7 +183,7 @@ async function downloadGuestWorkbook() {
   return {
     fileId,
     metadata: metadataResponse.data,
-    workbookData: Buffer.from(fileResponse.data),
+    workbookData: fileResponse.data,
   };
 }
 
