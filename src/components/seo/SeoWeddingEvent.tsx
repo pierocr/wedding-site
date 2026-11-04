@@ -10,6 +10,7 @@ import {
   EVENT_TIME_OFFSET,
   CEREMONY,
   RECEPTION,
+  RECEPTION_END_DATE_ISO,
   FEATURE_FLAGS,
 } from "@/data/site";
 
@@ -67,7 +68,7 @@ export default function SeoWeddingEvent() {
   // Schema completo cuando eventDetailsVisible es true
   const startDate = `${WEDDING_DATE_ISO}T${CEREMONY.timeIso ?? "16:30:00"}${EVENT_TIME_OFFSET}`;
   const receptionStart = `${WEDDING_DATE_ISO}T${RECEPTION.startTimeIso ?? "18:30:00"}${EVENT_TIME_OFFSET}`;
-  const endDate = `${WEDDING_DATE_ISO}T23:59:00${EVENT_TIME_OFFSET}`;
+  const endDate = `${RECEPTION_END_DATE_ISO}T${RECEPTION.endTimeIso}${EVENT_TIME_OFFSET}`;
 
   const jsonLd = {
     "@context": "https://schema.org",

@@ -3,6 +3,7 @@ import {
   CEREMONY,
   EVENT_TIMEZONE,
   RECEPTION,
+  RECEPTION_END_DATE_ISO,
   WEDDING_DATE_ISO,
 } from "@/data/site";
 
@@ -13,8 +14,8 @@ const escapeIcs = (value: string) =>
     .replaceAll(",", "\\,")
     .replaceAll("\n", "\\n");
 
-const toIcsDate = (time: string) =>
-  `${WEDDING_DATE_ISO.replaceAll("-", "")}T${time.replaceAll(":", "")}`;
+const toIcsDate = (date: string, time: string) =>
+  `${date.replaceAll("-", "")}T${time.replaceAll(":", "")}`;
 
 export async function GET(
   _request: Request,
@@ -52,8 +53,8 @@ export async function GET(
     "BEGIN:VEVENT",
     `UID:piero-debby-${event}-20261121@pieroydebby.cl`,
     `DTSTAMP:${new Date().toISOString().replaceAll(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
-    `DTSTART;TZID=${EVENT_TIMEZONE}:${toIcsDate(details.start)}`,
-    `DTEND;TZID=${EVENT_TIMEZONE}:${toIcsDate(details.end)}`,
+    `DTSTART;TZID=${EVENT_TIMEZONE}:${toIcsDate(WEDDING_DATE_ISO, details.start)}`,
+    `DTEND;TZID=${EVENT_TIMEZONE}:${toIcsDate(event === "reception" ? RECEPTION_END_DATE_ISO : WEDDING_DATE_ISO, details.end)}`,
     `SUMMARY:${escapeIcs(details.title)}`,
     `LOCATION:${escapeIcs(`${details.venue}, ${details.address}`)}`,
     "DESCRIPTION:Acompáñanos a celebrar la boda de Piero & Debby.",

@@ -9,6 +9,9 @@ export const BRIDE = "Debby";
 export const GROOM = "Piero";
 
 export const WEDDING_DATE_ISO = process.env.NEXT_PUBLIC_EVENT_DATE ?? "2026-11-21";
+const nextDay = new Date(`${WEDDING_DATE_ISO}T00:00:00Z`);
+nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+export const RECEPTION_END_DATE_ISO = nextDay.toISOString().slice(0, 10);
 export const EVENT_TIMEZONE = "America/Santiago";
 export const EVENT_TIME_OFFSET = "-03:00";
 
@@ -28,7 +31,7 @@ export const CEREMONY = {
 export const RECEPTION = {
   startTime: "18:30 hrs",
   startTimeIso: "18:30:00",
-  endTimeIso: "23:59:00",
+  endTimeIso: "03:30:00",
   venue: "Casona Santa Luz de Chicureo",
   venueAddress: "Chicureo, Santiago",
   locality: "Chicureo",
