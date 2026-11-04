@@ -4,6 +4,7 @@ import * as React from "react";
 import { Mail, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { PaymentInsights } from "@/lib/paymentInsights";
 
 type PaymentStatusInfo = {
   label: string;
@@ -19,6 +20,7 @@ export type DashboardPaymentRecord = {
   external_reference: string | null;
   raffle_number: number | null;
   statusInfo: PaymentStatusInfo;
+  insights: PaymentInsights | null;
 };
 
 function formatCLP(amount: number | null | undefined) {
@@ -98,6 +100,7 @@ export function PaymentsTable({
               <th className="px-4 py-3 font-medium">Monto</th>
               <th className="px-4 py-3 font-medium">Estado</th>
               <th className="px-4 py-3 font-medium">Referencia</th>
+              <th className="px-4 py-3 font-medium">Detalle del pago</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -132,13 +135,28 @@ export function PaymentsTable({
                   <td className="px-4 py-3 text-muted-foreground">
                     {payment.external_reference || payment.raffle_number || "-"}
                   </td>
+                  <td className="px-4 py-3">
+                    {payment.insights ? (
+                      <details className="min-w-36">
+                        <summary className="cursor-pointer font-medium text-primary">Ver detalle</summary>
+                        <dl className="mt-3 space-y-1 text-xs text-muted-foreground">
+                          <div><dt className="inline">Medio: </dt><dd className="inline">{payment.insights.media ?? "No informado"}</dd></div>
+                          <div><dt className="inline">Cuotas: </dt><dd className="inline">{payment.insights.installments ?? "No informado"}</dd></div>
+                          <div><dt className="inline">Costo del servicio: </dt><dd className="inline">{payment.insights.fee == null ? "No informado" : formatCLP(payment.insights.fee)}</dd></div>
+                          <div><dt className="inline">Impuestos: </dt><dd className="inline">{payment.insights.taxes == null ? "No informado" : formatCLP(payment.insights.taxes)}</dd></div>
+                          <div><dt className="inline">Tasa: </dt><dd className="inline">{payment.insights.media === "Transferencia directa" ? "No aplica" : payment.insights.rate == null ? "Pendiente de liquidación" : `${payment.insights.rate.toLocaleString("es-CL")} %`}</dd></div>
+                          <div><dt className="inline">Saldo a recibir: </dt><dd className="inline">{payment.insights.balance == null ? "No informado" : formatCLP(payment.insights.balance)}</dd></div>
+                        </dl>
+                      </details>
+                    ) : "—"}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
                   className="px-4 py-8 text-center text-muted-foreground"
-                  colSpan={6}
+                  colSpan={7}
                 >
                   {searchQuery.trim()
                     ? "No se encontraron pagos para esta búsqueda."

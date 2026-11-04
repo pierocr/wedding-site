@@ -108,7 +108,7 @@ async function flowRequest(
   endpoint: string,
   params: Record<string, string | number | undefined | null>,
   config: FlowConfig,
-  opts?: { method?: "GET" | "POST" }
+  opts?: { method?: "GET" | "POST"; timeout?: number | undefined }
 ) {
   const method = opts?.method ?? "POST";
   const normalized = normalizeParams({ ...params, apiKey: config.apiKey });
@@ -119,7 +119,7 @@ async function flowRequest(
 
   const res =
     method === "GET"
-      ? await fetch(`${url}?${search.toString()}`, { method: "GET" })
+      ? await fetch(`${url}?${search.toString()}`, { method: "GET", cache: "no-store", ...(opts?.timeout ? { signal: AbortSignal.timeout(opts.timeout) } : {}) })
       : await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -193,7 +193,7 @@ export function normalizeFlowStatus(code: any): FlowPaymentStatus {
   return "unknown";
 }
 
-export async function fetchFlowStatus(token: string) {
+export async function fetchFlowStatus(token: string, timeout?: number) {
   const config = getFlowConfig();
   let data: any = null;
   try {
@@ -201,11 +201,11 @@ export async function fetchFlowStatus(token: string) {
       "payment/getStatusExtended",
       { token },
       config,
-      { method: "GET" }
+      { method: "GET", timeout }
     );
   } catch (err) {
     // fallback a getStatus
-    data = await flowRequest("payment/getStatus", { token }, config, { method: "GET" });
+    data = await flowRequest("payment/getStatus", { token }, config, { method: "GET", timeout });
   }
 
   const statusCode =
@@ -251,6 +251,19 @@ export async function fetchFlowStatus(token: string) {
     payerEmail: payer?.email ? String(payer.email) : null,
     payerName: payer?.name ? String(payer.name) : null,
     amount,
+  };
+}
+
+export async function fetchFlowSettlements(startDate: string, endDate: string) {
+  const config = getFlowConfig();
+  const settlements = await flowRequest("settlement/search", { startDate, endDate }, config, { method: "GET", timeout: 8000 });
+  if (!Array.isArray(settlements)) throw new Error("Respuesta inesperada de liquidaciones Flow");
+  const results = await Promise.allSettled(settlements.map((settlement) =>
+    flowRequest("settlement/getByIdv2", { id: settlement.id }, config, { method: "GET", timeout: 8000 }),
+  ));
+  return {
+    details: results.flatMap((result) => result.status === "fulfilled" && Array.isArray(result.value?.detail?.payment) ? result.value.detail.payment : []),
+    incomplete: results.some((result) => result.status === "rejected"),
   };
 }
 

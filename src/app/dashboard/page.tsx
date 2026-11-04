@@ -22,6 +22,9 @@ import {
   safeEqual,
 } from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { fetchFlowSettlements, fetchFlowStatus, getFlowConfig } from "@/lib/flow";
+import { directTransferInsights, paymentInsights, type PaymentInsights } from "@/lib/paymentInsights";
+import { isTestPayment } from "@/lib/testPayments";
 import { activeManualConfirmations, countAdditionalManualConfirmations, getPendingGuests, type DirectoryGuest, type ManualEvent } from "@/lib/pendingGuests";
 import { syncGuestDirectoryAction } from "./actions";
 import { GuestSyncForm } from "./GuestSyncForm";
@@ -50,6 +53,7 @@ type PaymentRecord = {
   currency: string | null;
   external_reference: string | null;
   raffle_number: number | null;
+  meta: Record<string, any> | null;
 };
 
 type RsvpRecord = DashboardRsvpRecord;
@@ -169,6 +173,9 @@ function normalizeEmail(email: string | null | undefined) {
 }
 
 function paymentStatus(payment: PaymentRecord, paidEmails: Set<string>) {
+  if (isTestPayment(payment)) {
+    return { label: `Prueba · ${statusLabel(payment.status)}`, className: "border-slate-200 bg-slate-100 text-slate-700" };
+  }
   const donorEmail = normalizeEmail(payment.donor_email);
 
   if (
@@ -251,7 +258,7 @@ async function getDashboardData() {
       supabase
         .from("payments")
         .select(
-          "id, created_at, status, donor_name, donor_email, amount, currency, external_reference, raffle_number",
+          "id, created_at, status, donor_name, donor_email, amount, currency, external_reference, raffle_number, meta",
         )
         .order("created_at", { ascending: false }),
       getRsvpsWithDietPreferences(),
@@ -289,6 +296,55 @@ async function getDashboardData() {
     manualEvents: (manualResult.data || []) as ManualEvent[],
     manualAvailable: !manualResult.error,
   };
+}
+
+async function getFlowInsights(payments: PaymentRecord[]) {
+  const insights = new Map<string, PaymentInsights>();
+  const paid = payments.filter((payment) => payment.status === "paid");
+  const flowPayments = paid.filter((payment) => !directTransferInsights(payment));
+  let unavailable = false;
+  let config: ReturnType<typeof getFlowConfig> | null = null;
+  try { config = getFlowConfig(); } catch { unavailable = flowPayments.length > 0; }
+  const eligible = flowPayments.filter((payment) => {
+    const environment = payment.meta?.flow_environment;
+    return config && (environment === config.environment || (!environment && config.environment === "production"));
+  });
+  const settlementByOrder = new Map<string, Record<string, any>>();
+  const dates = eligible.map((payment) => payment.created_at?.slice(0, 10)).filter((date): date is string => Boolean(date && /^\d{4}-\d{2}-\d{2}$/.test(date))).sort();
+  if (dates.length) {
+    try {
+      const endDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+      const result = await fetchFlowSettlements(dates[0], endDate);
+      unavailable ||= result.incomplete;
+      for (const detail of result.details) {
+        if (detail.trxId != null) settlementByOrder.set(String(detail.trxId), detail);
+      }
+    } catch (error) {
+      console.error("No se pudieron consultar las liquidaciones Flow", error);
+      unavailable = true;
+    }
+  }
+  // Refresh older responses that did not include the extended fields, without changing payment records.
+  const refresh = eligible.filter((payment) => payment.meta?.flow_token && !Object.prototype.hasOwnProperty.call(payment.meta?.flow_status_response?.paymentData || {}, "installments"));
+  const refreshed = new Map<string, Record<string, any>>();
+  for (let index = 0; index < refresh.length; index += 5) {
+    await Promise.all(refresh.slice(index, index + 5).map(async (payment) => {
+      try { refreshed.set(payment.id, (await fetchFlowStatus(payment.meta!.flow_token, 5000)).raw); }
+      catch { unavailable = true; }
+    }));
+  }
+  for (const payment of paid) {
+    const directTransfer = directTransferInsights(payment);
+    if (directTransfer) {
+      insights.set(payment.id, directTransfer);
+      continue;
+    }
+    const raw = refreshed.get(payment.id) || payment.meta?.flow_status_response;
+    const order = payment.meta?.flow_order ?? raw?.flowOrder;
+    const settlement = eligible.includes(payment) && order != null ? settlementByOrder.get(String(order)) : undefined;
+    insights.set(payment.id, paymentInsights(raw, settlement));
+  }
+  return { insights, unavailable };
 }
 
 function Stat({
@@ -479,7 +535,17 @@ export default async function DashboardPage({
     event.scope === (guest.reason === "Acompañante por confirmar" ? "companion" : "guest"),
   ));
 
-  const paidPayments = payments.filter((payment) => payment.status === "paid");
+  const realPayments = payments.filter((payment) => !isTestPayment(payment));
+  const testPaymentCount = payments.length - realPayments.length;
+  const paidPayments = realPayments.filter((payment) => payment.status === "paid");
+  const { insights, unavailable: flowUnavailable } = await getFlowInsights(realPayments);
+  const withBalance = paidPayments.filter((payment) => insights.get(payment.id)?.balance != null);
+  const grossWithBalance = withBalance.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const netBalance = withBalance.reduce((sum, payment) => sum + (insights.get(payment.id)?.balance ?? 0), 0);
+  const withRate = paidPayments.filter((payment) => insights.get(payment.id)?.rate != null && Number(payment.amount) > 0);
+  const flowPaymentCount = paidPayments.filter((payment) => !directTransferInsights(payment)).length;
+  const rateGross = withRate.reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const averageRate = rateGross ? withRate.reduce((sum, payment) => sum + Number(payment.amount) * insights.get(payment.id)!.rate!, 0) / rateGross : null;
   const totalPaid = paidPayments.reduce(
     (sum, payment) => sum + Number(payment.amount || 0),
     0,
@@ -491,7 +557,7 @@ export default async function DashboardPage({
   );
   const pendingPayers = new Map<string, PaymentRecord>();
 
-  for (const payment of payments) {
+  for (const payment of realPayments) {
     if (payment.status !== "pending") continue;
 
     const donorEmail = normalizeEmail(payment.donor_email);
@@ -582,6 +648,20 @@ export default async function DashboardPage({
           </div>
         </section>
 
+        <section className="space-y-3" aria-label="Desglose financiero de Flow">
+          <div>
+            <h2 className="text-xl font-semibold">Lo recaudado y lo que recibirán</h2>
+            <p className="text-sm text-muted-foreground">El neto reúne los saldos informados por Flow y las transferencias directas identificadas.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <Stat icon={CircleDollarSign} label="Total pagado" value={formatCLP(totalPaid)} detail={`${paidPayments.length} pagos aprobados`} />
+            <Stat icon={CircleDollarSign} label="Neto disponible" value={withBalance.length ? formatCLP(netBalance) : "No disponible"} detail={`${withBalance.length} de ${paidPayments.length} pagos con neto conocido`} />
+            <Stat icon={CircleDollarSign} label="Descuento total" value={withBalance.length ? formatCLP(grossWithBalance - netBalance) : "No disponible"} detail={`Diferencia sobre ${formatCLP(grossWithBalance)} en pagos con saldo`} />
+            <Stat icon={CircleDollarSign} label="Tasa promedio" value={averageRate == null ? "No disponible" : `${new Intl.NumberFormat("es-CL", { maximumFractionDigits: 2 }).format(averageRate)} %`} detail={`Ponderada por monto · ${withRate.length} de ${flowPaymentCount} pagos Flow con tasa`} />
+          </div>
+          <p className="text-xs text-muted-foreground">El neto de Flow puede incluir pagos aún por depositar. La tasa proviene de liquidaciones de Flow y excluye las transferencias directas; los pagos sin información quedan fuera de los cálculos correspondientes. Los pagos de prueba de Piero se excluyen de los indicadores.{flowUnavailable ? " No fue posible consultar todos los datos de Flow; intenta recargar más tarde." : ""}</p>
+        </section>
+
         <section
           aria-label="Resumen de pagos"
           className="grid gap-3 md:grid-cols-2 lg:grid-cols-4"
@@ -657,7 +737,7 @@ export default async function DashboardPage({
             <div>
               <h2 className="text-xl font-semibold tracking-normal">Pagos</h2>
               <p className="text-sm text-muted-foreground">
-                Detalle de personas que iniciaron o completaron un regalo.
+                Detalle de personas que iniciaron o completaron un regalo. {testPaymentCount > 0 ? `${testPaymentCount} registros de prueba se muestran identificados y no se suman.` : ""}
               </p>
             </div>
             <Badge variant="outline">{payments.length} registros</Badge>
@@ -665,8 +745,9 @@ export default async function DashboardPage({
 
           <PaymentsTable
             payments={displayPayments.map(({ payment, statusInfo }) => ({
-              ...payment,
-              statusInfo,
+              id: payment.id, created_at: payment.created_at, donor_name: payment.donor_name,
+              donor_email: payment.donor_email, amount: payment.amount, external_reference: payment.external_reference,
+              raffle_number: payment.raffle_number, statusInfo, insights: insights.get(payment.id) || null,
             }))}
           />
         </section>
