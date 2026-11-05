@@ -616,6 +616,7 @@ export default async function DashboardPage({
             </p>
           </div>
           <div className="flex flex-wrap items-start gap-3 md:justify-end">
+            <Button asChild variant="outline"><Link href="/dashboard/sorteo">✦ El gran sorteo</Link></Button>
             <Button asChild variant="outline"><Link href="/dashboard/fotos">Fotos de invitados y QR</Link></Button>
             <GuestSyncForm action={syncGuestDirectoryAction} />
             <form action={logoutDashboard}>
