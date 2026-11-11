@@ -576,7 +576,7 @@ export default function GiftSection() {
           <Separator className="my-6" />
 
           {/* Donor Form */}
-          <div className="space-y-4">
+          <div id="datos-pago" className="space-y-4 scroll-mt-20">
             <h3 className="text-lg font-semibold text-center">Tus Datos</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">

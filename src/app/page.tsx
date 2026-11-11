@@ -21,6 +21,7 @@ import {
   CalendarCheck,
   HelpCircle,
   ChevronRight,
+  ShoppingCart,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
@@ -395,11 +396,12 @@ const Nav = () => {
       if (typeof window === "undefined") return;
 
       const id = href.replace("#", "");
-      const target = document.getElementById(id);
+      const target = document.getElementById(id) ??
+        (id === "datos-pago" ? document.getElementById("regalo") : null);
       if (!target) return;
 
       const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-      const headerHeight = isDesktop
+      const headerHeight = isDesktop || id === "datos-pago"
         ? (document.querySelector("header")?.getBoundingClientRect().height ??
           0)
         : 0;
@@ -498,7 +500,7 @@ const Nav = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+    <header className="fixed inset-x-0 top-0 z-50 md:sticky border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <a
           href="#inicio"
@@ -529,6 +531,17 @@ const Nav = () => {
           <div className="hidden md:block">
             <GiftButton />
           </div>
+          {cartQty > 0 && (
+            <a
+              href="#datos-pago"
+              onClick={(event) => handleAnchorClick(event, "#datos-pago")}
+              aria-label={`Carrito: ${cartQty} ${cartQty === 1 ? "regalo" : "regalos"}, ${currencyCLP(cartTotal)}. Ir al pago`}
+              className="relative inline-flex h-11 items-center gap-2 rounded-xl bg-primary/10 px-3 text-primary md:hidden"
+            >
+              <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+              <span className="text-sm font-semibold tabular-nums">{cartQty}</span>
+            </a>
+          )}
           <button
             type="button"
             className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-foreground/10 md:hidden"
@@ -540,6 +553,25 @@ const Nav = () => {
           </button>
         </div>
       </div>
+
+      {mounted && cartQty > 0 && createPortal(
+        <div data-mobile-cart-bar className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] backdrop-blur md:hidden">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+            <div aria-live="polite" className="min-w-0">
+              <p className="text-xs text-muted-foreground">{cartQty} {cartQty === 1 ? "regalo agregado" : "regalos agregados"}</p>
+              <p className="text-lg font-bold text-primary tabular-nums">{currencyCLP(cartTotal)}</p>
+            </div>
+            <a
+              href="#datos-pago"
+              onClick={(event) => handleAnchorClick(event, "#datos-pago")}
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm"
+            >
+              Ir al pago <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
+            </a>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* Drawer móvil */}
       {mounted &&
@@ -1209,7 +1241,7 @@ const Footer = () => (
 ============================== */
 export default function WeddingSite() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-14 md:pt-0">
       <Nav />
       {/* Reproductor MP3 (autoplay) */}
       <PlaylistMusicPlayer tracks={PLAYLIST} />
