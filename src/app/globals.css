@@ -178,13 +178,11 @@
   }
 }
 
-/* Mantiene el reproductor y el final de la página por encima del carrito móvil. */
-@media (max-width: 767px) {
-  body:has([data-mobile-cart-bar]) {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
-  }
+/* Mantiene el reproductor y el final de la página por encima del carrito. */
+body:has([data-cart-bar]) {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
 
-  body:has([data-mobile-cart-bar]) [data-music-player] {
-    bottom: calc(5.5rem + env(safe-area-inset-bottom));
-  }
+body:has([data-cart-bar]) [data-music-player] {
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
 }
