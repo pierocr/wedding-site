@@ -17,8 +17,13 @@ export const GALLERY: GalleryItem[] = [
   { src: "/gallery/10.jpeg", alt: "Nuevo recuerdo de Piero y Debby en la galería" },
   { src: "/gallery/11.jpeg", alt: "Otro recuerdo especial de Piero y Debby" },
   { src: "/gallery/12.jpeg", alt: "Piero y Debby compartiendo un momento inolvidable" },
+  { src: "/gallery/CivilD&P-133.jpg", alt: "Piero y Debby sonríen con flores después de su matrimonio civil" },
+  { src: "/gallery/CivilD&P-252.jpg", alt: "Piero y Debby posan juntos junto a un edificio" },
+  { src: "/gallery/CivilD&P-265.jpg", alt: "Piero y Debby caminan juntos después de su matrimonio civil" },
+  { src: "/gallery/CivilD&P-324.jpg", alt: "Piero y Debby se abrazan junto a un árbol florecido" },
   {
     src: "/gallery/CivilDP-327.webp",
     alt: "Piero y Debby besándose junto a un árbol florecido durante su matrimonio civil",
   },
+  { src: "/gallery/CivilD&P-330.jpg", alt: "Piero y Debby posan juntos al aire libre junto al agua" },
 ];
