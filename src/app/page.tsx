@@ -320,6 +320,7 @@ const LazyTimeline = dynamic(() => import("@/components/sections/Timeline"), {
 const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorElement>, href: string) => void }) => {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const [heroPassed, setHeroPassed] = React.useState(false);
 
   // Estado del carrito para el badge
   const [cartQty, setCartQty] = React.useState(0);
@@ -327,6 +328,19 @@ const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorEl
   const CART_KEY = "gift_cart";
 
   React.useEffect(() => setMounted(true), []);
+
+  React.useEffect(() => {
+    const hero = document.getElementById("inicio");
+    if (!hero) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry) setHeroPassed(!entry.isIntersecting && entry.boundingClientRect.bottom <= 56);
+      },
+      { rootMargin: "-56px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
 
   React.useEffect(() => {
     document.body.classList.toggle("overflow-hidden", open);
@@ -466,7 +480,22 @@ const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorEl
           <div className="hidden md:block">
             <GiftButton />
           </div>
-          {cartQty > 0 && (
+          {heroPassed && (
+            <Button asChild size="sm" className="h-10 rounded-xl bg-[#315640] px-3 text-white hover:bg-[#284835] md:hidden">
+              <a
+                href="#regalo"
+                onClick={(event) => {
+                  trackEvent("gift_info_click", { location: "mobile_header", destination: "#regalo" });
+                  handleAnchorClick(event, "#regalo");
+                }}
+              >
+                <Gift className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Haz tu regalo
+                {cartQty > 0 && <span className="ml-1.5 rounded-full bg-white/90 px-1.5 text-xs text-emerald-700">{cartQty}</span>}
+              </a>
+            </Button>
+          )}
+          {!heroPassed && cartQty > 0 && (
             <a
               href="#datos-pago"
               onClick={(event) => handleAnchorClick(event, "#datos-pago")}
