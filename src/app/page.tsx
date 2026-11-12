@@ -17,11 +17,11 @@ import {
   Users,
   Image as ImageIcon,
   Menu,
+  ShoppingCart,
   X,
   CalendarCheck,
   HelpCircle,
   ChevronRight,
-  ShoppingCart,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
@@ -431,15 +431,12 @@ const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorEl
             fullWidth ? "w-full" : "",
           ].join(" ")}
         >
-          <Gift className="mr-2 h-4 w-4" />
-          {hasItems ? "Regalo" : "Haz tu regalo"}
+          <Gift className={hasItems ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+          {!hasItems && "Haz tu regalo"}
           {hasItems && (
             <>
               <span className="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-white/90 text-emerald-700">
                 {cartQty}
-              </span>
-              <span className="ml-2 hidden sm:inline text-xs font-semibold tabular-nums">
-                {currencyCLP(cartTotal)}
               </span>
             </>
           )}
@@ -449,11 +446,20 @@ const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorEl
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+    <header className="fixed inset-x-0 top-0 z-50 border-b before:absolute before:inset-0 before:-z-10 before:bg-background/70 before:backdrop-blur supports-[backdrop-filter]:before:bg-background/50">
+      <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+        <button
+          type="button"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-foreground/10 md:hidden"
+          aria-label="Abrir menú"
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
         <a
           href="#inicio"
-          className="shrink-0 text-lg font-semibold"
+          className="min-w-0 flex-1 whitespace-nowrap text-center text-sm font-semibold min-[360px]:text-base md:flex-none md:text-left md:text-lg"
           onClick={(event) => handleAnchorClick(event, "#inicio")}
         >
           {GROOM} & {BRIDE}
@@ -476,45 +482,31 @@ const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorEl
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-10 items-center justify-end gap-1 md:gap-2">
           <div className="hidden md:block">
             <GiftButton />
           </div>
-          {heroPassed && (
-            <Button asChild size="sm" className="h-10 rounded-xl bg-[#315640] px-3 text-white hover:bg-[#284835] md:hidden">
+          {heroPassed ? (
+            <Button asChild size="sm" className="h-10 rounded-xl bg-[#315640] px-2 text-xs text-white hover:bg-[#284835] md:hidden">
               <a
                 href="#regalo"
+                aria-label={cartQty > 0 ? `Regalo (${cartQty} ítems)` : "Haz tu regalo"}
                 onClick={(event) => {
                   trackEvent("gift_info_click", { location: "mobile_header", destination: "#regalo" });
                   handleAnchorClick(event, "#regalo");
                 }}
               >
-                <Gift className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                Haz tu regalo
+                <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+                {cartQty === 0 && <span className="ml-1.5">Haz tu regalo</span>}
                 {cartQty > 0 && <span className="ml-1.5 rounded-full bg-white/90 px-1.5 text-xs text-emerald-700">{cartQty}</span>}
               </a>
             </Button>
-          )}
-          {!heroPassed && cartQty > 0 && (
-            <a
-              href="#datos-pago"
-              onClick={(event) => handleAnchorClick(event, "#datos-pago")}
-              aria-label={`Carrito: ${cartQty} ${cartQty === 1 ? "regalo" : "regalos"}, ${currencyCLP(cartTotal)}. Ir al pago`}
-              className="relative inline-flex h-11 items-center gap-2 rounded-xl bg-primary/10 px-3 text-primary md:hidden"
-            >
-              <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+          ) : cartQty > 0 ? (
+            <a href="#datos-pago" onClick={(event) => handleAnchorClick(event, "#datos-pago")} aria-label={`Carrito: ${cartQty} ${cartQty === 1 ? "regalo" : "regalos"}. Ir al pago`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary/10 px-3 text-primary md:hidden">
+              <ShoppingCart className="h-4 w-4" aria-hidden="true" />
               <span className="text-sm font-semibold tabular-nums">{cartQty}</span>
             </a>
-          )}
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-foreground/10 md:hidden"
-            aria-label="Abrir menú"
-            aria-expanded={open}
-            onClick={() => setOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+          ) : null}
         </div>
       </div>
 
@@ -553,10 +545,10 @@ const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorEl
               role="dialog"
               aria-modal="true"
               aria-label="Menú de navegación"
-              className={`fixed right-0 inset-y-0 w-[86%] max-w-[22rem]
+              className={`fixed left-0 inset-y-0 w-[86%] max-w-[22rem]
                           transform transition-transform duration-200 ease-out
-                          ${open ? "translate-x-0" : "translate-x-full"}
-                          bg-white dark:bg-neutral-950 shadow-2xl border-l border-black/10
+                          ${open ? "translate-x-0" : "-translate-x-full"}
+                          bg-white dark:bg-neutral-950 shadow-2xl border-r border-black/10
                           flex flex-col`}
             >
               <div className="flex h-16 items-center justify-between border-b px-4">
@@ -1296,7 +1288,6 @@ export default function WeddingSite() {
   return (
     <div className="min-h-screen pt-14">
       <Nav onNavigate={handleNavigate} />
-      {/* Reproductor MP3 (autoplay) */}
       <PlaylistMusicPlayer tracks={PLAYLIST} />
       {/* <MiniCountdownBar />   <= countdown fuera del Hero */}
       <div id="inicio">

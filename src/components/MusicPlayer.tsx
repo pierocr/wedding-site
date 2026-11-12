@@ -165,7 +165,7 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
     <div
       data-music-player
       className={[
-        "fixed bottom-3 right-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-2",
+        "fixed bottom-3 right-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col items-end",
         className,
       ].join(" ")}
     >
@@ -176,7 +176,7 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="w-[min(86vw,280px)] overflow-hidden rounded-xl border bg-background/95 p-2 shadow-xl ring-1 ring-border backdrop-blur"
+            className="absolute bottom-full right-0 mb-2 w-[min(86vw,280px)] overflow-hidden rounded-xl border bg-background/95 p-2 shadow-xl ring-1 ring-border backdrop-blur"
           >
             <div className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Playlist
@@ -244,19 +244,17 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
         )}
       </AnimatePresence>
 
-      <div className="relative isolate flex items-center gap-2 rounded-full border bg-background/95 p-1.5 shadow-lg ring-1 ring-border backdrop-blur">
+      <div className="relative isolate flex items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg ring-1 ring-border backdrop-blur md:gap-2 md:p-1.5">
         {!playing && (
-          <span className="pointer-events-none absolute left-1.5 top-1.5 -z-10 h-12 w-12 rounded-full bg-primary/30 animate-ping" />
+          <span className="pointer-events-none absolute left-1.5 top-1.5 -z-10 hidden h-12 w-12 animate-ping rounded-full bg-primary/30 md:block" />
         )}
 
         <motion.button
           type="button"
           onClick={togglePlay}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm md:h-12 md:w-12"
           aria-label={playing ? "Pausar musica" : "Reproducir musica"}
           title={playing ? "Pausar" : "Reproducir"}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.94 }}
         >
           {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </motion.button>
@@ -264,7 +262,7 @@ export const MusicPlayer = ({ tracks, className = "" }: MusicPlayerProps) => {
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="flex h-12 w-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          className="flex h-10 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground md:h-12 md:w-10"
           aria-expanded={open}
           aria-label={open ? "Cerrar playlist" : "Abrir playlist"}
           title={open ? "Cerrar playlist" : "Abrir playlist"}
