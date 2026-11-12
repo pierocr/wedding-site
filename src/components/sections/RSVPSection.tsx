@@ -3,7 +3,6 @@ import * as React from "react";
 import {
   Heart,
   Loader2,
-  Lock,
   MailCheck,
   PencilLine,
   Send,
@@ -882,50 +881,24 @@ const RSVPSectionForm = () => {
 const RSVPSection = () => {
   if (!FEATURE_FLAGS.rsvpEnabled) {
     return (
-      <div className="relative">
-        {/* Placeholder borroso detrás para no inicializar Supabase cuando la feature está apagada */}
-        <div
-          className="filter blur-[4px] pointer-events-none select-none"
-          aria-hidden="true"
-        >
-          <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-            <CardContent className="pt-6">
-              <div className="space-y-5 opacity-70">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="h-16 rounded-md border bg-background" />
-                  <div className="h-16 rounded-md border bg-background" />
-                </div>
-                <div className="h-10 rounded-md border bg-background" />
-                <div className="h-10 rounded-md border bg-background" />
-                <div className="h-32 rounded-md border bg-background" />
-                <div className="h-10 w-48 rounded-xl bg-primary/20" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Overlay con mensaje */}
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="max-w-md shadow-lg border-2">
-            <CardContent className="pt-6 text-center space-y-4">
-              <div className="flex justify-center">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <Lock className="h-6 w-6 text-primary" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">
-                  Pronto disponible
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Esta sección estará disponible cuando se entreguen las
-                  invitaciones
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card className="rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+        <CardContent className="flex flex-col items-center gap-4 px-6 py-10 text-center sm:py-12">
+          <div className="rounded-full bg-primary/10 p-3 text-primary">
+            <Heart className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <h3 className="text-xl font-semibold">¡Gracias por ser parte de este día!</h3>
+          <p className="max-w-xl leading-relaxed text-muted-foreground">
+            Las confirmaciones de asistencia ya están cerradas. Gracias de corazón
+            a todos los que confirmaron y que ya son parte de esta historia tan
+            especial para nosotros.
+          </p>
+          <p className="max-w-xl leading-relaxed text-muted-foreground">
+            Si tienes alguna duda o consulta, puedes comunicarte por WhatsApp con
+            cualquiera de nosotros. ¡Nos vemos pronto!
+          </p>
+          <p className="font-medium text-primary">Con cariño, Piero y Debby</p>
+        </CardContent>
+      </Card>
     );
   }
 

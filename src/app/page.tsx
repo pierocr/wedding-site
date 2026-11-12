@@ -60,6 +60,7 @@ import {
 } from "@/data/site";
 import { LockedOverlay } from "@/components/ui/LockedOverlay";
 import { trackEvent, trackPageView } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 import { MusicPlayer as PlaylistMusicPlayer } from "@/components/MusicPlayer";
 import { PLAYLIST } from "@/data/playlist";
 
@@ -316,14 +317,13 @@ const LazyTimeline = dynamic(() => import("@/components/sections/Timeline"), {
 ============================== */
 // import { Menu, X } from "lucide-react";
 // === NAV solo con íconos neutros (sin emojis) ===
-const Nav = () => {
+const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorElement>, href: string) => void }) => {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
   // Estado del carrito para el badge
   const [cartQty, setCartQty] = React.useState(0);
   const [cartTotal, setCartTotal] = React.useState(0);
-  const scrollCorrectionTimersRef = React.useRef<number[]>([]);
   const CART_KEY = "gift_cart";
 
   React.useEffect(() => setMounted(true), []);
@@ -391,73 +391,10 @@ const Nav = () => {
     { href: "#faq", label: "Preguntas frecuentes", Icon: HelpCircle },
   ];
 
-  const scrollToSection = React.useCallback(
-    (href: string, behavior: ScrollBehavior = "smooth") => {
-      if (typeof window === "undefined") return;
-
-      const id = href.replace("#", "");
-      const target = document.getElementById(id) ??
-        (id === "datos-pago" ? document.getElementById("regalo") : null);
-      if (!target) return;
-
-      const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-      const headerHeight = isDesktop || id === "datos-pago"
-        ? (document.querySelector("header")?.getBoundingClientRect().height ??
-          0)
-        : 0;
-      const targetTop =
-        target.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
-
-      window.scrollTo({ top: Math.max(0, targetTop), behavior });
-    },
-    [],
-  );
-
-  const clearScrollCorrections = React.useCallback(() => {
-    scrollCorrectionTimersRef.current.forEach((timer) =>
-      window.clearTimeout(timer),
-    );
-    scrollCorrectionTimersRef.current = [];
-  }, []);
-
-  const handleAnchorClick = React.useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-      event.preventDefault();
-      setOpen(false);
-      clearScrollCorrections();
-
-      window.history.pushState(null, "", href);
-      trackPageView(`${window.location.pathname}${window.location.search}${href}`);
-      requestAnimationFrame(() => scrollToSection(href, "auto"));
-
-      const cancelOnUserScroll = () => clearScrollCorrections();
-      window.addEventListener("wheel", cancelOnUserScroll, {
-        once: true,
-        passive: true,
-      });
-      window.addEventListener("touchmove", cancelOnUserScroll, {
-        once: true,
-        passive: true,
-      });
-      window.addEventListener("keydown", cancelOnUserScroll, { once: true });
-      window.addEventListener("pointerdown", cancelOnUserScroll, {
-        once: true,
-        passive: true,
-      });
-      window.setTimeout(() => {
-        window.addEventListener("scroll", cancelOnUserScroll, {
-          once: true,
-          passive: true,
-        });
-      }, 250);
-
-      // Las secciones lazy pueden cambiar la altura de la página al cargar.
-      scrollCorrectionTimersRef.current = [400, 1000, 1800, 2800].map((delay) =>
-        window.setTimeout(() => scrollToSection(href, "auto"), delay),
-      );
-    },
-    [clearScrollCorrections, scrollToSection],
-  );
+  const handleAnchorClick = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    setOpen(false);
+    onNavigate(event, href);
+  };
 
   const GiftButton = ({ fullWidth = false }: { fullWidth?: boolean }) => {
     const hasItems = cartQty > 0;
@@ -475,11 +412,9 @@ const Nav = () => {
       >
         <Button
           size="sm"
-          variant={hasItems ? "default" : "secondary"}
           className={[
-            "rounded-xl",
+            "rounded-xl bg-[#315640] text-white hover:bg-[#284835]",
             fullWidth ? "w-full" : "",
-            hasItems ? "bg-emerald-600 text-white hover:bg-emerald-700" : "",
           ].join(" ")}
         >
           <Gift className="mr-2 h-4 w-4" />
@@ -713,7 +648,7 @@ const HERO_IMAGES = ["/hero/1.webp"];
 // Estas fotos deben exportarse manualmente como WebP/AVIF (<200KB) antes de cada despliegue para sostener un LCP rápido.
 
 // === HERO (versión centrada, sin solaparse y sin altura excesiva en desktop) ===
-const Hero = () => {
+const Hero = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorElement>, href: string) => void }) => {
   const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE_ISO);
   const [idx, setIdx] = React.useState(0);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
@@ -741,6 +676,59 @@ const Hero = () => {
         {l}
       </div>
     </div>
+  );
+
+  const rsvpButton = (
+    <Button
+      key="rsvp"
+      asChild
+      className={cn(
+        "h-12 w-full rounded-xl px-5 font-bold sm:w-auto",
+        FEATURE_FLAGS.rsvpEnabled
+          ? "sm:min-w-[clamp(13rem,24vw,15rem)] bg-[#315640] text-white shadow-[0_12px_30px_rgba(31,74,56,0.35)] hover:bg-[#284835]"
+          : "sm:min-w-[clamp(12rem,20vw,14rem)] border border-white/70 bg-[#f4efe6] text-[#241f18] shadow-[0_14px_34px_rgba(244,239,230,0.3)] hover:bg-[#fffaf1]",
+      )}
+    >
+      <a
+        href="#rsvp"
+        className="text-center no-underline hover:no-underline"
+        onClick={() =>
+          trackEvent("rsvp_click", {
+            location: "hero",
+            destination: "#rsvp",
+          })
+        }
+      >
+        {FEATURE_FLAGS.rsvpEnabled ? "Confirmar asistencia" : "Confirmaciones"}
+      </a>
+    </Button>
+  );
+  const giftButton = (
+    <Button
+      key="gift"
+      asChild
+      className={cn(
+        "h-12 w-full rounded-xl px-5 font-bold sm:w-auto",
+        FEATURE_FLAGS.rsvpEnabled
+          ? "sm:min-w-[clamp(12rem,20vw,14rem)] border border-white/70 bg-[#f4efe6] text-[#241f18] shadow-[0_14px_34px_rgba(244,239,230,0.3)] ring-1 ring-black/10 hover:bg-[#fffaf1]"
+          : "sm:min-w-[clamp(13rem,24vw,15rem)] bg-[#315640] text-white shadow-[0_12px_30px_rgba(31,74,56,0.35)] hover:bg-[#284835]",
+      )}
+    >
+      <a
+        href="#regalo"
+        className="text-center no-underline hover:no-underline"
+        onClick={(event) => {
+          trackEvent("gift_info_click", {
+            location: "hero",
+            destination: "#regalo",
+          });
+          onNavigate(event, "#regalo");
+        }}
+      >
+        <Gift className="h-4 w-4" />
+        Haz tu regalo
+      </a>
+    </Button>
   );
 
   return (
@@ -880,7 +868,11 @@ const Hero = () => {
                         Google Calendar
                       </a>
                     </Button>
-                    <Button asChild variant="outline" className="h-11 rounded-xl">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-11 rounded-xl"
+                    >
                       {/* Descarga un archivo .ics; no debe ser navegación del cliente. */}
                       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                       <a
@@ -903,41 +895,9 @@ const Hero = () => {
 
               {/* Botones */}
               <div className="mt-[clamp(4px,0.8vw,8px)] flex w-full flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
-                <Button
-                  asChild
-                  className="h-12 w-full rounded-xl bg-[#315640] px-5 font-bold text-white shadow-[0_12px_30px_rgba(31,74,56,0.35)] hover:bg-[#284835] sm:w-auto sm:min-w-[clamp(13rem,24vw,15rem)]"
-                >
-                  <a
-                    href="#rsvp"
-                    className="text-center no-underline hover:no-underline"
-                    onClick={() =>
-                      trackEvent("rsvp_click", {
-                        location: "hero",
-                        destination: "#rsvp",
-                      })
-                    }
-                  >
-                    Confirmar Asistencia
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  className="h-12 w-full rounded-xl border border-white/70 bg-[#f4efe6] px-5 font-bold text-[#241f18] shadow-[0_14px_34px_rgba(244,239,230,0.3)] ring-1 ring-black/10 hover:bg-[#fffaf1] sm:w-auto sm:min-w-[clamp(12rem,20vw,14rem)]"
-                >
-                  <a
-                    href="#regalo"
-                    className="text-center no-underline hover:no-underline"
-                    onClick={() =>
-                      trackEvent("gift_info_click", {
-                        location: "hero",
-                        destination: "#regalo",
-                      })
-                    }
-                  >
-                    <Gift className="h-4 w-4" />
-                    Haz tu regalo
-                  </a>
-                </Button>
+                {FEATURE_FLAGS.rsvpEnabled
+                  ? [rsvpButton, giftButton]
+                  : [giftButton, rsvpButton]}
               </div>
             </div>
           </LockedOverlay>
@@ -1196,7 +1156,24 @@ const FAQ = () => {
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4 text-sm leading-relaxed text-muted-foreground md:text-[15px]">
                   {f.a}
-                  {f.q.startsWith("📤") && <a href="/fotos" className="mt-3 block font-semibold text-primary underline">Compartir mis fotos →</a>}
+                  {f.q.startsWith("📤") && (
+                    <div className="mt-4 flex flex-col items-start gap-3">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <button type="button" className="rounded-xl border bg-white p-1 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Ampliar código QR para compartir fotos">
+                            <Image src="/api/fotos/qr" alt="Código QR para compartir fotos" width={160} height={160} unoptimized />
+                          </button>
+                        </DialogTrigger>
+                        <p className="text-xs">Toca el código para ampliarlo</p>
+                        <DialogContent className="flex h-[100dvh] max-w-none flex-col items-center justify-center gap-4 rounded-none p-6 text-center sm:rounded-none">
+                          <DialogTitle className="text-xl">Compartamos nuestros recuerdos</DialogTitle>
+                          <DialogDescription>Escanea este código para subir tus fotos.</DialogDescription>
+                          <Image src="/api/fotos/qr" alt="Código QR para compartir fotos" width={700} height={700} unoptimized className="max-w-full rounded-xl bg-white" style={{ width: "min(80vw, 65dvh, 600px)" }} />
+                        </DialogContent>
+                      </Dialog>
+                      <a href="/fotos" className="font-semibold text-primary underline">Compartir mis fotos →</a>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -1240,14 +1217,61 @@ const Footer = () => (
    PAGE
 ============================== */
 export default function WeddingSite() {
+  const scrollCleanupRef = React.useRef<(() => void) | null>(null);
+
+  React.useEffect(() => () => scrollCleanupRef.current?.(), []);
+
+  const handleNavigate = React.useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+      event.preventDefault();
+      scrollCleanupRef.current?.();
+      const id = href.slice(1);
+      const target = document.getElementById(id) ??
+        (id === "datos-pago" ? document.getElementById("regalo") : null);
+      if (!target) return;
+
+      window.history.pushState(null, "", href);
+      trackPageView(`${window.location.pathname}${window.location.search}${href}`);
+
+      const scrollToTarget = () => {
+        const headerHeight = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
+        const top = target.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
+        window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+      };
+
+      // Las secciones anteriores pueden cambiar de altura al cargarse.
+      const observer = new ResizeObserver(scrollToTarget);
+      document.querySelectorAll("section").forEach((section) => {
+        if (section === target || section.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING) {
+          observer.observe(section);
+        }
+      });
+      const cancel = () => {
+        observer.disconnect();
+        window.clearTimeout(timeout);
+        ["wheel", "touchstart", "pointerdown", "keydown"].forEach((type) =>
+          window.removeEventListener(type, cancel),
+        );
+        scrollCleanupRef.current = null;
+      };
+      const timeout = window.setTimeout(cancel, 5000);
+      ["wheel", "touchstart", "pointerdown", "keydown"].forEach((type) =>
+        window.addEventListener(type, cancel, { once: true, passive: true }),
+      );
+      scrollCleanupRef.current = cancel;
+      requestAnimationFrame(scrollToTarget);
+    },
+    [],
+  );
+
   return (
     <div className="min-h-screen pt-14">
-      <Nav />
+      <Nav onNavigate={handleNavigate} />
       {/* Reproductor MP3 (autoplay) */}
       <PlaylistMusicPlayer tracks={PLAYLIST} />
       {/* <MiniCountdownBar />   <= countdown fuera del Hero */}
       <div id="inicio">
-        <Hero />
+        <Hero onNavigate={handleNavigate} />
       </div>
 
       <Section id="agenda" title="Agenda" icon={Calendar} animation="up">

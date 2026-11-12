@@ -7,14 +7,14 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['heic-decode'],
-  allowedDevOrigins: ['192.168.1.20', '192.168.100.88'],
+  allowedDevOrigins: ['192.168.1.20', '192.168.100.88', '192.168.100.94'],
   turbopack: {
     root: projectRoot,
   },
   // No cortes el build por errores de types
   typescript: { ignoreBuildErrors: true },
   images: {
-    qualities: [72, 82, 92],
+    qualities: [50, 72, 82, 92],
     remotePatterns: [
       {
         protocol: "https",

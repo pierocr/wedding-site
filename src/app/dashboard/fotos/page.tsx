@@ -1,20 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import QRCode from "qrcode";
 import { PreviewRecovery } from "./PreviewRecovery";
 import { PhotoThumbnail } from "./PhotoThumbnail";
 import { DownloadAll } from "./DownloadAll";
 import { hasDashboardAccess } from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { SITE_URL } from "@/data/site";
+import { GUEST_PHOTOS_URL, guestPhotosQrDataUrl } from "@/lib/guestPhotosQr";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Fotos de invitados", robots: { index: false, follow: false } };
 
 export default async function GuestPhotosDashboard() {
   if (!await hasDashboardAccess()) redirect("/dashboard");
-  const url = new URL("/fotos", SITE_URL).toString();
-  const qr = await QRCode.toDataURL(url, { width: 700, margin: 3, color: { dark: "#263f2e", light: "#ffffff" }, errorCorrectionLevel: "M" });
+  const url = GUEST_PHOTOS_URL;
+  const qr = await guestPhotosQrDataUrl();
   const { data: photos, error } = await getSupabaseAdmin().from("wedding_guest_photos").select("id,original_name,guest_name,file_size,created_at,completed_at,preview_status").order("created_at", { ascending: false }).limit(1000);
   return <main className="min-h-screen bg-[#f8f6f0] px-5 py-10 text-[#26382c]"><div className="mx-auto max-w-5xl"><Link href="/dashboard" className="text-sm font-medium underline">← Volver al dashboard</Link><div className="mt-8"><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#829080]">Piero & Debby</p><h1 className="mt-3 !font-serif text-4xl font-normal">Fotos de invitados</h1><p className="mt-3 text-sm text-[#718072]">Un lugar privado para guardar los recuerdos que compartieron con ustedes.</p></div>
     <section className="mt-8 grid gap-6 rounded-2xl border border-[#e2e7dc] bg-white p-6 sm:grid-cols-[180px_1fr] sm:items-center"><img src={qr} alt="Código QR para subir fotos" className="w-44 max-w-full rounded-lg border border-[#edf0ea]" /><div><h2 className="!font-serif text-2xl font-normal">El QR de sus recuerdos</h2><p className="mt-2 text-sm leading-6 text-[#718072]">Descárguenlo para imprimirlo en las mesas o compartirlo con sus invitados.</p><p className="mt-3 break-all text-sm">{url}</p><div className="mt-4 flex flex-wrap gap-3"><a href={qr} download="qr-fotos-piero-debby.png" className="rounded-lg bg-[#365741] px-4 py-2 text-sm font-semibold text-white">Descargar QR</a><Link href="/fotos" className="rounded-lg border border-[#cbd7c9] px-4 py-2 text-sm font-semibold">Abrir página de fotos</Link></div></div></section>

@@ -10,6 +10,9 @@ import {
   Check,
   Sparkles,
   CreditCard,
+  Info,
+  Landmark,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +33,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import clsx from "clsx";
 import Image from "next/image";
@@ -767,18 +771,84 @@ export default function GiftSection() {
               </Button>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Puedes pagar con tarjeta de débito, crédito (hasta 12 cuotas sin
-                interés) o transferencia bancaria.
-              </p>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Puedes pagar con tarjeta o transferencia bancaria.
+                </p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Información sobre las formas de pago"
+                      className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Info className="size-5" aria-hidden="true" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-xl sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Formas de pago</DialogTitle>
+                      <DialogDescription className="leading-relaxed">
+                        Elige la alternativa que te acomode. Al continuar, podrás
+                        seleccionar cómo pagar tu regalo.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 py-2">
+                      <div className="flex items-start gap-3">
+                        <CreditCard className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                        <div>
+                          <h3 className="font-semibold">Webpay</h3>
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            Paga con tu tarjeta de débito o crédito a través de Webpay.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <CalendarDays className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                        <div>
+                          <h3 className="font-semibold">Webpay en cuotas</h3>
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            Si prefieres, puedes pagar con tarjeta de crédito en
+                            2 a 12 cuotas sin interés. Selecciona las cuotas entre
+                            las opciones disponibles durante el pago.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Landmark className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                        <div>
+                          <h3 className="font-semibold">Transferencia bancaria con Khipu</h3>
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            Paga directamente desde tu banco seleccionando Khipu y
+                            siguiendo las instrucciones que aparecerán en pantalla.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button type="button" className="w-full rounded-xl sm:w-auto">
+                          Entendido
+                        </Button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="flex shrink-0 items-center justify-center gap-3">
+                <Image
+                  src="/flow-logo.png"
+                  alt="Flow"
+                  width={36}
+                  height={36}
+                  className="size-9 rounded-md object-contain"
+                />
                 <Image
                   src="/1.Webpay_FB_800px.png"
                   alt="WebPay"
-                  width={110}
-                  height={37}
-                  className="h-auto w-[110px] object-contain"
-                  priority
+                  width={90}
+                  height={30}
+                  className="h-auto w-[90px] object-contain"
                 />
               </div>
             </div>

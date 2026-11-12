@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createRsvpEditToken, hashRsvpEditSecret } from "@/lib/rsvpEditAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,12 @@ function dietaryPreference(row: {
 }
 
 export async function POST(req: NextRequest) {
+  if (!FEATURE_FLAGS.rsvpEnabled) {
+    return NextResponse.json(
+      { ok: false, message: "Las confirmaciones de asistencia están cerradas. Si tienes alguna consulta, comunícate por WhatsApp con los novios." },
+      { status: 403 },
+    );
+  }
   const parsed = verificationSchema.safeParse(
     await req.json().catch(() => null),
   );

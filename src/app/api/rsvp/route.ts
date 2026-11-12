@@ -4,6 +4,7 @@ import { rsvpSchema } from "@/lib/rsvpSchema";
 import { hashRsvpEditSecret } from "@/lib/rsvpEditAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendRsvpConfirmationEmails } from "@/lib/email/rsvpConfirmation";
+import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -95,6 +96,9 @@ async function sendEmailsOrWarning(opts: {
 }
 
 export async function POST(req: NextRequest) {
+  if (!FEATURE_FLAGS.rsvpEnabled) {
+    return json(403, { ok: false, message: "Las confirmaciones de asistencia están cerradas. Si tienes alguna consulta, comunícate por WhatsApp con los novios." });
+  }
   if (isRateLimited(req)) {
     return json(429, {
       ok: false,

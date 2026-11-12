@@ -3,8 +3,8 @@
 // Este archivo se puede modificar directamente y subir al repo sin riesgo
 
 export const FEATURE_FLAGS = {
-  // RSVP - cambiar a true cuando se entreguen invitaciones
-  rsvpEnabled: true,
+  // RSVP - cambiar a true para volver a abrir las confirmaciones
+  rsvpEnabled: false,
 
   // Christmas Promotion - activa hasta 31 de diciembre
   christmasPromoEnabled: false,
