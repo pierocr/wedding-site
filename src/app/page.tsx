@@ -938,7 +938,7 @@ const Schedule = () => {
             place: RECEPTION.venue,
             address: RECEPTION.venueAddress,
             link: RECEPTION.mapsUrl,
-            image: "/hero/centrodeeventos.webp",
+            image: "/hero/centrodeeventos.webp?v=20261112",
             icon: <PartyPopper className="h-5 w-5" />,
           },
           {

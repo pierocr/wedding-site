@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   images: {
     qualities: [50, 72, 82, 92],
+    localPatterns: [
+      { pathname: '/**', search: '' },
+      { pathname: '/hero/centrodeeventos.webp', search: '?v=20261112' },
+    ],
     remotePatterns: [
       {
         protocol: "https",

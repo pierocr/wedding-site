@@ -158,7 +158,14 @@ const GIFT_CATALOG: GiftItem[] = [
     icon: "🗺️",
     title: "La Gran Aventura",
     description: "Explorar el mundo juntos.",
-    price: 280000,
+    price: 260000,
+  },
+  {
+    id: "escapada-romantica",
+    icon: "🌊",
+    title: "Un Rincón Frente al Mar",
+    description: "Una pausa junto al mar.",
+    price: 300000,
   },
   {
     id: "amanecer-luna-miel",
