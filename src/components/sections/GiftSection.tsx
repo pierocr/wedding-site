@@ -6,13 +6,13 @@ import {
   Minus,
   Trash2,
   ShoppingCart,
-  Heart,
   Check,
   Sparkles,
   CreditCard,
   Info,
   Landmark,
   CalendarDays,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,105 +59,119 @@ type CartLine = {
 
 // ============ GIFT CATALOG ============
 const GIFT_CATALOG: GiftItem[] = [
-  // Detalles ($40,000 - $70,000)
+  // Detalles hasta $100.000
   {
     id: "primer-cafe",
     icon: "☕",
     title: "El Primer Café Juntos",
-    description: "Cada mañana con aroma a café y miradas que lo dicen todo.",
-    price: 40000,
+    description: "Mañanas con aroma a café.",
+    price: 50000,
   },
   {
     id: "brindis-estrellas",
     icon: "🥂",
     title: "Brindis Bajo las Estrellas",
-    description: "Copas al cielo para celebrar que se encontraron.",
-    price: 50000,
-  },
-  {
-    id: "risas-domingo",
-    icon: "🌸",
-    title: "Risas de Domingo",
-    description: "Sábanas livianas, risa suave y tiempo que se estira.",
+    description: "Un brindis por su amor.",
     price: 60000,
   },
   {
     id: "baile-cocina",
     icon: "🎶",
     title: "Baile en la Cocina",
-    description: "Música improvisada y pasos descalzos antes de la cena.",
+    description: "Música y pasos juntos.",
     price: 70000,
-  },
-  // Experiencias ($60,000 - $100,000)
-  {
-    id: "pelicula-manta",
-    icon: "🎬",
-    title: "Noche de Película y Manta",
-    description: "Sofá, manta y la excusa perfecta para estar juntos.",
-    price: 80000,
-  },
-  {
-    id: "picnic-secreto",
-    icon: "🧺",
-    title: "Picnic en su Lugar Secreto",
-    description: "Un rincón verde solo para ustedes y las nubes.",
-    price: 90000,
   },
   {
     id: "paseo-atardecer",
     icon: "🌅",
     title: "Paseo al Atardecer",
-    description: "El sol pintando el cielo mientras caminan de la mano.",
+    description: "Un paseo de la mano.",
     price: 100000,
+  },
+  // Experiencias sobre $100.000
+  {
+    id: "desayuno-especial",
+    icon: "🥐",
+    title: "Desayuno para Dos",
+    description: "Una mañana sin apuro.",
+    price: 110000,
   },
   {
     id: "cena-velas",
     icon: "🕯️",
     title: "Cena a la Luz de las Velas",
-    description: "Luz suave, conversación lenta y miradas que eligen.",
+    description: "Una cena para dos.",
     price: 120000,
+  },
+  {
+    id: "tarde-vinedo",
+    icon: "🍷",
+    title: "Una Tarde entre Viñedos",
+    description: "Un brindis entre viñas.",
+    price: 130000,
   },
   {
     id: "noche-estrellas",
     icon: "✨",
     title: "Noche Bajo las Estrellas",
-    description: "Perderse en el cielo y soñar despiertos juntos.",
+    description: "Una noche para soñar.",
     price: 140000,
   },
-  // Sueños Grandes ($120,000 - $250,000)
+  {
+    id: "dia-desconexion",
+    icon: "🌿",
+    title: "Un Día para Desconectar",
+    description: "Un momento de calma.",
+    price: 150000,
+  },
+  {
+    id: "sabores-viaje",
+    icon: "🍽️",
+    title: "Sabores de Viaje",
+    description: "Nuevos sabores para dos.",
+    price: 160000,
+  },
+  // Luna de miel y hogar
   {
     id: "escapada",
     icon: "🧳",
     title: "Escapada de Fin de Semana",
-    description: "Dos días para perderse del mundo y encontrarse.",
+    description: "Dos días solo para ellos.",
     price: 180000,
+  },
+  {
+    id: "ruta-luna-miel",
+    icon: "🚗",
+    title: "Una Ruta para Recordar",
+    description: "Paisajes y recuerdos.",
+    price: 200000,
   },
   {
     id: "sesion-fotos",
     icon: "📸",
     title: "Recuerdos para Siempre",
-    description: "Fotos que guardan su complicidad sin palabras.",
+    description: "Su historia en fotos.",
     price: 220000,
   },
   {
     id: "aventura",
     icon: "🗺️",
     title: "La Gran Aventura",
-    description: "Explorar juntos con risas y valentía en la mochila.",
+    description: "Explorar el mundo juntos.",
     price: 280000,
   },
   {
     id: "amanecer-luna-miel",
     icon: "🌄",
     title: "Amanecer de Luna de Miel",
-    description: "Primer sol dorado de su nueva vida a dúo.",
+    description: "El primer sol de casados.",
     price: 350000,
   },
   {
     id: "nido",
     icon: "🏡",
     title: "Construyendo su Nido",
-    description: "Un ladrillo más para el hogar donde crece su amor.",
+    description: "Un aporte a su hogar.",
     price: 500000,
   },
 ];
@@ -335,7 +349,6 @@ export default function GiftSection() {
     !!name.trim() &&
     EMAIL_RE.test(email) &&
     cart.length > 0 &&
-    !!message.trim() &&
     !loading;
 
   const groupedGifts = [
@@ -412,25 +425,17 @@ export default function GiftSection() {
   return (
     <>
       <Card className="rounded-xl border-border/50 shadow-[0_4px_18px_rgba(0,0,0,0.035)]">
-        <CardHeader className="text-center pb-2">
-          <div className="flex justify-center mb-3">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Gift className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">
-            Con amor y gratitud
-          </p>
-          <CardTitle className="text-2xl md:text-3xl">
+        <CardHeader className="items-center pb-2 pt-5 text-center">
+          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+            <Gift aria-hidden="true" className="h-5 w-5 text-primary" />
             Regalos con Mensaje
           </CardTitle>
-          <CardDescription className="max-w-xl mx-auto mt-3 text-base leading-relaxed">
-            Si quieres dejarnos un detalle, aquí puedes elegir un gesto con
-            mucho cariño. <Heart className="inline-block h-4 w-4 text-accent" />
+          <CardDescription>
+            Elige un regalo para acompañarnos en esta nueva etapa.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6 pt-6">
+        <CardContent className="space-y-4 pt-3">
           {/* Gift Catalog Grid */}
           <div className="grid gap-2 lg:grid-cols-3">
             {GIFT_CATALOG.map((gift) => {
@@ -471,7 +476,7 @@ export default function GiftSection() {
                     <h3 className="line-clamp-2 text-sm font-semibold text-foreground leading-tight">
                       {gift.title}
                     </h3>
-                    <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+                    <p className="truncate text-xs text-muted-foreground leading-relaxed">
                       {gift.description}
                     </p>
 
@@ -528,8 +533,8 @@ export default function GiftSection() {
             })}
 
             {/* Custom Gift Card */}
-            <div className="space-y-4 rounded-xl border border-dashed border-accent/50 bg-accent/5 p-4">
-              <div className="flex items-center gap-3">
+            <details className="group rounded-xl border border-dashed border-accent/50 bg-accent/5 p-4">
+              <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
                 <div className="rounded-full bg-accent/20 p-2.5">
                   <Sparkles className="h-5 w-5 text-accent" />
                 </div>
@@ -539,66 +544,72 @@ export default function GiftSection() {
                     Crea un mensaje personalizado
                   </p>
                 </div>
-              </div>
+                <ChevronDown aria-hidden="true" className="ml-auto h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+              </summary>
 
-              <Input
-                placeholder="Escribe tu bendición o deseo..."
-                value={customMsg}
-                onChange={(e) => setCustomMsg(e.target.value)}
-                className="h-11 bg-background/80"
-              />
-
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="mt-4 space-y-4">
                 <Input
-                  type="number"
-                  placeholder="50000"
-                  min={1000}
-                  step={1000}
-                  value={customAmount}
-                  onChange={(e) =>
-                    setCustomAmount(
-                      e.target.value === "" ? "" : Number(e.target.value),
-                    )
-                  }
+                  placeholder="Escribe tu bendición o deseo..."
+                  value={customMsg}
+                  onChange={(e) => setCustomMsg(e.target.value)}
                   className="h-11 bg-background/80"
                 />
-                <span className="text-sm text-muted-foreground">CLP</span>
-              </div>
 
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={addCustomToCart}
-                className="w-full rounded-xl"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar deseo
-              </Button>
-            </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <Input
+                    type="number"
+                    placeholder="50000"
+                    min={1000}
+                    step={1000}
+                    value={customAmount}
+                    onChange={(e) =>
+                      setCustomAmount(
+                        e.target.value === "" ? "" : Number(e.target.value),
+                      )
+                    }
+                    className="h-11 bg-background/80"
+                  />
+                  <span className="text-sm text-muted-foreground">CLP</span>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={addCustomToCart}
+                  className="w-full rounded-xl"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Agregar deseo
+                </Button>
+              </div>
+            </details>
           </div>
 
-          <Separator className="my-6" />
+          <Separator className="my-4" />
 
           {/* Donor Form */}
-          <div id="datos-pago" className="space-y-4 scroll-mt-20">
+          <div id="datos-pago" className="space-y-3 scroll-mt-20">
             <h3 className="text-lg font-semibold text-center">Tus Datos</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1">
+                <label htmlFor="gift-name" className="text-sm font-medium">
                   Tu nombre (obligatorio)
                 </label>
                 <Input
+                  id="gift-name"
+                  required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej: Carolina Pérez"
                   className="h-11 bg-background"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+              <div className="space-y-1">
+                <label htmlFor="gift-email" className="text-sm font-medium">
                   Email (obligatorio)
                 </label>
                 <Input
+                  id="gift-email"
                   type="email"
                   required
                   value={email}
@@ -607,16 +618,17 @@ export default function GiftSection() {
                   className="h-11 bg-background"
                 />
               </div>
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium">
-                  Mensaje para los novios (obligatorio)
+              <div className="md:col-span-2 space-y-1">
+                <label htmlFor="gift-message" className="text-sm font-medium">
+                  Mensaje para los novios (opcional)
                 </label>
                 <Textarea
+                  id="gift-message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Déjanos un mensaje bonito que acompañe tu regalo..."
-                  rows={3}
-                  className="bg-background resize-none"
+                  rows={2}
+                  className="min-h-[60px] bg-background resize-none"
                 />
               </div>
             </div>
@@ -625,7 +637,7 @@ export default function GiftSection() {
           {/* Cart Summary */}
           <div className="rounded-xl border bg-card/50 backdrop-blur-sm overflow-hidden">
             {/* Cart Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b bg-secondary/30">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-secondary/30">
               <div className="flex items-center gap-3">
                 <ShoppingCart className="h-5 w-5 text-primary" />
                 <span className="font-semibold">Tu Selección</span>
@@ -642,19 +654,19 @@ export default function GiftSection() {
 
             {/* Cart Items */}
             {!mounted ? (
-              <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+              <div className="px-4 py-4 text-center text-sm text-muted-foreground">
                 Cargando...
               </div>
             ) : cart.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-                Aún no agregas regalos. Elige uno del catálogo o crea el tuyo.
+              <div className="px-4 py-4 text-center text-sm text-muted-foreground">
+                Elige un regalo del catálogo.
               </div>
             ) : (
               <div className="divide-y divide-border/50">
                 {cart.map((l) => (
                   <div
                     key={l.id}
-                    className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:items-center sm:gap-4"
+                    className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 px-4 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:items-center sm:gap-4"
                   >
                     <span className="row-span-3 flex h-10 w-10 items-center justify-center rounded-full bg-secondary/70 text-2xl sm:row-span-1 sm:h-auto sm:w-auto sm:bg-transparent">
                       {l.icon}
@@ -723,8 +735,8 @@ export default function GiftSection() {
             )}
 
             {/* Cart Footer */}
-            <div className="px-5 py-5 bg-secondary/20 border-t">
-              <div className="flex items-center justify-between mb-1">
+            <div className="px-4 py-2 bg-secondary/20 border-t">
+              <div className="flex items-center justify-between">
                 <Button
                   type="button"
                   variant="ghost"
@@ -749,7 +761,7 @@ export default function GiftSection() {
           </div>
 
           {/* Payment Button */}
-          <div className="pt-2 space-y-3">
+          <div className="space-y-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               <Button
                 size="lg"

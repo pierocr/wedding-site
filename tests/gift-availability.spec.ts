@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("el regalo de $40.000 queda disponible y seleccionable", async ({ page }) => {
+test("el regalo de $50.000 queda disponible y seleccionable", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());

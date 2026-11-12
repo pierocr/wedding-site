@@ -28,6 +28,6 @@ test("flujo visual de compra sandbox completo", async ({ page }) => {
     timeout: 60_000,
   });
   await expect(page.getByText(/Número de concurso:\s*\d{6}/)).toBeVisible();
-  await expect(page.getByText("$40.000")).toBeVisible();
+  await expect(page.getByText("$50.000")).toBeVisible();
   await expect(page.getByText(/GIFT_\d{8}_[A-F0-9]{8}/)).toBeVisible();
 });

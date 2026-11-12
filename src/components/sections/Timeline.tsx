@@ -91,6 +91,7 @@ function buildMobileZigZagPath(len: number, leftX = 80, rightX = 240, startY = 2
 
 export default function Timeline() {
   const dotted = '4 10';
+  const prefersReduce = useReducedMotion();
 
   // === PATH MOBILE (2 columnas) ===
   const mobileStep = 175; // separa verticalmente los ítems en mobile
@@ -146,7 +147,13 @@ export default function Timeline() {
         <div className="absolute bottom-4 left-5 top-4 w-px bg-border" aria-hidden="true" />
         <div className="space-y-3">
           {EVENTS.map((event) => (
-            <div key={event.id} className="relative flex items-center gap-4 rounded-xl border bg-card p-3">
+            <motion.button
+              key={event.id}
+              type="button"
+              className="relative flex w-full items-center gap-4 rounded-xl border bg-card p-3 text-left transition-colors active:border-primary/60 active:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              whileTap={prefersReduce ? {} : { scale: 1.025, boxShadow: '0 8px 22px rgba(48, 76, 58, 0.16)' }}
+              transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+            >
               <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground tabular-nums">
                 {event.time}
               </span>
@@ -162,7 +169,7 @@ export default function Timeline() {
                   className="h-9 w-9 shrink-0 object-contain"
                 />
               ) : null}
-            </div>
+            </motion.button>
           ))}
         </div>
       </div>
