@@ -10,6 +10,20 @@ export type GuestSyncState = {
   message: string;
 };
 
+export async function setPaymentDismissal(guestId: string, name: string, reason: "paid" | "other" | "restore"): Promise<GuestSyncState> {
+  if (!(await hasDashboardAccess())) return { status: "error", message: "Tu sesión expiró. Ingresa nuevamente al dashboard." };
+  if (!/^[0-9a-f-]{36}$/i.test(guestId) || !name || !["paid", "other", "restore"].includes(reason)) return { status: "error", message: "No se pudo identificar el registro." };
+  const supabase = getSupabaseAdmin();
+  const { data: guest, error: guestError } = await supabase.from("guest_directory").select("first_name, last_name, is_active").eq("id", guestId).maybeSingle();
+  if (guestError || !guest?.is_active || [guest.first_name, guest.last_name].filter(Boolean).join(" ") !== name) return { status: "error", message: "La lista cambió. Recarga el dashboard antes de continuar." };
+  const result = reason === "restore"
+    ? await supabase.from("guest_payment_dismissals").delete().eq("guest_id", guestId).eq("guest_name", name)
+    : await supabase.from("guest_payment_dismissals").upsert({ guest_id: guestId, guest_name: name, reason, updated_at: new Date().toISOString() });
+  if (result.error) return { status: "error", message: "No se pudo guardar el cambio. Inténtalo nuevamente." };
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Cambio guardado." };
+}
+
 export async function manualConfirmationAction(
   _previousState: GuestSyncState,
   formData: FormData,

@@ -25,9 +25,11 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { fetchFlowSettlements, fetchFlowStatus, getFlowConfig } from "@/lib/flow";
 import { directTransferInsights, paymentInsights, type PaymentInsights } from "@/lib/paymentInsights";
 import { isTestPayment } from "@/lib/testPayments";
+import { reconcileGuestPayments, type PaymentGuest } from "@/lib/guestPayments";
 import { activeManualConfirmations, countAdditionalManualConfirmations, getPendingGuests, type DirectoryGuest, type ManualEvent } from "@/lib/pendingGuests";
 import { syncGuestDirectoryAction } from "./actions";
 import { GuestSyncForm } from "./GuestSyncForm";
+import { GuestPaymentsTable } from "./GuestPaymentsTable";
 import { PaymentsTable } from "./PaymentsTable";
 import { PendingGuestsTable } from "./PendingGuestsTable";
 import { RsvpTable, type DashboardRsvpRecord } from "./RsvpTable";
@@ -58,7 +60,7 @@ type PaymentRecord = {
 
 type RsvpRecord = DashboardRsvpRecord;
 
-type GuestDirectoryRecord = DirectoryGuest;
+type GuestDirectoryRecord = DirectoryGuest & PaymentGuest;
 
 type GuestSyncRunRecord = {
   guest_count: number;
@@ -264,7 +266,7 @@ async function getDashboardData() {
       getRsvpsWithDietPreferences(),
       supabase
         .from("guest_directory")
-        .select("id, first_name, last_name, companion_name, attendance_status, party_size")
+        .select("id, first_name, last_name, companion_name, email, attendance_status, party_size")
         .eq("is_active", true),
       supabase
         .from("guest_sync_runs")
@@ -538,6 +540,7 @@ export default async function DashboardPage({
   const realPayments = payments.filter((payment) => !isTestPayment(payment));
   const testPaymentCount = payments.length - realPayments.length;
   const paidPayments = realPayments.filter((payment) => payment.status === "paid");
+  const guestPayments = reconcileGuestPayments(guests, realPayments);
   const { insights, unavailable: flowUnavailable } = await getFlowInsights(realPayments);
   const withBalance = paidPayments.filter((payment) => insights.get(payment.id)?.balance != null);
   const grossWithBalance = withBalance.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
@@ -782,6 +785,16 @@ export default async function DashboardPage({
           </div>
           <PendingGuestsTable guests={pendingGuests} hasDirectory={guests.length > 0} manualAvailable={manualAvailable} manualConfirmations={manualConfirmations} />
         </section>
+
+        <section className="space-y-3" aria-label="Cruce de invitados y pagos">
+          <div>
+            <h2 className="text-xl font-semibold">Invitados y pagos</h2>
+            <p className="text-sm text-muted-foreground">Cruce orientativo por nombre o correo, actualizado cada 30 segundos mientras el dashboard está abierto. Un pago encontrado no indica a cuántas personas cubre.</p>
+            <p className="text-sm text-muted-foreground">Sin pago encontrado no significa necesariamente una deuda: revisen pagos externos, nombres diferentes y aportes de parejas. La lista de invitados se actualiza al sincronizar la planilla.</p>
+          </div>
+          <GuestPaymentsTable initialRows={guestPayments} />
+        </section>
+
 
       </div>
     </main>
