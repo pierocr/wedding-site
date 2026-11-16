@@ -699,41 +699,10 @@ const Hero = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorE
     </div>
   );
 
-  const rsvpButton = (
-    <Button
-      key="rsvp"
-      asChild
-      className={cn(
-        "h-12 w-full rounded-xl px-5 font-bold sm:w-auto",
-        FEATURE_FLAGS.rsvpEnabled
-          ? "sm:min-w-[clamp(13rem,24vw,15rem)] bg-[#315640] text-white shadow-[0_12px_30px_rgba(31,74,56,0.35)] hover:bg-[#284835]"
-          : "sm:min-w-[clamp(12rem,20vw,14rem)] border border-white/70 bg-[#f4efe6] text-[#241f18] shadow-[0_14px_34px_rgba(244,239,230,0.3)] hover:bg-[#fffaf1]",
-      )}
-    >
-      <a
-        href="#rsvp"
-        className="text-center no-underline hover:no-underline"
-        onClick={() =>
-          trackEvent("rsvp_click", {
-            location: "hero",
-            destination: "#rsvp",
-          })
-        }
-      >
-        {FEATURE_FLAGS.rsvpEnabled ? "Confirmar asistencia" : "Confirmaciones"}
-      </a>
-    </Button>
-  );
   const giftButton = (
     <Button
-      key="gift"
       asChild
-      className={cn(
-        "h-12 w-full rounded-xl px-5 font-bold sm:w-auto",
-        FEATURE_FLAGS.rsvpEnabled
-          ? "sm:min-w-[clamp(12rem,20vw,14rem)] border border-white/70 bg-[#f4efe6] text-[#241f18] shadow-[0_14px_34px_rgba(244,239,230,0.3)] ring-1 ring-black/10 hover:bg-[#fffaf1]"
-          : "sm:min-w-[clamp(13rem,24vw,15rem)] bg-[#315640] text-white shadow-[0_12px_30px_rgba(31,74,56,0.35)] hover:bg-[#284835]",
-      )}
+      className="h-12 w-full max-w-56 rounded-xl bg-[#315640] px-5 font-bold text-white shadow-[0_12px_30px_rgba(31,74,56,0.35)] hover:bg-[#284835] sm:w-auto sm:min-w-[clamp(13rem,24vw,15rem)] sm:max-w-none"
     >
       <a
         href="#regalo"
@@ -916,9 +885,7 @@ const Hero = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorE
 
               {/* Botones */}
               <div className="mt-[clamp(4px,0.8vw,8px)] flex w-full flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
-                {FEATURE_FLAGS.rsvpEnabled
-                  ? [rsvpButton, giftButton]
-                  : [giftButton, rsvpButton]}
+                {giftButton}
               </div>
             </div>
           </LockedOverlay>
