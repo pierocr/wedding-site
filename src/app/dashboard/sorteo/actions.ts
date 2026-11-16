@@ -15,7 +15,7 @@ export async function drawWinner() {
     for (let offset = 0; ; offset += pageSize) {
       const { data, error } = await supabase.from("payments")
         .select("donor_name, donor_email, external_reference, raffle_number, meta")
-        .eq("status", "paid").not("raffle_number", "is", null)
+        .eq("status", "paid").gt("amount", 100000).not("raffle_number", "is", null)
         .order("id").range(offset, offset + pageSize - 1);
       if (error) throw error;
       payments.push(...data);
