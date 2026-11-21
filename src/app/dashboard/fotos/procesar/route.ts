@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   const stale = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { data, error } = await admin.from("wedding_guest_photos")
     .select("id,object_path")
+    .like("content_type", "image/%")
     .or(`preview_status.in.(pending,failed),and(preview_status.eq.processing,preview_attempted_at.lt.${stale})`)
     .order("preview_attempted_at", { ascending: true, nullsFirst: true }).limit(5);
   if (error) return Response.json({ error: "No pudimos buscar fotos pendientes." }, { status: 503 });

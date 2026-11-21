@@ -1,6 +1,6 @@
 import { createHmac, randomUUID } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { PHOTO_BUCKET, PHOTO_MAX_BYTES, PHOTO_TYPES } from "@/lib/guestPhotos";
+import { PHOTO_BUCKET, mediaMaxBytes, PHOTO_TYPES } from "@/lib/guestPhotos";
 
 export const runtime = "nodejs";
 
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   try { body = await request.json(); } catch { return Response.json({ error: "Solicitud inválida." }, { status: 400 }); }
   if (!body || typeof body.name !== "string" || body.name.length < 1 || body.name.length > 255 ||
       typeof body.type !== "string" || !PHOTO_TYPES[body.type] ||
-      typeof body.size !== "number" || !Number.isSafeInteger(body.size) || body.size <= 0 || body.size > PHOTO_MAX_BYTES ||
+      typeof body.size !== "number" || !Number.isSafeInteger(body.size) || body.size <= 0 || body.size > mediaMaxBytes(body.type) ||
       (body.guestName != null && (typeof body.guestName !== "string" || body.guestName.length > 80))) {
     return Response.json({ error: "El archivo no cumple los requisitos de formato o tamaño." }, { status: 400 });
   }

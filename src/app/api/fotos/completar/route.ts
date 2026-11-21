@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   }
   try {
     const admin = getSupabaseAdmin();
-    const { data: photo, error } = await admin.from("wedding_guest_photos").select("object_path,completed_at,preview_status").eq("id", id).maybeSingle();
+    const { data: photo, error } = await admin.from("wedding_guest_photos").select("object_path,completed_at,preview_status,content_type").eq("id", id).maybeSingle();
     if (error || !photo) return Response.json({ error: "Foto no encontrada." }, { status: 404 });
     if (!photo.completed_at) {
       const { data: object, error: objectError } = await admin.storage.from(PHOTO_BUCKET).info(photo.object_path);
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       const { error: updateError } = await admin.from("wedding_guest_photos").update({ completed_at: new Date().toISOString() }).eq("id", id);
       if (updateError) throw updateError;
     }
-    const previewReady = photo.preview_status === "ready" || await createGuestPhotoPreview(id, photo.object_path);
+    const previewReady = photo.content_type.startsWith("video/") || photo.preview_status === "ready" || await createGuestPhotoPreview(id, photo.object_path);
     return Response.json({ ok: true, previewReady });
   } catch (error) {
     console.error("Photo completion failed", error);

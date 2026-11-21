@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GuestVideos } from "./guest-videos";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, Camera, ChevronLeft, ChevronRight, Heart, Images, Minus, Plus, RefreshCw, X } from "lucide-react";
 
@@ -142,8 +143,9 @@ export function GuestGallery() {
       </div>
       <div className="flex items-center justify-between gap-3 py-4 sm:gap-4 sm:py-6"><p className="text-xs font-semibold uppercase tracking-[.14em] text-[#788b7a]">Los recuerdos de todos</p><span className="inline-flex items-center gap-2 text-xs text-[#7f9180]"><span className="h-2 w-2 rounded-full bg-[#81a584]" /> Se actualiza automáticamente</span></div>
       {error && <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#f4ece2] p-4 text-sm text-[#7d6249]"><span>{error}</span><button type="button" onClick={() => void load(pages)} className="inline-flex items-center gap-2 font-semibold"><RefreshCw size={15} /> Reintentar</button></div>}
-      {loading ? <div className="py-20 text-center text-sm text-[#879588]">Cargando recuerdos...</div> : photos.length === 0 && !error ? <div className="rounded-2xl border border-dashed border-[#cbd9c8] bg-white/60 px-6 py-20 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#edf3ea] text-[#78917a]"><Images size={25} /></span><h2 className="mt-5 !font-serif text-2xl font-normal">Aquí empieza nuestro álbum</h2><p className="mt-2 text-sm text-[#829083]">Las fotos que compartan aparecerán aquí.</p><Link href="/fotos" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#365741] underline underline-offset-4">Compartir la primera foto <ArrowUpRight size={14} /></Link></div> : <div className="columns-3 gap-2 sm:gap-4">{photos.map(photo => <PhotoTile key={photo.id} photo={photo} onOpen={() => setSelected(photo.id)} />)}</div>}
+      {loading ? <div className="py-20 text-center text-sm text-[#879588]">Cargando recuerdos...</div> : photos.length === 0 && !error ? <div className="rounded-2xl border border-dashed border-[#cbd9c8] bg-white/60 px-6 py-20 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#edf3ea] text-[#78917a]"><Images size={25} /></span><h2 className="mt-5 !font-serif text-2xl font-normal">Aquí empieza nuestro álbum</h2><p className="mt-2 text-sm text-[#829083]">Las fotos que compartan aparecerán aquí; los videos se muestran más abajo.</p><Link href="/fotos" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#365741] underline underline-offset-4">Compartir la primera foto <ArrowUpRight size={14} /></Link></div> : <div className="columns-3 gap-2 sm:gap-4">{photos.map(photo => <PhotoTile key={photo.id} photo={photo} onOpen={() => setSelected(photo.id)} />)}</div>}
       {hasMore && <div className="mt-8 text-center"><button type="button" disabled={loadingMore} onClick={() => { setLoadingMore(true); setPages(value => value + 1); }} className="rounded-xl border border-[#c9d5c7] px-6 py-3 text-sm font-semibold text-[#365741] hover:bg-white disabled:opacity-50">{loadingMore ? "Cargando..." : "Ver más recuerdos"}</button></div>}
+      <GuestVideos />
       <p className="mt-14 flex items-center justify-center gap-2 text-xs tracking-[.1em] text-[#a0ab9e]"><Heart size={13} /> GRACIAS POR SER PARTE DE NUESTRA HISTORIA</p>
     </main>
     {activePhoto && <div
