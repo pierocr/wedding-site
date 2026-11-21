@@ -2,9 +2,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   Calendar,
+  Camera,
   CalendarPlus,
   Clock,
   Download,
@@ -55,6 +57,7 @@ import {
   CEREMONY,
   RECEPTION,
   WEDDING_DATE_ISO,
+  COUNTDOWN_TARGET_ISO,
   BANK_TRANSFER,
   FEATURE_FLAGS,
 } from "@/data/site";
@@ -147,7 +150,7 @@ const ICON_DEFAULT = {
    HELPERS
 ============================== */
 function useCountdown(targetISO: string) {
-  const target = useMemo(() => new Date(`${targetISO}T00:00:00`), [targetISO]);
+  const target = useMemo(() => new Date(targetISO), [targetISO]);
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -611,7 +614,7 @@ const Nav = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorEl
 };
 
 const MiniCountdownBar = () => {
-  const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE_ISO);
+  const { days, hours, minutes, seconds } = useCountdown(COUNTDOWN_TARGET_ISO);
 
   const targetDate = React.useMemo(
     () => new Date(`${WEDDING_DATE_ISO}T00:00:00`),
@@ -670,7 +673,7 @@ const HERO_IMAGES = ["/hero/1.webp"];
 
 // === HERO (versión centrada, sin solaparse y sin altura excesiva en desktop) ===
 const Hero = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorElement>, href: string) => void }) => {
-  const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE_ISO);
+  const { days, hours, minutes, seconds } = useCountdown(COUNTDOWN_TARGET_ISO);
   const [idx, setIdx] = React.useState(0);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
@@ -889,6 +892,15 @@ const Hero = ({ onNavigate }: { onNavigate: (event: React.MouseEvent<HTMLAnchorE
               </div>
             </div>
           </LockedOverlay>
+          <div className="flex justify-center px-3 pb-3">
+            <Link
+              href="/fotos"
+              className="group inline-flex min-h-12 w-full max-w-56 items-center justify-center gap-2 rounded-xl border border-white/70 bg-[#f8f6f0] px-3 py-3 text-center text-sm font-bold text-[#315640] shadow-[0_12px_30px_rgba(20,35,25,0.24)] transition hover:bg-white hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto sm:min-w-[clamp(13rem,24vw,15rem)] sm:max-w-none"
+            >
+              <Camera className="h-4 w-4 shrink-0 transition-transform group-hover:-rotate-6" aria-hidden="true" />
+              Sube tus fotos y videos
+            </Link>
+          </div>
         </div>
       </motion.div>
     </section>

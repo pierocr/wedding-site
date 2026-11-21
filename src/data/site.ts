@@ -14,6 +14,7 @@ nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 export const RECEPTION_END_DATE_ISO = nextDay.toISOString().slice(0, 10);
 export const EVENT_TIMEZONE = "America/Santiago";
 export const EVENT_TIME_OFFSET = "-03:00";
+export const COUNTDOWN_TARGET_ISO = `${WEDDING_DATE_ISO}T17:00:00${EVENT_TIME_OFFSET}`;
 
 export const CEREMONY = {
   datePretty: "Sábado 21 de noviembre de 2026",
