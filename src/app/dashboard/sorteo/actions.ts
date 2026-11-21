@@ -1,15 +1,12 @@
 "use server";
 
 import { randomInt } from "node:crypto";
-import { hasDashboardAccess } from "@/lib/dashboardAccess";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isTestPayment } from "@/lib/testPayments";
 
 const excludedRaffleNumbers = new Set([555624, 771331]);
 
 export async function drawWinner() {
-  if (!(await hasDashboardAccess())) return { error: "Tu sesión expiró. Vuelve a ingresar al dashboard." };
-
   try {
     const supabase = getSupabaseAdmin();
     const payments = [];
